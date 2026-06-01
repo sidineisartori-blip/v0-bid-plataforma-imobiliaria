@@ -61,6 +61,8 @@ type FormData = {
   estado: string
   bairro: string
   logradouro: string
+  numero: string
+  complemento: string
   quartos: number
   banheiros: number
   vagas: number
@@ -69,8 +71,29 @@ type FormData = {
   aceita_animal: boolean
   lancamento: boolean
   publico_no_site: boolean
+  // Proprietário
   prop_nome: string
+  prop_cpf_cnpj: string
+  prop_nacionalidade: string
+  prop_estado_civil: string
+  prop_profissao: string
+  prop_rg: string
   prop_whatsapp: string
+  prop_email: string
+  // Cônjuge (condicional)
+  prop_conjuge_nome: string
+  prop_conjuge_cpf: string
+  prop_conjuge_whatsapp: string
+  // Imóvel
+  prop_matricula: string
+  cartorio_registro: string
+  // Condições financeiras
+  percentual_comissao: string
+  formas_pagamento: string[]
+  aceita_negociacao: string
+  // Prazo
+  validade_autorizacao: string
+  exclusividade: string
 }
 
 const MIN_FOTOS = 5
@@ -97,11 +120,13 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
     tipo_imovel: imovel?.tipo_imovel || 'Apartamento',
     titulo: imovel?.titulo || '',
     descricao: imovel?.descricao || '',
-    cep: '',
+    cep: imovel?.cep ? imovel.cep.replace(/(\d{5})(\d{3})/, '$1-$2') : '',
     cidade: imovel?.cidade || '',
-    estado: '',
+    estado: imovel?.estado || '',
     bairro: imovel?.bairro || '',
-    logradouro: '',
+    logradouro: imovel?.logradouro || '',
+    numero: imovel?.numero || '',
+    complemento: imovel?.complemento || '',
     quartos: imovel?.quartos || 0,
     banheiros: imovel?.banheiros || 0,
     vagas: imovel?.vagas || 0,
@@ -111,8 +136,38 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
     lancamento: imovel?.lancamento || false,
     publico_no_site: imovel?.publico_no_site || false,
     prop_nome: imovel?.prop_nome || '',
+    prop_cpf_cnpj: imovel?.prop_cpf_cnpj || '',
+    prop_nacionalidade: imovel?.prop_nacionalidade || '',
+    prop_estado_civil: imovel?.prop_estado_civil || '',
+    prop_profissao: imovel?.prop_profissao || '',
+    prop_rg: imovel?.prop_rg || '',
     prop_whatsapp: imovel?.prop_whatsapp || '',
+    prop_email: imovel?.prop_email || '',
+    prop_conjuge_nome: imovel?.prop_conjuge_nome || '',
+    prop_conjuge_cpf: imovel?.prop_conjuge_cpf || '',
+    prop_conjuge_whatsapp: imovel?.prop_conjuge_whatsapp || '',
+    prop_matricula: imovel?.prop_matricula || '',
+    cartorio_registro: imovel?.cartorio_registro || '',
+    percentual_comissao: imovel?.percentual_comissao || '',
+    formas_pagamento: imovel?.formas_pagamento || [],
+    aceita_negociacao: imovel?.aceita_negociacao || '',
+    validade_autorizacao: imovel?.validade_autorizacao || '',
+    exclusividade: imovel?.exclusividade || '',
   })
+
+  const mostrarConjuge = form.prop_estado_civil === 'Casado(a)' || form.prop_estado_civil === 'União Estável'
+
+  function toggleFormaPagamento(forma: string) {
+    setForm((prev) => {
+      const atual = prev.formas_pagamento
+      return {
+        ...prev,
+        formas_pagamento: atual.includes(forma)
+          ? atual.filter((f) => f !== forma)
+          : [...atual, forma],
+      }
+    })
+  }
 
   async function buscarCep(cepRaw: string) {
     const cep = cepRaw.replace(/\D/g, '')
@@ -213,6 +268,8 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
       estado: form.estado || null,
       bairro: form.bairro || null,
       logradouro: form.logradouro || null,
+      numero: form.numero || null,
+      complemento: form.complemento || null,
       quartos: form.quartos,
       banheiros: form.banheiros,
       vagas: form.vagas,
@@ -221,10 +278,30 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
       aceita_animal: form.aceita_animal,
       lancamento: form.lancamento,
       publico_no_site: form.publico_no_site,
-      matching_ativo: false,
+      matching_ativo: imovel?.matching_ativo ?? false,
       status: imovel?.status || 'aguardando_assinatura',
+      // Proprietário
       prop_nome: form.prop_nome || null,
+      prop_cpf_cnpj: form.prop_cpf_cnpj || null,
+      prop_nacionalidade: form.prop_nacionalidade || null,
+      prop_estado_civil: form.prop_estado_civil || null,
+      prop_profissao: form.prop_profissao || null,
+      prop_rg: form.prop_rg || null,
       prop_whatsapp: form.prop_whatsapp || null,
+      prop_email: form.prop_email || null,
+      prop_conjuge_nome: mostrarConjuge ? (form.prop_conjuge_nome || null) : null,
+      prop_conjuge_cpf: mostrarConjuge ? (form.prop_conjuge_cpf || null) : null,
+      prop_conjuge_whatsapp: mostrarConjuge ? (form.prop_conjuge_whatsapp || null) : null,
+      // Imóvel
+      prop_matricula: form.prop_matricula || null,
+      cartorio_registro: form.cartorio_registro || null,
+      // Condições financeiras
+      percentual_comissao: form.percentual_comissao || null,
+      formas_pagamento: form.formas_pagamento.length > 0 ? form.formas_pagamento : null,
+      aceita_negociacao: form.aceita_negociacao || null,
+      // Prazo
+      validade_autorizacao: form.validade_autorizacao || null,
+      exclusividade: form.exclusividade || null,
     }
 
     if (imovel?.id) payload.id = imovel.id
@@ -256,20 +333,29 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
     // Envio de autorização via WhatsApp se proprietário tiver telefone
     if (form.prop_whatsapp && form.prop_nome) {
       const valorFormatado = parseFloat(form.valor || '0').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      const formasPagTxt = form.formas_pagamento.length > 0
+        ? form.formas_pagamento.join(', ')
+        : 'Não informado'
       const mensagem = `Olá ${form.prop_nome}!
 
 Sou ${corretorNome}, corretor de imóveis${corretorCreci ? ` - CRECI ${corretorCreci}` : ''}.
 
 Estou cadastrando seu imóvel na plataforma BID para encontrarmos o melhor comprador/locatário.
 
-Para autorizar a divulgação, por favor confirme respondendo *AUTORIZO* nesta conversa.
+*DADOS DO IMÓVEL PARA AUTORIZAÇÃO:*
+Tipo: ${form.tipo_imovel} - ${form.tipo_negocio}
+Endereço: ${[form.logradouro, form.numero, form.bairro, form.cidade, form.estado].filter(Boolean).join(', ')}
+Matrícula: ${form.prop_matricula || 'Não informado'}
+Cartório: ${form.cartorio_registro || 'Não informado'}
+Valor: ${valorFormatado}
+Comissão: ${form.percentual_comissao || 'A combinar'}
+Formas de pagamento: ${formasPagTxt}
+Validade da autorização: ${form.validade_autorizacao || 'Não informado'}
+Exclusividade: ${form.exclusividade || 'Não informado'}
 
-Dados do imóvel:
-📍 ${[form.bairro, form.cidade, form.estado].filter(Boolean).join(' - ')}
-🏠 ${form.tipo_imovel} - ${form.tipo_negocio}
-💰 ${valorFormatado}
+Para *AUTORIZAR* a divulgação, responda com a palavra *AUTORIZO* nesta conversa.
 
-Ao responder AUTORIZO, você confirma que é o proprietário e autoriza a divulgação do imóvel pela Plataforma BID.
+Ao responder AUTORIZO, você declara ser o proprietário e autoriza a divulgação do imóvel pela Plataforma BID.
 
 Atenciosamente,
 ${corretorNome}${corretorCreci ? ` - CRECI ${corretorCreci}` : ''}`
@@ -753,29 +839,223 @@ ${corretorNome}${corretorCreci ? ` - CRECI ${corretorCreci}` : ''}`
             </div>
           </div>
 
-          {/* Dados do Proprietario */}
+          {/* ── BLOCO: DADOS DO PROPRIETÁRIO ─────────────────── */}
           <div>
             <p style={sectionTitleStyle}>Dados do Proprietário (Privados)</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={labelStyle}>Nome Completo</label>
-                <input
-                  type="text"
-                  style={inputStyle}
-                  value={form.prop_nome}
-                  onChange={(e) => set('prop_nome', e.target.value)}
-                  placeholder="Nome do proprietário"
-                />
+
+              {/* Nome + CPF/CNPJ */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Nome Completo *</label>
+                  <input required type="text" style={inputStyle} value={form.prop_nome}
+                    onChange={(e) => set('prop_nome', e.target.value)} placeholder="Nome do proprietário" />
+                </div>
+                <div>
+                  <label style={labelStyle}>CPF / CNPJ *</label>
+                  <input required type="text" style={inputStyle} value={form.prop_cpf_cnpj}
+                    onChange={(e) => set('prop_cpf_cnpj', e.target.value)} placeholder="000.000.000-00" />
+                </div>
+              </div>
+
+              {/* Nacionalidade + Estado Civil */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Nacionalidade *</label>
+                  <input required type="text" style={inputStyle} value={form.prop_nacionalidade}
+                    onChange={(e) => set('prop_nacionalidade', e.target.value)} placeholder="Brasileiro(a)" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Estado Civil *</label>
+                  <select required style={inputStyle} value={form.prop_estado_civil}
+                    onChange={(e) => set('prop_estado_civil', e.target.value)}>
+                    <option value="">Selecione...</option>
+                    <option>Solteiro(a)</option>
+                    <option>Casado(a)</option>
+                    <option>Divorciado(a)</option>
+                    <option>{'Viúvo(a)'}</option>
+                    <option>União Estável</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Profissão + RG */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Profissão *</label>
+                  <input required type="text" style={inputStyle} value={form.prop_profissao}
+                    onChange={(e) => set('prop_profissao', e.target.value)} placeholder="Ex: Médico, Comerciante" />
+                </div>
+                <div>
+                  <label style={labelStyle}>RG *</label>
+                  <input required type="text" style={inputStyle} value={form.prop_rg}
+                    onChange={(e) => set('prop_rg', e.target.value)} placeholder="0.000.000-0" />
+                </div>
+              </div>
+
+              {/* WhatsApp + E-mail */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>WhatsApp *</label>
+                  <input required type="text" style={inputStyle} value={form.prop_whatsapp}
+                    onChange={(e) => set('prop_whatsapp', e.target.value)} placeholder="(00) 00000-0000" />
+                </div>
+                <div>
+                  <label style={labelStyle}>E-mail</label>
+                  <input type="email" style={inputStyle} value={form.prop_email}
+                    onChange={(e) => set('prop_email', e.target.value)} placeholder="proprietario@email.com" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── BLOCO: CÔNJUGE (condicional) ──────────────────── */}
+          {mostrarConjuge && (
+            <div>
+              <p style={sectionTitleStyle}>
+                Dados do Cônjuge / Companheiro(a)
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Nome do Cônjuge *</label>
+                  <input required type="text" style={inputStyle} value={form.prop_conjuge_nome}
+                    onChange={(e) => set('prop_conjuge_nome', e.target.value)} placeholder="Nome completo" />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={labelStyle}>CPF do Cônjuge *</label>
+                    <input required type="text" style={inputStyle} value={form.prop_conjuge_cpf}
+                      onChange={(e) => set('prop_conjuge_cpf', e.target.value)} placeholder="000.000.000-00" />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>WhatsApp do Cônjuge *</label>
+                    <input required type="text" style={inputStyle} value={form.prop_conjuge_whatsapp}
+                      onChange={(e) => set('prop_conjuge_whatsapp', e.target.value)} placeholder="(00) 00000-0000" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── BLOCO: DADOS DO IMÓVEL ────────────────────────── */}
+          <div>
+            <p style={sectionTitleStyle}>Dados Registrais do Imóvel</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Número / Compl.</label>
+                  <input type="text" style={inputStyle} value={form.numero}
+                    onChange={(e) => set('numero', e.target.value)} placeholder="123 / Apto 4B" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Matrícula do Imóvel *</label>
+                  <input required type="text" style={inputStyle} value={form.prop_matricula}
+                    onChange={(e) => set('prop_matricula', e.target.value)} placeholder="Ex: 12345" />
+                </div>
               </div>
               <div>
-                <label style={labelStyle}>WhatsApp</label>
-                <input
-                  type="text"
-                  style={inputStyle}
-                  value={form.prop_whatsapp}
-                  onChange={(e) => set('prop_whatsapp', e.target.value)}
-                  placeholder="(00) 00000-0000"
-                />
+                <label style={labelStyle}>Cartório de Registro *</label>
+                <input required type="text" style={inputStyle} value={form.cartorio_registro}
+                  onChange={(e) => set('cartorio_registro', e.target.value)}
+                  placeholder="Ex: 1º Cartório de Registro de Imóveis de Jacarezinho" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── BLOCO: CONDIÇÕES FINANCEIRAS ──────────────────── */}
+          <div>
+            <p style={sectionTitleStyle}>Condições Financeiras</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+              {/* Comissão + Aceita negociação */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Percentual de Comissão *</label>
+                  <select required style={inputStyle} value={form.percentual_comissao}
+                    onChange={(e) => set('percentual_comissao', e.target.value)}>
+                    <option value="">Selecione...</option>
+                    <option value="6%">6%</option>
+                    <option value="7%">7%</option>
+                    <option value="8%">8%</option>
+                    <option value="A combinar">A combinar</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Aceita Negociação de Preço?</label>
+                  <select style={inputStyle} value={form.aceita_negociacao}
+                    onChange={(e) => set('aceita_negociacao', e.target.value)}>
+                    <option value="">Selecione...</option>
+                    <option value="Sim">Sim</option>
+                    <option value="Não">Não</option>
+                    <option value="Consultar">Consultar</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Formas de pagamento */}
+              <div>
+                <label style={labelStyle}>Formas de Pagamento Aceitas *</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                  {[
+                    'À vista',
+                    'Financiamento bancário',
+                    'FGTS',
+                    'Permuta',
+                    'Parcelado direto com proprietário',
+                  ].map((forma) => (
+                    <label
+                      key={forma}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        color: '#F0EDE6',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={form.formas_pagamento.includes(forma)}
+                        onChange={() => toggleFormaPagamento(forma)}
+                        style={{
+                          width: '14px',
+                          height: '14px',
+                          accentColor: '#C9A84C',
+                          cursor: 'pointer',
+                        }}
+                      />
+                      {forma}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── BLOCO: PRAZO DA AUTORIZAÇÃO ───────────────────── */}
+          <div>
+            <p style={sectionTitleStyle}>Prazo da Autorização</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={labelStyle}>Validade da Autorização *</label>
+                <select required style={inputStyle} value={form.validade_autorizacao}
+                  onChange={(e) => set('validade_autorizacao', e.target.value)}>
+                  <option value="">Selecione...</option>
+                  <option value="30 dias">30 dias</option>
+                  <option value="60 dias">60 dias</option>
+                  <option value="90 dias">90 dias</option>
+                  <option value="180 dias">180 dias</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Exclusividade *</label>
+                <select required style={inputStyle} value={form.exclusividade}
+                  onChange={(e) => set('exclusividade', e.target.value)}>
+                  <option value="">Selecione...</option>
+                  <option value="Não exclusiva">Não exclusiva</option>
+                  <option value="Exclusiva">Exclusiva</option>
+                </select>
               </div>
             </div>
           </div>
