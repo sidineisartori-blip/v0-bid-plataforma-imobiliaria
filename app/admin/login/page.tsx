@@ -3,11 +3,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 export default function AdminLoginPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [mostrarSenha, setMostrar] = useState(false)
@@ -20,47 +18,26 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
-      // Verifica se existe um admin_user com esse email
-      const { data: adminUser, error: adminError } = await supabase
-        .from('admin_users')
-        .select('id, email, password_hash, role, is_active, full_name')
-        .eq('email', email.toLowerCase().trim())
-        .single()
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      })
 
-      if (adminError || !adminUser) {
-        setErro('Credenciais invalidas.')
+      const data = await res.json()
+
+      if (!res.ok || !data.ok) {
+        setErro(data.error || 'Credenciais invalidas.')
         setLoading(false)
         return
       }
 
-      if (!adminUser.is_active) {
-        setErro('Esta conta foi desativada.')
-        setLoading(false)
-        return
-      }
-
-      // Verifica a senha (comparacao simples - em producao usar bcrypt)
-      // Para simplificar, vamos usar uma senha master configuravel
-      const MASTER_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_MASTER_PASSWORD || 'BID@dmin2024!'
-      
-      if (senha !== MASTER_PASSWORD && senha !== adminUser.password_hash) {
-        setErro('Credenciais invalidas.')
-        setLoading(false)
-        return
-      }
-
-      // Atualiza ultimo login
-      await supabase
-        .from('admin_users')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', adminUser.id)
-
-      // Salva sessao no localStorage (em producao usar cookies httpOnly)
+      // Salva sessao no localStorage
       localStorage.setItem('admin_session', JSON.stringify({
-        id: adminUser.id,
-        email: adminUser.email,
-        role: adminUser.role,
-        full_name: adminUser.full_name,
+        id: data.admin.id,
+        email: data.admin.email,
+        role: data.admin.role,
+        full_name: data.admin.full_name,
         expires: Date.now() + (24 * 60 * 60 * 1000), // 24 horas
       }))
 
