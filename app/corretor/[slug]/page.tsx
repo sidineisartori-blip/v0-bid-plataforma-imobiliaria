@@ -2,6 +2,8 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import SiteCorretorPublico from '@/components/site/SiteCorretorPublico'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SiteCorretorPage({
   params,
 }: {

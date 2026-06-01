@@ -1,16 +1,4 @@
 {
   "framework": "nextjs",
-  "buildCommand": "next build",
-  "devCommand": "next dev",
-  "installCommand": "npm install",
-  "regions": ["gru1"],
-  "headers": [
-    {
-      "source": "/corretor/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "index, follow" },
-        { "key": "Cache-Control", "value": "s-maxage=60, stale-while-revalidate=300" }
-      ]
-    }
-  ]
+  "regions": ["gru1"]
 }

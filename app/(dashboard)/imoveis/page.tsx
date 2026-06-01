@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ImoveisClient from '@/components/imoveis/ImoveisClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ImoveisPage() {
   const supabase = await createClient()
   const {

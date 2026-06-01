@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function ConfirmacaoPage() {
+function ConfirmacaoContent() {
   const searchParams = useSearchParams()
   const email        = searchParams.get('email') || ''
   const supabase     = createClient()
@@ -117,5 +117,13 @@ export default function ConfirmacaoPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ConfirmacaoPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', backgroundColor: '#0E0E0F' }} />}>
+      <ConfirmacaoContent />
+    </Suspense>
   )
 }
