@@ -168,9 +168,25 @@ export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatCl
         {/* Itens */}
         <div className="flex-1 overflow-y-auto">
           {negociacoes.length === 0 ? (
-            <p className="px-4 py-6 text-[12px]" style={{ color: 'var(--color-muted)' }}>
-              Nenhuma negociação ativa.
-            </p>
+            <div className="px-4 py-12 flex flex-col items-center justify-center gap-4 text-center" style={{ minHeight: '200px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>💬</div>
+              <div className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>Nenhuma conversa ainda</div>
+              <div className="text-xs" style={{ color: 'var(--color-muted)', lineHeight: 1.6, maxWidth: '220px' }}>
+                Aceite um match e proponha uma parceria para iniciar uma conversa com seu corretor parceiro.
+              </div>
+              <button
+                onClick={() => router.push('/matches')}
+                className="mt-3 text-xs px-4 py-2 rounded" style={{
+                  backgroundColor: 'var(--color-gold)',
+                  color: 'var(--color-dark)',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Ver Matches Disponíveis →
+              </button>
+            </div>
           ) : (
             negociacoes.map((neg) => {
               const parceirodaNeg = getParceiro(neg)
