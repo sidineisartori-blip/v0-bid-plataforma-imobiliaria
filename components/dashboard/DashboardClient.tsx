@@ -28,16 +28,16 @@ function MetricCard({
         backgroundColor: '#181819',
         border: '1px solid rgba(201,168,76,0.1)',
         borderRadius: '2px',
-        padding: '20px 24px',
+        padding: '24px 28px',
       }}
     >
       <p
         style={{
-          fontSize: '9px',
+          fontSize: '12px',
           textTransform: 'uppercase',
           letterSpacing: '0.12em',
           color: accent || '#C9A84C',
-          marginBottom: '8px',
+          marginBottom: '10px',
           fontWeight: 600,
         }}
       >
@@ -46,7 +46,7 @@ function MetricCard({
       <p
         style={{
           fontFamily: 'var(--font-serif)',
-          fontSize: '28px',
+          fontSize: '36px',
           fontWeight: 700,
           color: '#F0EDE6',
           lineHeight: 1,
@@ -78,32 +78,32 @@ export default function DashboardClient({
   )
 
   return (
-    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
       {/* Alertas */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {matchesExternos.length > 0 && (
           <div
             style={{
               backgroundColor: 'rgba(201,168,76,0.08)',
               border: '1px solid rgba(201,168,76,0.25)',
               borderRadius: '2px',
-              padding: '12px 16px',
+              padding: '16px 20px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
           >
-            <p style={{ fontSize: '13px', color: '#C9A84C' }}>
+            <p style={{ fontSize: '15px', color: '#C9A84C' }}>
               Voce tem {matchesExternos.length} interessado(s) em imoveis compativeis.
             </p>
             <Link
               href="/matches"
               style={{
-                fontSize: '12px',
+                fontSize: '14px',
                 color: '#C9A84C',
                 border: '1px solid rgba(201,168,76,0.4)',
                 borderRadius: '2px',
-                padding: '4px 12px',
+                padding: '6px 16px',
                 textDecoration: 'none',
                 whiteSpace: 'nowrap',
               }}
@@ -119,23 +119,23 @@ export default function DashboardClient({
               backgroundColor: 'rgba(92,155,224,0.08)',
               border: '1px solid rgba(92,155,224,0.25)',
               borderRadius: '2px',
-              padding: '12px 16px',
+              padding: '16px 20px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
           >
-            <p style={{ fontSize: '13px', color: '#5C9BE0' }}>
+            <p style={{ fontSize: '15px', color: '#5C9BE0' }}>
               Voce tem {matchesInternos.length} compatibilidade(s) interna(s) na sua carteira.
             </p>
             <Link
               href="/matches"
               style={{
-                fontSize: '12px',
+                fontSize: '14px',
                 color: '#5C9BE0',
                 border: '1px solid rgba(92,155,224,0.4)',
                 borderRadius: '2px',
-                padding: '4px 12px',
+                padding: '6px 16px',
                 textDecoration: 'none',
                 whiteSpace: 'nowrap',
               }}
@@ -150,23 +150,23 @@ export default function DashboardClient({
             backgroundColor: 'rgba(224,92,92,0.08)',
             border: '1px solid rgba(224,92,92,0.25)',
             borderRadius: '2px',
-            padding: '12px 16px',
+            padding: '16px 20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <p style={{ fontSize: '13px', color: '#E05C5C' }}>
+          <p style={{ fontSize: '15px', color: '#E05C5C' }}>
             Parceria vence em 7 dias sem avanco no kanban.
           </p>
           <Link
             href="/crm"
             style={{
-              fontSize: '12px',
+              fontSize: '14px',
               color: '#E05C5C',
               border: '1px solid rgba(224,92,92,0.4)',
               borderRadius: '2px',
-              padding: '4px 12px',
+              padding: '6px 16px',
               textDecoration: 'none',
               whiteSpace: 'nowrap',
             }}
@@ -176,8 +176,8 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Métricas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+      {/* Metricas */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         <MetricCard label="Imoveis Ativos" value={imoveisAtivos} />
         <MetricCard label="Matches Pendentes" value={matches.length} />
         <MetricCard label="Negociacoes" value={negociacoes.length} accent="#9B9690" />
@@ -190,14 +190,14 @@ export default function DashboardClient({
           backgroundColor: '#181819',
           border: '1px solid rgba(201,168,76,0.1)',
           borderRadius: '2px',
-          padding: '20px 24px',
+          padding: '24px 28px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <p
             style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: '15px',
+              fontSize: '18px',
               fontWeight: 600,
               color: '#F0EDE6',
             }}
@@ -206,42 +206,42 @@ export default function DashboardClient({
           </p>
           <Link
             href="/crm"
-            style={{ fontSize: '12px', color: '#C9A84C', textDecoration: 'none' }}
+            style={{ fontSize: '14px', color: '#C9A84C', textDecoration: 'none' }}
           >
             Ver completo &rarr;
           </Link>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', overflowX: 'auto' }}>
           {KANBAN_COLUNAS.map((coluna) => {
             const cards = negociacoesPorColuna[coluna] || []
             return (
               <div key={coluna}>
                 <p
                   style={{
-                    fontSize: '9px',
+                    fontSize: '11px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
                     color: '#9B9690',
-                    marginBottom: '8px',
+                    marginBottom: '10px',
                     fontWeight: 600,
                   }}
                 >
                   {coluna}
                   <span
                     style={{
-                      marginLeft: '6px',
+                      marginLeft: '8px',
                       backgroundColor: '#232324',
                       borderRadius: '9999px',
-                      padding: '1px 6px',
-                      fontSize: '9px',
+                      padding: '2px 8px',
+                      fontSize: '11px',
                       color: '#F0EDE6',
                     }}
                   >
                     {cards.length}
                   </span>
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minHeight: '40px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: '48px' }}>
                   {cards.slice(0, 3).map((neg) => (
                     <div
                       key={neg.id}
@@ -249,8 +249,8 @@ export default function DashboardClient({
                         backgroundColor: '#232324',
                         borderLeft: '2px solid #C9A84C',
                         borderRadius: '1px',
-                        padding: '6px 8px',
-                        fontSize: '10px',
+                        padding: '8px 10px',
+                        fontSize: '12px',
                         color: '#9B9690',
                       }}
                     >
@@ -262,7 +262,7 @@ export default function DashboardClient({
                       style={{
                         border: '1px dashed #232324',
                         borderRadius: '2px',
-                        height: '32px',
+                        height: '40px',
                       }}
                     />
                   )}
@@ -273,54 +273,54 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Grid 2 colunas: Matches + Imóveis */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      {/* Grid 2 colunas: Matches + Imoveis */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
         {/* Top Matches */}
         <div
           style={{
             backgroundColor: '#181819',
             border: '1px solid rgba(201,168,76,0.1)',
             borderRadius: '2px',
-            padding: '20px 24px',
+            padding: '24px 28px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <p style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', fontWeight: 600, color: '#F0EDE6' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', fontWeight: 600, color: '#F0EDE6' }}>
               Top Matches
             </p>
-            <Link href="/matches" style={{ fontSize: '12px', color: '#C9A84C', textDecoration: 'none' }}>
+            <Link href="/matches" style={{ fontSize: '14px', color: '#C9A84C', textDecoration: 'none' }}>
               Ver todos &rarr;
             </Link>
           </div>
 
           {matches.length === 0 ? (
-            <p style={{ fontSize: '13px', color: '#9B9690', textAlign: 'center', padding: '24px 0' }}>
+            <p style={{ fontSize: '15px', color: '#9B9690', textAlign: 'center', padding: '32px 0' }}>
               Nenhum match pendente
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {matches.slice(0, 4).map((match) => (
                 <div
                   key={match.id}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
-                    padding: '10px 12px',
+                    gap: '14px',
+                    padding: '14px 16px',
                     backgroundColor: '#232324',
                     borderRadius: '2px',
                   }}
                 >
                   <div
                     style={{
-                      width: '36px',
-                      height: '36px',
+                      width: '44px',
+                      height: '44px',
                       borderRadius: '50%',
                       backgroundColor: 'rgba(201,168,76,0.15)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '12px',
+                      fontSize: '14px',
                       fontWeight: 700,
                       color: '#C9A84C',
                       flexShrink: 0,
@@ -329,17 +329,17 @@ export default function DashboardClient({
                     {match.score}%
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '12px', color: '#F0EDE6', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontSize: '15px', color: '#F0EDE6', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {match.imovel?.titulo || match.imovel_id.slice(0, 12)}
                     </p>
-                    <p style={{ fontSize: '11px', color: '#9B9690' }}>
+                    <p style={{ fontSize: '13px', color: '#9B9690' }}>
                       {match.solicitacao?.cliente_nome || '—'} · {match.imovel?.cidade || ''}
                     </p>
                   </div>
                   <span
                     style={{
-                      fontSize: '10px',
-                      padding: '2px 8px',
+                      fontSize: '12px',
+                      padding: '4px 10px',
                       borderRadius: '2px',
                       backgroundColor: match.tipo === 'interno' ? 'rgba(92,155,224,0.15)' : 'rgba(201,168,76,0.15)',
                       color: match.tipo === 'interno' ? '#5C9BE0' : '#C9A84C',
@@ -354,30 +354,30 @@ export default function DashboardClient({
           )}
         </div>
 
-        {/* Top Imóveis */}
+        {/* Top Imoveis */}
         <div
           style={{
             backgroundColor: '#181819',
             border: '1px solid rgba(201,168,76,0.1)',
             borderRadius: '2px',
-            padding: '20px 24px',
+            padding: '24px 28px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <p style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', fontWeight: 600, color: '#F0EDE6' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', fontWeight: 600, color: '#F0EDE6' }}>
               Meus Imoveis
             </p>
-            <Link href="/imoveis" style={{ fontSize: '12px', color: '#C9A84C', textDecoration: 'none' }}>
+            <Link href="/imoveis" style={{ fontSize: '14px', color: '#C9A84C', textDecoration: 'none' }}>
               Ver todos &rarr;
             </Link>
           </div>
 
           {imoveis.length === 0 ? (
-            <p style={{ fontSize: '13px', color: '#9B9690', textAlign: 'center', padding: '24px 0' }}>
+            <p style={{ fontSize: '15px', color: '#9B9690', textAlign: 'center', padding: '32px 0' }}>
               Nenhum imovel cadastrado
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {imoveis.slice(0, 4).map((imovel) => {
                 const sc = STATUS_COLORS[imovel.status]
                 return (
@@ -386,23 +386,23 @@ export default function DashboardClient({
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '12px',
-                      padding: '10px 12px',
+                      gap: '14px',
+                      padding: '14px 16px',
                       backgroundColor: '#232324',
                       borderRadius: '2px',
                     }}
                   >
-                    <span style={{ fontSize: '20px', flexShrink: 0 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
+                    <span style={{ fontSize: '24px', flexShrink: 0 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                        <p style={{ fontSize: '12px', color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <p style={{ fontSize: '15px', color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {imovel.titulo}
                         </p>
                         {imovel.lancamento && (
                           <span
                             style={{
-                              fontSize: '9px',
-                              padding: '1px 5px',
+                              fontSize: '10px',
+                              padding: '2px 6px',
                               borderRadius: '2px',
                               backgroundColor: 'rgba(201,168,76,0.15)',
                               color: '#C9A84C',
@@ -413,14 +413,14 @@ export default function DashboardClient({
                           </span>
                         )}
                       </div>
-                      <p style={{ fontSize: '11px', color: '#9B9690' }}>
+                      <p style={{ fontSize: '13px', color: '#9B9690' }}>
                         {imovel.bairro ? `${imovel.bairro} · ` : ''}{formatCurrency(imovel.valor)}
                       </p>
                     </div>
                     <span
                       style={{
-                        fontSize: '10px',
-                        padding: '2px 8px',
+                        fontSize: '12px',
+                        padding: '4px 10px',
                         borderRadius: '2px',
                         backgroundColor: sc.bg,
                         color: sc.text,

@@ -34,12 +34,12 @@ function LoginForm() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '10px 14px',
+    padding: '14px 16px',
     backgroundColor: '#232324',
     border: '1px solid #2E2E30',
     borderRadius: '2px',
     color: '#F0EDE6',
-    fontSize: '14px',
+    fontSize: '16px',
     outline: 'none',
     fontFamily: 'DM Sans, sans-serif',
   }
@@ -48,9 +48,9 @@ function LoginForm() {
     backgroundColor: 'rgba(92,184,138,0.1)',
     border: '1px solid rgba(92,184,138,0.25)',
     borderRadius: '2px',
-    padding: '10px 14px',
-    marginBottom: '16px',
-    fontSize: '12px',
+    padding: '14px 16px',
+    marginBottom: '20px',
+    fontSize: '15px',
     color: '#c8f5dc',
     lineHeight: 1.5,
   }
@@ -79,19 +79,19 @@ function LoginForm() {
 
       <div style={{ position: 'relative', width: '100%', maxWidth: '400px', padding: '0 24px' }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '48px', fontWeight: 700, color: '#C9A84C', margin: 0, lineHeight: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '56px', fontWeight: 700, color: '#C9A84C', margin: 0, lineHeight: 1 }}>
             BID
           </h1>
-          <p style={{ fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#9B9690', marginTop: '8px' }}>
-            Plataforma Imobiliária
+          <p style={{ fontSize: '13px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#9B9690', marginTop: '12px' }}>
+            Plataforma Imobiliaria
           </p>
         </div>
 
         {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '40px' }}>
           <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(201,168,76,0.15)' }} />
-          <div style={{ width: '60px', height: '1px', backgroundColor: '#C9A84C' }} />
+          <div style={{ width: '80px', height: '1px', backgroundColor: '#C9A84C' }} />
           <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(201,168,76,0.15)' }} />
         </div>
 
@@ -100,7 +100,7 @@ function LoginForm() {
           backgroundColor: '#181819',
           border: '1px solid rgba(201,168,76,0.2)',
           borderRadius: '2px',
-          padding: '40px',
+          padding: '48px',
         }}>
           {/* Banners de sucesso */}
           {cadastroSucesso && (
@@ -120,19 +120,19 @@ function LoginForm() {
               backgroundColor: 'rgba(224,92,92,0.1)',
               border: '1px solid rgba(224,92,92,0.3)',
               borderRadius: '2px',
-              padding: '10px 14px',
-              marginBottom: '20px',
-              fontSize: '13px',
+              padding: '14px 16px',
+              marginBottom: '24px',
+              fontSize: '15px',
               color: '#E05C5C',
             }}>
               {erro}
             </div>
           )}
 
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* E-mail */}
             <div>
-              <label style={{ display: 'block', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9B9690', marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '13px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9B9690', marginBottom: '10px', fontWeight: 500 }}>
                 E-mail
               </label>
               <input
@@ -147,7 +147,7 @@ function LoginForm() {
 
             {/* Senha com toggle */}
             <div>
-              <label style={{ display: 'block', fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9B9690', marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '13px', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9B9690', marginBottom: '10px', fontWeight: 500 }}>
                 Senha
               </label>
               <div style={{ position: 'relative' }}>
@@ -155,15 +155,15 @@ function LoginForm() {
                   type={mostrarSenha ? 'text' : 'password'}
                   value={senha}
                   onChange={e => setSenha(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="********"
                   required
-                  style={{ ...inputStyle, paddingRight: '44px' }}
+                  style={{ ...inputStyle, paddingRight: '48px' }}
                 />
                 <button
                   type="button"
                   onClick={() => setMostrar(p => !p)}
                   aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9B9690', fontSize: '15px', lineHeight: 1, padding: 0 }}
+                  style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9B9690', fontSize: '18px', lineHeight: 1, padding: 0 }}
                 >
                   {mostrarSenha ? '○' : '●'}
                 </button>
@@ -174,12 +174,12 @@ function LoginForm() {
               type="submit"
               disabled={loading}
               style={{
-                padding: '11px',
+                padding: '14px',
                 backgroundColor: '#C9A84C',
                 color: '#0E0E0F',
                 border: 'none',
                 borderRadius: '2px',
-                fontSize: '13px',
+                fontSize: '15px',
                 fontWeight: 600,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.7 : 1,
@@ -191,11 +191,11 @@ function LoginForm() {
             </button>
           </form>
 
-          <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #232324', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
-            <Link href="/recuperar-senha" style={{ fontSize: '12px', color: '#C9A84C', textDecoration: 'none' }}>
+          <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid #232324', display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>
+            <Link href="/recuperar-senha" style={{ fontSize: '15px', color: '#C9A84C', textDecoration: 'none' }}>
               Esqueci minha senha
             </Link>
-            <p style={{ fontSize: '12px', color: '#9B9690', margin: 0 }}>
+            <p style={{ fontSize: '15px', color: '#9B9690', margin: 0 }}>
               Nao tem conta?{' '}
               <Link href="/cadastro" style={{ color: '#C9A84C', textDecoration: 'none', fontWeight: 500 }}>
                 Cadastre-se
