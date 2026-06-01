@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
-// Esta rota cria o primeiro admin user
-// IMPORTANTE: Remova ou proteja esta rota em producao
+export const dynamic = 'force-dynamic'
+
+// Esta rota cria o primeiro admin user — usa service_role para ignorar RLS
 export async function POST(request: Request) {
-  const supabase = await createClient()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   
   const { email, password, full_name, setup_key } = await request.json()
 
