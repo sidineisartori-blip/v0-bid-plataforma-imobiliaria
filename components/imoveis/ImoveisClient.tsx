@@ -11,6 +11,8 @@ interface ImoveisClientProps {
   imoveis: Imovel[]
   cidades: Cidade[]
   corretorId: string
+  corretorNome?: string
+  corretorCreci?: string
 }
 
 const btnIconStyle: React.CSSProperties = {
@@ -24,7 +26,7 @@ const btnIconStyle: React.CSSProperties = {
   transition: 'color 0.15s',
 }
 
-export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisClientProps) {
+export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNome = '', corretorCreci = '' }: ImoveisClientProps) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -32,6 +34,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
   const [imovelEditando, setImovelEditando] = useState<Imovel | null>(null)
   const [deletandoId, setDeletandoId] = useState<string | null>(null)
   const [matchingId, setMatchingId] = useState<string | null>(null)
+  const [autorizandoId, setAutorizandoId] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState<ImovelStatus | ''>('')
   const [filtroCidade, setFiltroCidade] = useState('')
 
@@ -81,6 +84,17 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
       setMatchMsg('Erro ao rodar matching.')
     }
     setMatchingId(null)
+  }
+
+  async function handleAutorizar(imovel: Imovel) {
+    if (!confirm(`Confirmar que ${imovel.prop_nome || 'o proprietário'} autorizou a divulgação do imóvel "${imovel.titulo}"?`)) return
+    setAutorizandoId(imovel.id)
+    await supabase
+      .from('imoveis')
+      .update({ status: 'ativo', matching_ativo: true })
+      .eq('id', imovel.id)
+    setAutorizandoId(null)
+    router.refresh()
   }
 
   function abrirNovo() {
@@ -146,7 +160,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
               cursor: 'pointer',
             }}
           >
-            + Cadastrar Imovel
+            + Cadastrar Imóvel
           </button>
         </div>
 
@@ -248,7 +262,29 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
                   </span>
 
                   {/* Botoes */}
-                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0, alignItems: 'center' }}>
+                    {/* Botão de autorização — visível apenas em aguardando_assinatura */}
+                    {imovel.status === 'aguardando_assinatura' && (
+                      <button
+                        title="Proprietário Autorizou"
+                        disabled={autorizandoId === imovel.id}
+                        onClick={() => handleAutorizar(imovel)}
+                        style={{
+                          backgroundColor: 'rgba(92,184,138,0.1)',
+                          border: '1px solid rgba(92,184,138,0.35)',
+                          borderRadius: '2px',
+                          color: '#5CB88A',
+                          cursor: autorizandoId === imovel.id ? 'not-allowed' : 'pointer',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          padding: '6px 10px',
+                          letterSpacing: '0.03em',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {autorizandoId === imovel.id ? '...' : 'Proprietário Autorizou'}
+                      </button>
+                    )}
                     <button
                       title="Rodar Matching"
                       style={btnIconStyle}
@@ -285,6 +321,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
         <ModalImovel
           imovel={imovelEditando}
           corretorId={corretorId}
+          corretorNome={corretorNome}
+          corretorCreci={corretorCreci}
           cidades={cidades}
           onClose={() => setModalAberto(false)}
         />

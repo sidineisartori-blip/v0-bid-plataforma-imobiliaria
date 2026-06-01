@@ -2,6 +2,8 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
@@ -66,6 +68,14 @@ export function Sidebar({
   notifsNaoLidas = 0,
   planoAtual = 'free',
 }: SidebarProps) {
+  const router = useRouter()
+
+  async function handleLogout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   function getPlanoBadge(plano: string): string | null {
     if (plano === 'free') return null
     if (plano === 'pro') return 'PRO'
@@ -169,6 +179,26 @@ export function Sidebar({
             <p className="text-[11px] text-[--color-gold] mt-0.5">{corretorSelo}</p>
           </div>
         </div>
+        <button
+          onClick={handleLogout}
+          style={{
+            width: '100%',
+            background: 'none',
+            border: 'none',
+            borderTop: '1px solid rgba(201,168,76,0.08)',
+            padding: '10px 14px',
+            color: '#9B9690',
+            fontSize: 12,
+            cursor: 'pointer',
+            textAlign: 'left',
+            marginTop: 6,
+            letterSpacing: '0.02em',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = '#E05C5C')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = '#9B9690')}
+        >
+          ⎋ Sair da conta
+        </button>
       </div>
     </aside>
   )

@@ -9,6 +9,8 @@ import { TIPO_IMOVEL_OPTIONS } from '@/lib/format'
 interface ModalImovelProps {
   imovel?: Imovel | null
   corretorId: string
+  corretorNome?: string
+  corretorCreci?: string
   cidades: Cidade[]
   onClose: () => void
 }
@@ -74,11 +76,12 @@ type FormData = {
 const MIN_FOTOS = 5
 const MAX_FOTOS = 30
 
-export default function ModalImovel({ imovel, corretorId, cidades, onClose }: ModalImovelProps) {
+export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corretor', corretorCreci = '', cidades, onClose }: ModalImovelProps) {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [toast, setToast] = useState('')
   const [cepLoading, setCepLoading] = useState(false)
   const [cepError, setCepError] = useState('')
   const [cepOk, setCepOk] = useState(false)
@@ -249,6 +252,41 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
     }
 
     router.refresh()
+
+    // Envio de autorização via WhatsApp se proprietário tiver telefone
+    if (form.prop_whatsapp && form.prop_nome) {
+      const valorFormatado = parseFloat(form.valor || '0').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      const mensagem = `Olá ${form.prop_nome}!
+
+Sou ${corretorNome}, corretor de imóveis${corretorCreci ? ` - CRECI ${corretorCreci}` : ''}.
+
+Estou cadastrando seu imóvel na plataforma BID para encontrarmos o melhor comprador/locatário.
+
+Para autorizar a divulgação, por favor confirme respondendo *AUTORIZO* nesta conversa.
+
+Dados do imóvel:
+📍 ${[form.bairro, form.cidade, form.estado].filter(Boolean).join(' - ')}
+🏠 ${form.tipo_imovel} - ${form.tipo_negocio}
+💰 ${valorFormatado}
+
+Ao responder AUTORIZO, você confirma que é o proprietário e autoriza a divulgação do imóvel pela Plataforma BID.
+
+Atenciosamente,
+${corretorNome}${corretorCreci ? ` - CRECI ${corretorCreci}` : ''}`
+
+      const telefone = form.prop_whatsapp.replace(/\D/g, '')
+      const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`
+      window.open(url, '_blank')
+
+      setToast('Imóvel salvo! WhatsApp aberto para enviar autorização ao proprietário.')
+      setLoading(false)
+      setTimeout(() => {
+        setToast('')
+        onClose()
+      }, 3500)
+      return
+    }
+
     onClose()
   }
 
@@ -315,6 +353,39 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
         </div>
 
         <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* Toast de sucesso (WhatsApp) */}
+          {toast && (
+            <div style={{
+              backgroundColor: 'rgba(92,184,138,0.1)',
+              border: '1px solid rgba(92,184,138,0.3)',
+              borderRadius: '2px',
+              padding: '14px 16px',
+              fontSize: '13px',
+              color: '#5CB88A',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              <span style={{ fontSize: '16px' }}>✓</span>
+              {toast}
+            </div>
+          )}
+
+          {/* Erro */}
+          {error && (
+            <div style={{
+              backgroundColor: 'rgba(224,92,92,0.1)',
+              border: '1px solid rgba(224,92,92,0.3)',
+              borderRadius: '2px',
+              padding: '14px 16px',
+              fontSize: '13px',
+              color: '#E05C5C',
+            }}>
+              {error}
+            </div>
+          )}
+
           {/* Tipo de Negocio + Tipo de Imovel */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
@@ -722,10 +793,6 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
           >
             Após salvar, o termo de autorização será enviado ao proprietário via Certisign para assinatura digital.
           </p>
-
-          {error && (
-            <p style={{ fontSize: '12px', color: '#E05C5C' }}>{error}</p>
-          )}
 
           {/* Botoes */}
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
