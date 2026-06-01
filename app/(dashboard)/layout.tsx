@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SidebarWrapper from '@/components/layout/SidebarWrapper'
+import DashboardShell from '@/components/layout/DashboardShell'
+
+export const dynamic = 'force-dynamic'
 
 export default async function DashboardLayout({
   children,
@@ -32,27 +35,22 @@ export default async function DashboardLayout({
       ? 'Membro Premium'
       : corretor?.plano === 'pro'
       ? 'Membro Pro'
-      : 'Membro Basico'
+      : 'Membro Básico'
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#0E0E0F' }}>
-      <SidebarWrapper
-        corretorNome={corretorNome}
-        corretorCreci={corretorCreci}
-        corretorSelo={corretorSelo}
-        corretorId={user.id}
-        matchesPendentes={matchesPendentes || 0}
-      />
-      <main
-        style={{
-          marginLeft: '240px',
-          flex: 1,
-          overflowY: 'auto',
-          backgroundColor: '#0E0E0F',
-        }}
-      >
-        {children}
-      </main>
-    </div>
+    <DashboardShell
+      sidebar={
+        <SidebarWrapper
+          corretorNome={corretorNome}
+          corretorCreci={corretorCreci}
+          corretorSelo={corretorSelo}
+          corretorId={user.id}
+          matchesPendentes={matchesPendentes || 0}
+          planoAtual={corretor?.plano || 'free'}
+        />
+      }
+    >
+      {children}
+    </DashboardShell>
   )
 }

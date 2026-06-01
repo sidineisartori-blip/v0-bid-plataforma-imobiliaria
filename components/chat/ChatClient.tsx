@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, KeyboardEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { useChat } from '@/hooks/useChat'
 
 interface Corretor {
@@ -70,6 +71,7 @@ function Avatar({ nome, size = 32 }: { nome: string; size?: number }) {
 }
 
 export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatClientProps) {
+  const router = useRouter()
   const [negociacaoAtiva, setNegociacaoAtiva] = useState<Negociacao | null>(
     negociacoes[0] || null
   )
@@ -403,14 +405,31 @@ export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatCl
         </div>
       ) : (
         <div
-          className="flex-1 flex items-center justify-center"
+          className="flex-1 flex flex-col items-center justify-center gap-4"
           style={{ backgroundColor: 'var(--color-dark)' }}
         >
-          <p className="text-[14px]" style={{ color: 'var(--color-muted)' }}>
-            {negociacoes.length === 0
-              ? 'Nenhuma negociação ativa. Aceite um match para iniciar uma conversa.'
-              : 'Selecione uma conversa ao lado.'}
-          </p>
+          {negociacoes.length === 0 ? (
+            <>
+              <p className="text-[17px] font-medium" style={{ color: '#F0EDE6' }}>Nenhuma conversa ainda</p>
+              <p className="text-[14px] text-center" style={{ color: 'var(--color-muted)', maxWidth: '320px', lineHeight: 1.6 }}>
+                Aceite um match e proponha uma parceria para iniciar uma conversa com seu corretor parceiro.
+              </p>
+              <button
+                onClick={() => router.push('/matches')}
+                style={{
+                  backgroundColor: '#C9A84C', color: '#0E0E0F',
+                  border: 'none', borderRadius: '2px', padding: '10px 24px',
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Ver Matches disponíveis
+              </button>
+            </>
+          ) : (
+            <p className="text-[14px]" style={{ color: 'var(--color-muted)' }}>
+              Selecione uma conversa ao lado.
+            </p>
+          )}
         </div>
       )}
     </div>
