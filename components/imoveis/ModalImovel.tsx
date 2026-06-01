@@ -71,6 +71,9 @@ type FormData = {
   prop_whatsapp: string
 }
 
+const MIN_FOTOS = 5
+const MAX_FOTOS = 30
+
 export default function ModalImovel({ imovel, corretorId, cidades, onClose }: ModalImovelProps) {
   const router = useRouter()
   const supabase = createClient()
@@ -79,6 +82,12 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
   const [cepLoading, setCepLoading] = useState(false)
   const [cepError, setCepError] = useState('')
   const [cepOk, setCepOk] = useState(false)
+
+  // Fotos
+  const [fotos, setFotos] = useState<File[]>([])
+  const [fotosExistentes, setFotosExistentes] = useState<string[]>(imovel?.image_urls || [])
+  const [fotosUploadando, setFotosUploadando] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState<FormData>({
     tipo_negocio: imovel?.tipo_negocio || 'Venda',
@@ -140,6 +149,45 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
   const set = (field: keyof FormData, value: unknown) =>
     setForm((prev) => ({ ...prev, [field]: value }))
 
+  function handleFotosChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    const total = fotos.length + fotosExistentes.length + files.length
+    if (total > MAX_FOTOS) {
+      alert(`Máximo de ${MAX_FOTOS} fotos permitido.`)
+      return
+    }
+    setFotos((prev) => [...prev, ...files])
+    // Limpa o input para permitir selecionar os mesmos arquivos novamente
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  function removerFotoNova(index: number) {
+    setFotos((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function removerFotoExistente(url: string) {
+    setFotosExistentes((prev) => prev.filter((u) => u !== url))
+  }
+
+  async function uploadFotos(imovelId: string): Promise<string[]> {
+    if (fotos.length === 0) return fotosExistentes
+    setFotosUploadando(true)
+    const urls: string[] = [...fotosExistentes]
+    for (const file of fotos) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const path = `${corretorId}/${imovelId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error: uploadErr } = await supabase.storage
+        .from('imoveis')
+        .upload(path, file, { upsert: true })
+      if (!uploadErr) {
+        const { data } = supabase.storage.from('imoveis').getPublicUrl(path)
+        urls.push(data.publicUrl)
+      }
+    }
+    setFotosUploadando(false)
+    return urls
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -178,16 +226,34 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
 
     if (imovel?.id) payload.id = imovel.id
 
-    const { error: err } = await supabase.from('imoveis').upsert(payload)
-    if (err) {
-      setError(err.message)
+    // Primeiro upsert para obter o id do imóvel
+    const { data: imovelSalvo, error: err } = await supabase
+      .from('imoveis')
+      .upsert(payload)
+      .select('id')
+      .single()
+
+    if (err || !imovelSalvo) {
+      setError(err?.message || 'Erro ao salvar imóvel.')
       setLoading(false)
       return
+    }
+
+    // Upload das fotos e atualiza image_urls
+    if (fotos.length > 0 || fotosExistentes.length !== (imovel?.image_urls?.length ?? 0)) {
+      const imageUrls = await uploadFotos(imovelSalvo.id)
+      await supabase
+        .from('imoveis')
+        .update({ image_urls: imageUrls })
+        .eq('id', imovelSalvo.id)
     }
 
     router.refresh()
     onClose()
   }
+
+  const totalFotos = fotos.length + fotosExistentes.length
+  const loadingGeral = loading || fotosUploadando
 
   // Fecha ao pressionar Esc
   useEffect(() => {
@@ -290,6 +356,171 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
               onChange={(e) => set('descricao', e.target.value)}
               placeholder="Descrição do imóvel..."
             />
+          </div>
+
+          {/* Fotos */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <label style={labelStyle}>
+                Fotos do Imóvel
+                <span style={{ color: '#9B9690', fontWeight: 400 }}> (mín. {MIN_FOTOS}, máx. {MAX_FOTOS})</span>
+              </label>
+              <span style={{
+                fontSize: '11px',
+                color: totalFotos >= MIN_FOTOS ? '#5CB88A' : '#9B9690',
+              }}>
+                {totalFotos} {totalFotos === 1 ? 'foto selecionada' : 'fotos selecionadas'}
+              </span>
+            </div>
+
+            {/* Área de drop / clique */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: '100%',
+                padding: '20px',
+                border: `1px dashed ${totalFotos >= MIN_FOTOS ? 'rgba(92,184,138,0.4)' : 'rgba(201,168,76,0.3)'}`,
+                borderRadius: '2px',
+                backgroundColor: 'rgba(201,168,76,0.03)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '6px',
+                marginBottom: totalFotos > 0 ? '12px' : '0',
+              }}
+            >
+              <span style={{ fontSize: '20px', color: '#C9A84C' }}>+</span>
+              <span style={{ fontSize: '12px', color: '#9B9690' }}>
+                Clique para adicionar fotos
+              </span>
+              <span style={{ fontSize: '11px', color: '#9B9690', opacity: 0.7 }}>
+                JPG, PNG, WEBP · Restam {MAX_FOTOS - totalFotos} slots
+              </span>
+            </button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={handleFotosChange}
+            />
+
+            {/* Grid de previews */}
+            {totalFotos > 0 && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                gap: '8px',
+              }}>
+                {/* Fotos já salvas */}
+                {fotosExistentes.map((url) => (
+                  <div key={url} style={{ position: 'relative' }}>
+                    <img
+                      src={url}
+                      alt="Foto do imóvel"
+                      style={{
+                        width: '100%',
+                        height: '80px',
+                        objectFit: 'cover',
+                        borderRadius: '2px',
+                        border: '1px solid #2E2E30',
+                        display: 'block',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removerFotoExistente(url)}
+                      style={{
+                        position: 'absolute',
+                        top: '3px',
+                        right: '3px',
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '2px',
+                        backgroundColor: 'rgba(14,14,15,0.85)',
+                        border: 'none',
+                        color: '#E05C5C',
+                        fontSize: '11px',
+                        lineHeight: '18px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                      }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                {/* Novas fotos (preview local) */}
+                {fotos.map((file, i) => (
+                  <div key={i} style={{ position: 'relative' }}>
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      style={{
+                        width: '100%',
+                        height: '80px',
+                        objectFit: 'cover',
+                        borderRadius: '2px',
+                        border: '1px solid rgba(201,168,76,0.3)',
+                        display: 'block',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removerFotoNova(i)}
+                      style={{
+                        position: 'absolute',
+                        top: '3px',
+                        right: '3px',
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '2px',
+                        backgroundColor: 'rgba(14,14,15,0.85)',
+                        border: 'none',
+                        color: '#E05C5C',
+                        fontSize: '11px',
+                        lineHeight: '18px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                      }}
+                    >
+                      &times;
+                    </button>
+                    {/* Badge "novo" */}
+                    <span style={{
+                      position: 'absolute',
+                      bottom: '3px',
+                      left: '3px',
+                      fontSize: '9px',
+                      backgroundColor: 'rgba(201,168,76,0.85)',
+                      color: '#0E0E0F',
+                      padding: '1px 4px',
+                      borderRadius: '1px',
+                      fontWeight: 600,
+                      letterSpacing: '0.03em',
+                    }}>
+                      NOVO
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {totalFotos > 0 && totalFotos < MIN_FOTOS && (
+              <p style={{ fontSize: '11px', color: '#E8C96A', marginTop: '8px' }}>
+                Adicione mais {MIN_FOTOS - totalFotos} foto(s) para atingir o mínimo recomendado.
+              </p>
+            )}
           </div>
 
           {/* CEP */}
@@ -515,19 +746,23 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loadingGeral}
               style={{
                 padding: '9px 20px',
                 borderRadius: '2px',
                 border: 'none',
-                backgroundColor: loading ? '#a08840' : '#C9A84C',
+                backgroundColor: loadingGeral ? '#a08840' : '#C9A84C',
                 color: '#0E0E0F',
                 fontSize: '13px',
                 fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
+                cursor: loadingGeral ? 'not-allowed' : 'pointer',
               }}
             >
-              {loading ? 'Salvando...' : 'Salvar e Enviar Termo'}
+              {fotosUploadando
+                ? `Enviando fotos...`
+                : loading
+                ? 'Salvando...'
+                : 'Salvar e Enviar Termo'}
             </button>
           </div>
         </form>
