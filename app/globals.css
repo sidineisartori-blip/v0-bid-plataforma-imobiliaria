@@ -1,0 +1,123 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ── BID Design System tokens ─────────────────────────────────────── */
+:root {
+  /* shadcn tokens mapeados para o dark theme do BID */
+  --background:             0 0% 5%;
+  --foreground:             40 20% 94%;
+  --card:                   0 0% 9%;
+  --card-foreground:        40 20% 94%;
+  --popover:                0 0% 9%;
+  --popover-foreground:     40 20% 94%;
+  --primary:                43 57% 55%;
+  --primary-foreground:     0 0% 5%;
+  --secondary:              0 0% 14%;
+  --secondary-foreground:   40 20% 94%;
+  --muted:                  0 0% 14%;
+  --muted-foreground:       0 0% 60%;
+  --accent:                 43 57% 55%;
+  --accent-foreground:      0 0% 5%;
+  --destructive:            0 72% 51%;
+  --destructive-foreground: 40 20% 94%;
+  --border:                 0 0% 18%;
+  --input:                  0 0% 14%;
+  --ring:                   43 57% 55%;
+  --radius:                 0.125rem;
+  --chart-1:                43 57% 55%;
+  --chart-2:                152 40% 54%;
+  --chart-3:                210 62% 61%;
+  --chart-4:                0 65% 60%;
+  --chart-5:                270 50% 60%;
+  --sidebar:                0 0% 9%;
+  --sidebar-foreground:     40 20% 94%;
+  --sidebar-primary:        43 57% 55%;
+  --sidebar-primary-foreground: 0 0% 5%;
+  --sidebar-accent:         0 0% 14%;
+  --sidebar-accent-foreground: 40 20% 94%;
+  --sidebar-border:         0 0% 18%;
+  --sidebar-ring:           43 57% 55%;
+
+  /* Paleta BID — usada via var() e classes bg-[--color-*] */
+  --color-gold:      #C9A84C;
+  --color-gold-light:#E8C96A;
+  --color-gold-pale: #F5E9C8;
+  --color-dark:      #0E0E0F;
+  --color-dark-2:    #181819;
+  --color-dark-3:    #232324;
+  --color-dark-4:    #2E2E30;
+  --color-text:      #F0EDE6;
+  --color-muted:     #9B9690;
+  --color-green:     #5CB88A;
+  --color-red:       #E05C5C;
+  --color-blue:      #5C9BE0;
+}
+
+@theme inline {
+  --font-sans:  'DM Sans', 'DM Sans Fallback';
+  --font-serif: 'Playfair Display', 'Playfair Display Fallback';
+  --font-mono:  'Geist Mono', 'Geist Mono Fallback';
+
+  --color-background:             hsl(var(--background));
+  --color-foreground:             hsl(var(--foreground));
+  --color-card:                   hsl(var(--card));
+  --color-card-foreground:        hsl(var(--card-foreground));
+  --color-popover:                hsl(var(--popover));
+  --color-popover-foreground:     hsl(var(--popover-foreground));
+  --color-primary:                hsl(var(--primary));
+  --color-primary-foreground:     hsl(var(--primary-foreground));
+  --color-secondary:              hsl(var(--secondary));
+  --color-secondary-foreground:   hsl(var(--secondary-foreground));
+  --color-muted-foreground:       hsl(var(--muted-foreground));
+  --color-accent:                 hsl(var(--accent));
+  --color-accent-foreground:      hsl(var(--accent-foreground));
+  --color-destructive:            hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border:                 hsl(var(--border));
+  --color-input:                  hsl(var(--input));
+  --color-ring:                   hsl(var(--ring));
+  --color-chart-1:                hsl(var(--chart-1));
+  --color-chart-2:                hsl(var(--chart-2));
+  --color-chart-3:                hsl(var(--chart-3));
+  --color-chart-4:                hsl(var(--chart-4));
+  --color-chart-5:                hsl(var(--chart-5));
+  --radius-sm:                    calc(var(--radius) - 4px);
+  --radius-md:                    calc(var(--radius) - 2px);
+  --radius-lg:                    var(--radius);
+  --radius-xl:                    calc(var(--radius) + 4px);
+  --color-sidebar:                hsl(var(--sidebar));
+  --color-sidebar-foreground:     hsl(var(--sidebar-foreground));
+  --color-sidebar-primary:        hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent:         hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border:         hsl(var(--sidebar-border));
+  --color-sidebar-ring:           hsl(var(--sidebar-ring));
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+  html {
+    background-color: #0E0E0F;
+  }
+  body {
+    background-color: #0E0E0F;
+    color: #F0EDE6;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  input, select, textarea, button {
+    font-family: 'DM Sans', sans-serif;
+  }
+}
+
+::-webkit-scrollbar       { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(201,168,76,.2); border-radius: 2px; }
