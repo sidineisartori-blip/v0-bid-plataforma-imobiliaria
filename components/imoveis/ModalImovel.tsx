@@ -13,6 +13,15 @@ interface ModalImovelProps {
   onClose: () => void
 }
 
+interface ViaCepResponse {
+  cep: string
+  logradouro: string
+  bairro: string
+  localidade: string
+  uf: string
+  erro?: boolean
+}
+
 const inputStyle: React.CSSProperties = {
   width: '100%',
   backgroundColor: '#232324',
@@ -45,8 +54,11 @@ type FormData = {
   tipo_imovel: string
   titulo: string
   descricao: string
+  cep: string
   cidade: string
+  estado: string
   bairro: string
+  logradouro: string
   quartos: number
   banheiros: number
   vagas: number
@@ -64,14 +76,20 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [cepLoading, setCepLoading] = useState(false)
+  const [cepError, setCepError] = useState('')
+  const [cepOk, setCepOk] = useState(false)
 
   const [form, setForm] = useState<FormData>({
     tipo_negocio: imovel?.tipo_negocio || 'Venda',
     tipo_imovel: imovel?.tipo_imovel || 'Apartamento',
     titulo: imovel?.titulo || '',
     descricao: imovel?.descricao || '',
+    cep: '',
     cidade: imovel?.cidade || '',
+    estado: '',
     bairro: imovel?.bairro || '',
+    logradouro: '',
     quartos: imovel?.quartos || 0,
     banheiros: imovel?.banheiros || 0,
     vagas: imovel?.vagas || 0,
@@ -84,6 +102,41 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
     prop_whatsapp: imovel?.prop_whatsapp || '',
   })
 
+  async function buscarCep(cepRaw: string) {
+    const cep = cepRaw.replace(/\D/g, '')
+    if (cep.length !== 8) return
+    setCepLoading(true)
+    setCepError('')
+    setCepOk(false)
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const data: ViaCepResponse = await res.json()
+      if (data.erro) {
+        setCepError('CEP não encontrado. Verifique o número e tente novamente.')
+        setCepLoading(false)
+        return
+      }
+      setForm((prev) => ({
+        ...prev,
+        cidade: data.localidade,
+        estado: data.uf,
+        bairro: data.bairro || prev.bairro,
+        logradouro: data.logradouro || '',
+      }))
+      setCepOk(true)
+    } catch {
+      setCepError('Erro ao consultar CEP. Verifique sua conexão.')
+    }
+    setCepLoading(false)
+  }
+
+  function handleCepChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 8)
+    const formatted = raw.length > 5 ? `${raw.slice(0, 5)}-${raw.slice(5)}` : raw
+    set('cep', formatted)
+    if (raw.length === 8) buscarCep(raw)
+  }
+
   const set = (field: keyof FormData, value: unknown) =>
     setForm((prev) => ({ ...prev, [field]: value }))
 
@@ -92,14 +145,23 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
     setLoading(true)
     setError('')
 
+    if (!form.cidade) {
+      setError('Informe um CEP válido para preencher a cidade automaticamente.')
+      setLoading(false)
+      return
+    }
+
     const payload: Record<string, unknown> = {
       corretor_id: corretorId,
       tipo_negocio: form.tipo_negocio,
       tipo_imovel: form.tipo_imovel,
       titulo: form.titulo,
       descricao: form.descricao || null,
+      cep: form.cep.replace(/\D/g, '') || null,
       cidade: form.cidade,
+      estado: form.estado || null,
       bairro: form.bairro || null,
+      logradouro: form.logradouro || null,
       quartos: form.quartos,
       banheiros: form.banheiros,
       vagas: form.vagas,
@@ -176,7 +238,7 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
           }}
         >
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: '#F0EDE6' }}>
-            {imovel ? 'Editar Imovel' : 'Cadastrar Imovel'}
+            {imovel ? 'Editar Imóvel' : 'Cadastrar Imóvel'}
           </h2>
           <button
             onClick={onClose}
@@ -190,14 +252,14 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
           {/* Tipo de Negocio + Tipo de Imovel */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Tipo de Negocio</label>
+              <label style={labelStyle}>Tipo de Negócio</label>
               <select style={inputStyle} value={form.tipo_negocio} onChange={(e) => set('tipo_negocio', e.target.value)}>
                 <option value="Venda">Venda</option>
-                <option value="Locação">Locacao</option>
+                <option value="Locação">Locação</option>
               </select>
             </div>
             <div>
-              <label style={labelStyle}>Tipo de Imovel</label>
+              <label style={labelStyle}>Tipo de Imóvel</label>
               <select style={inputStyle} value={form.tipo_imovel} onChange={(e) => set('tipo_imovel', e.target.value)}>
                 {TIPO_IMOVEL_OPTIONS.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -208,7 +270,7 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
 
           {/* Titulo */}
           <div>
-            <label style={labelStyle}>Nome / Titulo do Imovel *</label>
+            <label style={labelStyle}>Nome / Título do Imóvel *</label>
             <input
               required
               type="text"
@@ -221,26 +283,86 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
 
           {/* Descricao */}
           <div>
-            <label style={labelStyle}>Descricao</label>
+            <label style={labelStyle}>Descrição</label>
             <textarea
               style={{ ...inputStyle, minHeight: '72px', resize: 'vertical' }}
               value={form.descricao}
               onChange={(e) => set('descricao', e.target.value)}
-              placeholder="Descricao do imovel..."
+              placeholder="Descrição do imóvel..."
             />
           </div>
 
-          {/* Cidade + Bairro */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          {/* CEP */}
+          <div>
+            <label style={labelStyle}>CEP *</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                required
+                type="text"
+                inputMode="numeric"
+                maxLength={9}
+                style={{
+                  ...inputStyle,
+                  paddingRight: '40px',
+                  borderColor: cepOk ? 'rgba(92,184,138,0.5)' : cepError ? 'rgba(224,92,92,0.5)' : '#2E2E30',
+                }}
+                value={form.cep}
+                onChange={handleCepChange}
+                placeholder="00000-000"
+              />
+              <span style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: '13px',
+                color: cepLoading ? '#9B9690' : cepOk ? '#5CB88A' : '#2E2E30',
+              }}>
+                {cepLoading ? '...' : cepOk ? '✓' : ''}
+              </span>
+            </div>
+            {cepError && (
+              <p style={{ fontSize: '11px', color: '#E05C5C', marginTop: '4px' }}>{cepError}</p>
+            )}
+          </div>
+
+          {/* Cidade + Estado (preenchidos automaticamente) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
             <div>
               <label style={labelStyle}>Cidade *</label>
-              <select required style={inputStyle} value={form.cidade} onChange={(e) => set('cidade', e.target.value)}>
-                <option value="">Selecione...</option>
-                {cidades.map((c) => (
-                  <option key={c.id} value={c.name}>{c.name} — {c.state}</option>
-                ))}
-              </select>
+              <input
+                required
+                type="text"
+                style={{
+                  ...inputStyle,
+                  backgroundColor: cepOk ? '#1a2a20' : '#1c1c1d',
+                  color: cepOk ? '#5CB88A' : '#9B9690',
+                  cursor: 'default',
+                }}
+                value={form.cidade}
+                readOnly
+                placeholder="Preenchido automaticamente via CEP"
+              />
             </div>
+            <div>
+              <label style={labelStyle}>Estado</label>
+              <input
+                type="text"
+                style={{
+                  ...inputStyle,
+                  backgroundColor: cepOk ? '#1a2a20' : '#1c1c1d',
+                  color: cepOk ? '#5CB88A' : '#9B9690',
+                  cursor: 'default',
+                }}
+                value={form.estado}
+                readOnly
+                placeholder="UF"
+              />
+            </div>
+          </div>
+
+          {/* Bairro + Logradouro */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
               <label style={labelStyle}>Bairro</label>
               <input
@@ -248,7 +370,17 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
                 style={inputStyle}
                 value={form.bairro}
                 onChange={(e) => set('bairro', e.target.value)}
-                placeholder="Nome do bairro"
+                placeholder="Bairro (auto ou manual)"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Logradouro</label>
+              <input
+                type="text"
+                style={inputStyle}
+                value={form.logradouro}
+                onChange={(e) => set('logradouro', e.target.value)}
+                placeholder="Rua, Av. (auto ou manual)"
               />
             </div>
           </div>
@@ -270,7 +402,7 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
           {/* Area + Valor */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Area Total (m²)</label>
+              <label style={labelStyle}>Área Total (m²)</label>
               <input
                 type="number"
                 style={inputStyle}
@@ -299,21 +431,21 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
             <div>
               <label style={labelStyle}>Aceita Animal?</label>
               <select style={inputStyle} value={form.aceita_animal ? 'true' : 'false'} onChange={(e) => set('aceita_animal', e.target.value === 'true')}>
-                <option value="false">Nao</option>
+                <option value="false">Não</option>
                 <option value="true">Sim</option>
               </select>
             </div>
             <div>
-              <label style={labelStyle}>Lancamento?</label>
+              <label style={labelStyle}>Lançamento?</label>
               <select style={inputStyle} value={form.lancamento ? 'true' : 'false'} onChange={(e) => set('lancamento', e.target.value === 'true')}>
-                <option value="false">Nao</option>
+                <option value="false">Não</option>
                 <option value="true">Sim</option>
               </select>
             </div>
             <div>
-              <label style={labelStyle}>Visivel no Site?</label>
+              <label style={labelStyle}>Visível no Site?</label>
               <select style={inputStyle} value={form.publico_no_site ? 'true' : 'false'} onChange={(e) => set('publico_no_site', e.target.value === 'true')}>
-                <option value="false">Nao</option>
+                <option value="false">Não</option>
                 <option value="true">Sim</option>
               </select>
             </div>
@@ -321,7 +453,7 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
 
           {/* Dados do Proprietario */}
           <div>
-            <p style={sectionTitleStyle}>Dados do Proprietario (Privados)</p>
+            <p style={sectionTitleStyle}>Dados do Proprietário (Privados)</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <label style={labelStyle}>Nome Completo</label>
@@ -330,7 +462,7 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
                   style={inputStyle}
                   value={form.prop_nome}
                   onChange={(e) => set('prop_nome', e.target.value)}
-                  placeholder="Nome do proprietario"
+                  placeholder="Nome do proprietário"
                 />
               </div>
               <div>
@@ -357,7 +489,7 @@ export default function ModalImovel({ imovel, corretorId, cidades, onClose }: Mo
               borderLeft: '2px solid #C9A84C',
             }}
           >
-            Apos salvar, o termo de autorizacao sera enviado ao proprietario via Certisign para assinatura digital.
+            Após salvar, o termo de autorização será enviado ao proprietário via Certisign para assinatura digital.
           </p>
 
           {error && (
