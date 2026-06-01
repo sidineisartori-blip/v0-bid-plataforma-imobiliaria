@@ -45,7 +45,7 @@ export default async function DashboardLayout({
       />
       <main
         style={{
-          marginLeft: '216px',
+          marginLeft: '240px',
           flex: 1,
           overflowY: 'auto',
           backgroundColor: '#0E0E0F',

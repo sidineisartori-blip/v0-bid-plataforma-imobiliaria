@@ -46,23 +46,24 @@ export default function CadastroPage() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '10px 14px',
+    padding: '14px 16px',
     backgroundColor: '#232324',
     border: '1px solid #2E2E30',
     borderRadius: '2px',
     color: '#F0EDE6',
-    fontSize: '14px',
+    fontSize: '16px',
     outline: 'none',
     fontFamily: 'DM Sans, sans-serif',
   }
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
-    fontSize: '11px',
+    fontSize: '13px',
     letterSpacing: '0.08em',
     textTransform: 'uppercase' as const,
     color: '#9B9690',
-    marginBottom: '8px',
+    marginBottom: '10px',
+    fontWeight: 500,
   }
 
   const handleStep1 = (e: React.FormEvent) => {
@@ -142,28 +143,28 @@ export default function CadastroPage() {
         background: 'radial-gradient(ellipse 600px 500px at 50% 40%, rgba(201,168,76,0.08) 0%, transparent 70%)',
       }} />
 
-      <div style={{ position: 'relative', width: '100%', maxWidth: '480px', padding: '0 24px' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '520px', padding: '0 24px' }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '48px', fontWeight: 700, color: '#C9A84C', margin: 0, lineHeight: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: '56px', fontWeight: 700, color: '#C9A84C', margin: 0, lineHeight: 1 }}>
             BID
           </h1>
-          <p style={{ fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#9B9690', marginTop: '8px' }}>
-            Plataforma Imobiliária
+          <p style={{ fontSize: '13px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#9B9690', marginTop: '12px' }}>
+            Plataforma Imobiliaria
           </p>
         </div>
 
         {/* Barra de progresso visual (FIX 5) */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#C9A84C' }}>
+        <div style={{ marginBottom: '28px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <span style={{ fontSize: '12px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#C9A84C' }}>
               Etapa {step} de 2
             </span>
-            <span style={{ fontSize: '10px', color: '#9B9690' }}>
+            <span style={{ fontSize: '13px', color: '#9B9690' }}>
               {step === 1 ? 'Dados Pessoais' : 'Dados Profissionais'}
             </span>
           </div>
-          <div style={{ backgroundColor: '#232324', borderRadius: '2px', height: '3px', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: '#232324', borderRadius: '2px', height: '4px', overflow: 'hidden' }}>
             <div style={{
               height: '100%',
               backgroundColor: '#C9A84C',
@@ -179,16 +180,16 @@ export default function CadastroPage() {
           backgroundColor: '#181819',
           border: '1px solid rgba(201,168,76,0.2)',
           borderRadius: '2px',
-          padding: '36px',
+          padding: '44px',
         }}>
           {erro && (
             <div style={{
               backgroundColor: 'rgba(224,92,92,0.1)',
               border: '1px solid rgba(224,92,92,0.3)',
               borderRadius: '2px',
-              padding: '10px 14px',
-              marginBottom: '20px',
-              fontSize: '13px',
+              padding: '14px 16px',
+              marginBottom: '24px',
+              fontSize: '15px',
               color: '#E05C5C',
             }}>
               {erro}
@@ -197,7 +198,7 @@ export default function CadastroPage() {
 
           <form
             onSubmit={step === 1 ? handleStep1 : handleCadastro}
-            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
           >
             {step === 1 ? (
               <>
@@ -233,12 +234,12 @@ export default function CadastroPage() {
                       type={mostrarSenha ? 'text' : 'password'}
                       value={senha}
                       onChange={e => setSenha(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="********"
                       required
-                      style={{ ...inputStyle, paddingRight: '44px' }}
+                      style={{ ...inputStyle, paddingRight: '48px' }}
                     />
                     <button type="button" onClick={() => setMostrarSenha(p => !p)} aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9B9690', fontSize: '15px', lineHeight: 1, padding: 0 }}>
+                      style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9B9690', fontSize: '18px', lineHeight: 1, padding: 0 }}>
                       {mostrarSenha ? '○' : '●'}
                     </button>
                   </div>
@@ -251,12 +252,12 @@ export default function CadastroPage() {
                       type={mostrarConf ? 'text' : 'password'}
                       value={confirmarSenha}
                       onChange={e => setConfirmar(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="********"
                       required
-                      style={{ ...inputStyle, paddingRight: '44px' }}
+                      style={{ ...inputStyle, paddingRight: '48px' }}
                     />
                     <button type="button" onClick={() => setMostrarConf(p => !p)} aria-label={mostrarConf ? 'Ocultar senha' : 'Mostrar senha'}
-                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9B9690', fontSize: '15px', lineHeight: 1, padding: 0 }}>
+                      style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9B9690', fontSize: '18px', lineHeight: 1, padding: 0 }}>
                       {mostrarConf ? '○' : '●'}
                     </button>
                   </div>
@@ -280,11 +281,11 @@ export default function CadastroPage() {
 
                 <div>
                   <label style={labelStyle}>Tipo</label>
-                  <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ display: 'flex', gap: '24px' }}>
                     {(['PF', 'PJ'] as const).map(t => (
-                      <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: '#F0EDE6' }}>
-                        <input type="radio" value={t} checked={tipo === t} onChange={() => setTipo(t)} style={{ accentColor: '#C9A84C' }} />
-                        {t === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}
+                      <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '15px', color: '#F0EDE6' }}>
+                        <input type="radio" value={t} checked={tipo === t} onChange={() => setTipo(t)} style={{ accentColor: '#C9A84C', width: '18px', height: '18px' }} />
+                        {t === 'PF' ? 'Pessoa Fisica' : 'Pessoa Juridica'}
                       </label>
                     ))}
                   </div>
@@ -292,49 +293,49 @@ export default function CadastroPage() {
 
                 {tipo === 'PJ' && (
                   <div>
-                    <label style={labelStyle}>Nome da Imobiliária</label>
+                    <label style={labelStyle}>Nome da Imobiliaria</label>
                     <input type="text" value={nomeImobiliaria} onChange={e => setNomeImob(e.target.value)} placeholder="Imobiliaria ABC" style={inputStyle} />
                   </div>
                 )}
 
                 <div>
-                  <label style={labelStyle}>Cidade de Atuação</label>
+                  <label style={labelStyle}>Cidade de Atuacao</label>
                   <input type="text" value={cidade} onChange={e => setCidade(e.target.value)} placeholder="Jacarezinho" required style={inputStyle} />
                 </div>
 
                 {/* Checkbox de termos (FIX 10) */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginTop: '8px' }}>
                   <input
                     type="checkbox"
                     id="termos"
                     checked={aceitouTermos}
                     onChange={e => setAceitou(e.target.checked)}
-                    style={{ marginTop: '2px', accentColor: '#C9A84C', cursor: 'pointer', flexShrink: 0 }}
+                    style={{ marginTop: '3px', accentColor: '#C9A84C', cursor: 'pointer', flexShrink: 0, width: '18px', height: '18px' }}
                   />
-                  <label htmlFor="termos" style={{ fontSize: '12px', color: '#9B9690', cursor: 'pointer', lineHeight: 1.5 }}>
+                  <label htmlFor="termos" style={{ fontSize: '14px', color: '#9B9690', cursor: 'pointer', lineHeight: 1.6 }}>
                     Li e concordo com os{' '}
                     <a href="/termos" target="_blank" style={{ color: '#C9A84C', textDecoration: 'none' }}>Termos de Uso</a>
                     {' '}e a{' '}
-                    <a href="/privacidade" target="_blank" style={{ color: '#C9A84C', textDecoration: 'none' }}>Política de Privacidade</a>
+                    <a href="/privacidade" target="_blank" style={{ color: '#C9A84C', textDecoration: 'none' }}>Politica de Privacidade</a>
                   </label>
                 </div>
               </>
             )}
 
             {/* Botoes */}
-            <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
+            <div style={{ display: 'flex', gap: '16px', paddingTop: '12px' }}>
               {step === 2 && (
                 <button
                   type="button"
                   onClick={() => { setStep(1); setErro('') }}
                   style={{
                     flex: 1,
-                    padding: '11px',
+                    padding: '14px',
                     backgroundColor: 'transparent',
                     color: '#F0EDE6',
                     border: '1px solid #2E2E30',
                     borderRadius: '2px',
-                    fontSize: '13px',
+                    fontSize: '15px',
                     cursor: 'pointer',
                     fontFamily: 'DM Sans, sans-serif',
                   }}
@@ -347,12 +348,12 @@ export default function CadastroPage() {
                 disabled={loading || (step === 2 && !aceitouTermos)}
                 style={{
                   flex: 1,
-                  padding: '11px',
+                  padding: '14px',
                   backgroundColor: '#C9A84C',
                   color: '#0E0E0F',
                   border: 'none',
                   borderRadius: '2px',
-                  fontSize: '13px',
+                  fontSize: '15px',
                   fontWeight: 600,
                   cursor: loading || (step === 2 && !aceitouTermos) ? 'not-allowed' : 'pointer',
                   opacity: loading || (step === 2 && !aceitouTermos) ? 0.6 : 1,
@@ -366,7 +367,7 @@ export default function CadastroPage() {
             </div>
           </form>
 
-          <p style={{ textAlign: 'center', fontSize: '12px', color: '#9B9690', marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #232324' }}>
+          <p style={{ textAlign: 'center', fontSize: '15px', color: '#9B9690', marginTop: '28px', paddingTop: '28px', borderTop: '1px solid #232324' }}>
             Ja tem conta?{' '}
             <Link href="/login" style={{ color: '#C9A84C', textDecoration: 'none', fontWeight: 500 }}>
               Faca login

@@ -19,8 +19,8 @@ const btnIconStyle: React.CSSProperties = {
   borderRadius: '2px',
   color: '#9B9690',
   cursor: 'pointer',
-  fontSize: '13px',
-  padding: '4px 8px',
+  fontSize: '16px',
+  padding: '6px 10px',
   transition: 'color 0.15s',
 }
 
@@ -97,8 +97,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
     backgroundColor: '#181819',
     border: '1px solid #232324',
     borderRadius: '2px',
-    padding: '7px 12px',
-    fontSize: '12px',
+    padding: '10px 14px',
+    fontSize: '15px',
     color: '#F0EDE6',
     outline: 'none',
     cursor: 'pointer',
@@ -106,10 +106,10 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
 
   return (
     <>
-      <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Header com filtros e botao */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
             <select
               style={selectStyle}
               value={filtroStatus}
@@ -140,8 +140,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
               color: '#0E0E0F',
               border: 'none',
               borderRadius: '2px',
-              padding: '8px 18px',
-              fontSize: '13px',
+              padding: '12px 24px',
+              fontSize: '15px',
               fontWeight: 600,
               cursor: 'pointer',
             }}
@@ -156,8 +156,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
             backgroundColor: '#181819',
             border: '1px solid rgba(201,168,76,0.3)',
             borderRadius: '2px',
-            padding: '10px 16px',
-            fontSize: '13px',
+            padding: '14px 20px',
+            fontSize: '15px',
             color: '#C9A84C',
           }}>
             {matchMsg}
@@ -165,7 +165,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
         )}
 
         {/* Contagem */}
-        <p style={{ fontSize: '12px', color: '#9B9690' }}>
+        <p style={{ fontSize: '14px', color: '#9B9690' }}>
           {imoveisFiltrados.length} {imoveisFiltrados.length === 1 ? 'imovel' : 'imoveis'}
         </p>
 
@@ -179,9 +179,9 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
           }}
         >
           {imoveisFiltrados.length === 0 ? (
-            <div style={{ padding: '48px', textAlign: 'center' }}>
-              <p style={{ fontSize: '14px', color: '#9B9690' }}>Nenhum imovel encontrado.</p>
-              <p style={{ fontSize: '12px', color: '#2E2E30', marginTop: '8px' }}>
+            <div style={{ padding: '64px', textAlign: 'center' }}>
+              <p style={{ fontSize: '16px', color: '#9B9690' }}>Nenhum imovel encontrado.</p>
+              <p style={{ fontSize: '14px', color: '#2E2E30', marginTop: '10px' }}>
                 Clique em &ldquo;+ Cadastrar Imovel&rdquo; para adicionar.
               </p>
             </div>
@@ -194,8 +194,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '16px',
-                    padding: '14px 20px',
+                    gap: '20px',
+                    padding: '18px 24px',
                     borderBottom: i < imoveisFiltrados.length - 1 ? '1px solid #232324' : 'none',
                     transition: 'background-color 0.15s',
                   }}
@@ -203,18 +203,18 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
                   onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
                 >
                   {/* Emoji */}
-                  <span style={{ fontSize: '22px', flexShrink: 0 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
+                  <span style={{ fontSize: '28px', flexShrink: 0 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
 
                   {/* Info principal */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <p style={{ fontSize: '14px', fontWeight: 500, color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                      <p style={{ fontSize: '16px', fontWeight: 500, color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {imovel.titulo}
                       </p>
                       {imovel.lancamento && (
                         <span style={{
-                          fontSize: '9px',
-                          padding: '1px 6px',
+                          fontSize: '11px',
+                          padding: '2px 8px',
                           borderRadius: '2px',
                           backgroundColor: 'rgba(201,168,76,0.15)',
                           color: '#C9A84C',
@@ -226,7 +226,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
                         </span>
                       )}
                     </div>
-                    <p style={{ fontSize: '12px', color: '#9B9690' }}>
+                    <p style={{ fontSize: '14px', color: '#9B9690' }}>
                       {[imovel.bairro, imovel.cidade].filter(Boolean).join(' · ')}
                       {' · '}
                       {imovel.quartos}Q {imovel.banheiros}B {imovel.vagas}V
@@ -237,8 +237,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId }: ImoveisC
 
                   {/* Badge status */}
                   <span style={{
-                    fontSize: '11px',
-                    padding: '3px 10px',
+                    fontSize: '13px',
+                    padding: '5px 14px',
                     borderRadius: '2px',
                     backgroundColor: sc.bg,
                     color: sc.text,

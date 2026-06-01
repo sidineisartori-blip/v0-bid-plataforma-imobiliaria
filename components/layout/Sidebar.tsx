@@ -81,17 +81,17 @@ export function Sidebar({
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[216px] flex flex-col bg-[--color-dark-2] border-r border-[--color-dark-3]">
+    <aside className="fixed left-0 top-0 h-screen w-[240px] flex flex-col bg-[--color-dark-2] border-r border-[--color-dark-3]">
       {/* Logo */}
       <div className="px-6 py-8 border-b border-[--color-dark-3]">
         <h1
-          className="font-serif text-[28px] font-bold text-[--color-gold]"
+          className="font-serif text-[32px] font-bold text-[--color-gold]"
           style={{ lineHeight: 1 }}
         >
           BID
         </h1>
-        <p className="text-[9px] uppercase tracking-widest text-[--color-muted] mt-2">
-          Plataforma Imobiliária
+        <p className="text-[11px] uppercase tracking-widest text-[--color-muted] mt-2">
+          Plataforma Imobiliaria
         </p>
       </div>
 
@@ -99,7 +99,7 @@ export function Sidebar({
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         {navigationGroups.map((group) => (
           <div key={group.title}>
-            <p className="text-[9px] uppercase tracking-widest text-[--color-muted] px-2 mb-3 font-medium">
+            <p className="text-[11px] uppercase tracking-widest text-[--color-muted] px-2 mb-3 font-medium">
               {group.title}
             </p>
             <div className="space-y-1">
@@ -112,18 +112,18 @@ export function Sidebar({
                     key={item.id}
                     onClick={() => onNavChange(item.id)}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-all rounded-sm border-l-2 border-transparent',
+                      'w-full flex items-center gap-3 px-3 py-3 text-[15px] transition-all rounded-sm border-l-2 border-transparent',
                       isActive
                         ? 'border-l-[--color-gold] bg-[rgba(201,168,76,0.07)] text-[--color-gold]'
                         : 'text-[--color-text] hover:bg-[rgba(201,168,76,0.04)]'
                     )}
                   >
-                    <span className="text-base">{item.icon}</span>
+                    <span className="text-lg">{item.icon}</span>
                     <span className="flex-1 text-left font-medium">{item.label}</span>
                     {badgeValue && (
                       <span
                         className={cn(
-                          'text-[10px] px-1.5 py-0.5 rounded',
+                          'text-[11px] px-2 py-0.5 rounded',
                           getBadgeColor(item.badge as any)
                         )}
                       >
@@ -141,7 +141,7 @@ export function Sidebar({
       {/* Footer - User Profile */}
       <div className="border-t border-[--color-dark-3] p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[--color-gold] flex items-center justify-center text-[--color-dark] font-serif font-bold text-sm">
+          <div className="w-11 h-11 rounded-full bg-[--color-gold] flex items-center justify-center text-[--color-dark] font-serif font-bold text-base">
             {corretorNome
               .split(' ')
               .map((n) => n[0])
@@ -149,11 +149,11 @@ export function Sidebar({
               .toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-[--color-text] truncate">
+            <p className="text-sm font-medium text-[--color-text] truncate">
               {corretorNome}
             </p>
-            <p className="text-[10px] text-[--color-muted]">CRECI {corretorCreci}</p>
-            <p className="text-[9px] text-[--color-gold] mt-0.5">{corretorSelo}</p>
+            <p className="text-[12px] text-[--color-muted]">CRECI {corretorCreci}</p>
+            <p className="text-[11px] text-[--color-gold] mt-0.5">{corretorSelo}</p>
           </div>
         </div>
       </div>
