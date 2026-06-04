@@ -257,7 +257,6 @@ export default function AvaliacoesClient({
                 </div>
               )
             })}
-            )}
           </div>
 
           {minhaPos >= 10 && (
