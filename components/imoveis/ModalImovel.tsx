@@ -332,36 +332,86 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
 
     // Envio de autorização via WhatsApp se proprietário tiver telefone
     if (form.prop_whatsapp && form.prop_nome) {
-      const valorFormatado = parseFloat(form.valor || '0').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-      const formasPagTxt = form.formas_pagamento.length > 0
-        ? form.formas_pagamento.join(', ')
-        : 'Não informado'
-      const mensagem = `Olá ${form.prop_nome}!
+      const dataHoje = new Date().toLocaleDateString('pt-BR', { 
+        day: '2-digit', month: 'long', year: 'numeric' 
+      })
+      const diasValidade = form.validade_autorizacao === '30 dias' ? 30
+        : form.validade_autorizacao === '60 dias' ? 60
+        : form.validade_autorizacao === '180 dias' ? 180
+        : 90
+      const dataVencimento = new Date(Date.now() + diasValidade * 24 * 60 * 60 * 1000)
+        .toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
 
-Sou ${corretorNome}, corretor de imóveis${corretorCreci ? ` - CRECI ${corretorCreci}` : ''}.
+      const contrato = `AUTORIZAÇÃO DE ${form.tipo_negocio.toUpperCase()} DE IMÓVEL
+Plataforma BID — ${dataHoje}
 
-Estou cadastrando seu imóvel na plataforma BID para encontrarmos o melhor comprador/locatário.
+━━━━━━━━━━━━━━━━━━━━━━━━━
+1. QUALIFICAÇÃO DAS PARTES
+━━━━━━━━━━━━━━━━━━━━━━━━━
 
-*DADOS DO IMÓVEL PARA AUTORIZAÇÃO:*
-Tipo: ${form.tipo_imovel} - ${form.tipo_negocio}
-Endereço: ${[form.logradouro, form.numero, form.bairro, form.cidade, form.estado].filter(Boolean).join(', ')}
-Matrícula: ${form.prop_matricula || 'Não informado'}
-Cartório: ${form.cartorio_registro || 'Não informado'}
-Valor: ${valorFormatado}
-Comissão: ${form.percentual_comissao || 'A combinar'}
-Formas de pagamento: ${formasPagTxt}
-Validade da autorização: ${form.validade_autorizacao || 'Não informado'}
-Exclusividade: ${form.exclusividade || 'Não informado'}
+PROPRIETÁRIO(A):
+Nome: ${form.prop_nome}
+CPF: ${form.prop_cpf_cnpj || 'A confirmar'}
+WhatsApp: ${form.prop_whatsapp}
 
-Para *AUTORIZAR* a divulgação, responda com a palavra *AUTORIZO* nesta conversa.
+INTERMEDIÁRIO:
+Corretor: ${corretorNome}
+CRECI: ${corretorCreci || 'A informar'}
+Plataforma: BID — Negócios Imobiliários
 
-Ao responder AUTORIZO, você declara ser o proprietário e autoriza a divulgação do imóvel pela Plataforma BID.
+━━━━━━━━━━━━━━━━━━━━━━━━━
+2. DADOS DO IMÓVEL
+━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Atenciosamente,
-${corretorNome}${corretorCreci ? ` - CRECI ${corretorCreci}` : ''}`
+Tipo: ${form.tipo_imovel}
+Endereço: ${form.logradouro || ''}, ${form.numero || 's/n'}, ${form.bairro}
+Cidade/UF: ${form.cidade}/${form.estado || ''}
+CEP: ${form.cep || 'A informar'}
+Matrícula: ${form.prop_matricula || 'A informar'}
+Cartório: ${form.cartorio_registro || 'A informar'}
+Área total: ${form.area_total || 'A informar'} m²
+Quartos: ${form.quartos} | Banheiros: ${form.banheiros} | Vagas: ${form.vagas}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+3. CONDIÇÕES FINANCEIRAS
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Preço de ${form.tipo_negocio}: R$ ${Number(form.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+Comissão do corretor: ${form.percentual_comissao || '6%'} sobre o valor de venda
+Pagamento da comissão: Na assinatura do contrato definitivo
+Formas de pagamento: ${form.formas_pagamento.length > 0 ? form.formas_pagamento.join(', ') : 'A combinar'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+4. PRAZO E CONDIÇÕES
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Vigência: ${dataHoje} até ${dataVencimento}
+Exclusividade: ${form.exclusividade || 'Não exclusiva'}
+Autorização de publicidade: Sim — portais, redes sociais e plataforma BID
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+5. AUTORIZAÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Ao responder *AUTORIZO* nesta mensagem, o(a) proprietário(a) declara que:
+
+✅ É o legítimo proprietário do imóvel acima descrito
+✅ Autoriza o corretor a divulgar e intermediar a negociação
+✅ Concorda com as condições financeiras e prazo estabelecidos
+✅ Autoriza a publicação em portais, redes sociais e plataforma BID
+
+Esta autorização tem validade jurídica conforme Art. 722 do Código Civil Brasileiro.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Para AUTORIZAR responda: *AUTORIZO*
+Para RECUSAR responda: *RECUSO*
+Dúvidas: responda nesta conversa
+
+Plataforma BID | bid.app.br`
 
       const telefone = form.prop_whatsapp.replace(/\D/g, '')
-      const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`
+      const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(contrato)}`
       window.open(url, '_blank')
 
       setToast('Imóvel salvo! WhatsApp aberto para enviar autorização ao proprietário.')
