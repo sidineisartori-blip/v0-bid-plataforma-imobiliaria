@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
+import Image from 'next/image'
 import { TIPO_IMOVEL_OPTIONS } from '@/lib/format'
 
 interface CorretorPublico {
@@ -233,7 +234,7 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
 
       {/* ══════════════════════════════════════════════════════════
           HERO SECTION
-      ══════════════════════════════════════════════════════════ */}
+      ════════════════════════════════════════��═════════════════ */}
       <section style={{
         position: 'relative',
         minHeight: '100vh',
@@ -267,16 +268,22 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
           {/* Avatar */}
           <div style={{ marginBottom: '32px' }}>
             {corretor.avatar_url ? (
-              <img 
-                src={corretor.avatar_url} 
-                alt={corretor.full_name} 
-                style={{ 
-                  width: 100, height: 100, borderRadius: '50%', 
-                  border: '3px solid rgba(201,168,76,0.3)', 
-                  objectFit: 'cover',
-                  boxShadow: '0 0 60px rgba(201,168,76,0.15)',
-                }} 
-              />
+              <div style={{ 
+                width: 100, height: 100, borderRadius: '50%', 
+                border: '3px solid rgba(201,168,76,0.3)', 
+                overflow: 'hidden',
+                boxShadow: '0 0 60px rgba(201,168,76,0.15)',
+                position: 'relative',
+              }}>
+                <Image 
+                  src={corretor.avatar_url} 
+                  alt={corretor.full_name}
+                  fill
+                  sizes="100px"
+                  style={{ objectFit: 'cover' }}
+                  priority
+                />
+              </div>
             ) : (
               <div style={{ 
                 width: 100, height: 100, borderRadius: '50%', 
@@ -960,22 +967,28 @@ function CardImovel({
       {/* Imagem */}
       <div style={{ position: 'relative', height: '200px', backgroundColor: '#1a1a1b', overflow: 'hidden' }}>
         {imgUrl ? (
-          <img 
+          <Image 
             src={imgUrl} 
-            alt={imovel.titulo} 
+            alt={imovel.titulo}
+            fill
+            sizes="(max-width: 768px) 100vw, 400px"
             style={{ 
-              width: '100%', height: '100%', objectFit: 'cover',
+              objectFit: 'cover',
               transition: 'transform 0.5s',
               transform: hover ? 'scale(1.05)' : 'scale(1)',
-            }} 
+            }}
           />
         ) : (
           <div style={{ 
             width: '100%', height: '100%', 
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#3a3a3c', fontSize: '40px',
+            flexDirection: 'column', gap: '8px',
+            color: '#3a3a3c',
           }}>
-            ⌂
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 9h.01M15 9h.01" />
+            </svg>
+            <span style={{ fontSize: '12px' }}>Sem imagem</span>
           </div>
         )}
 
@@ -1094,10 +1107,13 @@ function ModalImovelDetalhe({
         <div style={{ position: 'relative', height: '360px', backgroundColor: '#1a1a1b' }}>
           {images.length > 0 ? (
             <>
-              <img 
+              <Image 
                 src={images[imgIndex]} 
-                alt={imovel.titulo} 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                alt={imovel.titulo}
+                fill
+                sizes="(max-width: 768px) 100vw, 600px"
+                style={{ objectFit: 'cover' }}
+                priority
               />
               {images.length > 1 && (
                 <>
@@ -1146,9 +1162,13 @@ function ModalImovelDetalhe({
             <div style={{ 
               width: '100%', height: '100%', 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#3a3a3c', fontSize: '60px',
+              flexDirection: 'column', gap: '12px',
+              color: '#3a3a3c',
             }}>
-              ⌂
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 9h.01M15 9h.01" />
+              </svg>
+              <span style={{ fontSize: '14px' }}>Sem imagens disponiveis</span>
             </div>
           )}
 
