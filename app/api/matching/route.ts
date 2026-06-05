@@ -1,16 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import { calcularScore } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  // Cliente Auth para verificar usuário autenticado
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabaseAuth.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  // Cliente Service Role para operações privilegiadas
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+
   try {
     const { imovelId, corretorId } = await request.json()
+
+    // Valida que o corretorId pertence ao usuário autenticado
+    if (corretorId && corretorId !== user.id) {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    }
 
     if (!imovelId) {
       return NextResponse.json({ error: 'imovelId obrigatorio' }, { status: 400 })
