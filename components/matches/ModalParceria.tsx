@@ -119,7 +119,7 @@ export default function ModalParceria({ match, parceiro, corretorId, onClose }: 
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => e.target === e.currentTarget && onClose()}
     >
       <div
         className="w-full max-w-[480px] rounded-sm border p-8 flex flex-col gap-6"
@@ -183,7 +183,7 @@ export default function ModalParceria({ match, parceiro, corretorId, onClose }: 
             </label>
             <select
               value={comissao}
-              onChange={(e) => setComissao(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setComissao(e.target.value)}
               className="w-full rounded-sm border px-3 py-2 text-sm outline-none transition-colors"
               style={{
                 backgroundColor: 'var(--color-dark-3)',
@@ -203,7 +203,7 @@ export default function ModalParceria({ match, parceiro, corretorId, onClose }: 
             </label>
             <select
               value={responsavel}
-              onChange={(e) => setResponsavel(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setResponsavel(e.target.value)}
               className="w-full rounded-sm border px-3 py-2 text-sm outline-none"
               style={{
                 backgroundColor: 'var(--color-dark-3)',
@@ -223,7 +223,7 @@ export default function ModalParceria({ match, parceiro, corretorId, onClose }: 
             </label>
             <select
               value={prazo}
-              onChange={(e) => setPrazo(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setPrazo(e.target.value)}
               className="w-full rounded-sm border px-3 py-2 text-sm outline-none"
               style={{
                 backgroundColor: 'var(--color-dark-3)',
@@ -243,7 +243,7 @@ export default function ModalParceria({ match, parceiro, corretorId, onClose }: 
             </label>
             <textarea
               value={obs}
-              onChange={(e) => setObs(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setObs(e.target.value)}
               rows={3}
               placeholder="Combinados adicionais..."
               className="w-full rounded-sm border px-3 py-2 text-sm outline-none resize-none"

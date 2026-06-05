@@ -99,10 +99,56 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
 
   async function handleIniciarAtendimento(match: MatchItem) {
     setLoading(match.id)
-    await supabase.from('matches').update({ status: 'aceito' }).eq('id', match.id)
-    await supabase.from('negociacoes').insert({ coluna: 'Parceria Ativa' })
-    setLoading(null)
-    router.refresh()
+
+    try {
+      // 1. Marca match como aceito
+      const { error: matchErr } = await supabase
+        .from('matches')
+        .update({ status: 'aceito' })
+        .eq('id', match.id)
+      if (matchErr) throw matchErr
+
+      // 2. Identifica os dois corretores envolvidos
+      const proponenteId = corretorId
+      const receptorId =
+        match.imovel?.corretor_id === corretorId
+          ? match.solicitacao?.corretor_id
+          : match.imovel?.corretor_id
+
+      if (!receptorId) throw new Error('Corretor receptor não identificado')
+
+      // 3. Cria parceria (match interno = mesmo corretor dos dois lados,
+      //    proponente = quem clicou, receptor = o outro lado da carteira)
+      const { data: parceria, error: parceriaErr } = await supabase
+        .from('parcerias')
+        .insert({
+          match_id: match.id,
+          corretor_proponente_id: proponenteId,
+          corretor_receptor_id: receptorId,
+          comissao_split: '50/50',
+          responsavel_atendimento: 'Proponente',
+          prazo_dias: 30,
+          status: 'ativa',
+          dados_liberados: true,
+          is_partnership: true,
+        })
+        .select()
+        .single()
+      if (parceriaErr) throw parceriaErr
+
+      // 4. Cria negociação para AMBOS os corretores (com parceria_id e corretor_id)
+      const { error: negErr } = await supabase.from('negociacoes').insert([
+        { parceria_id: parceria.id, coluna: 'Parceria Ativa', corretor_id: proponenteId },
+        { parceria_id: parceria.id, coluna: 'Parceria Ativa', corretor_id: receptorId },
+      ])
+      if (negErr) throw negErr
+
+    } catch (err) {
+      console.error('Erro ao iniciar atendimento:', err)
+    } finally {
+      setLoading(null)
+      router.refresh()
+    }
   }
 
   return (
@@ -152,7 +198,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
         <select
           value={filtroStatus}
-          onChange={(e) => setFiltroStatus(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFiltroStatus(e.target.value)}
           style={{ background: '#232324', border: '1px solid rgba(201,168,76,0.14)', borderRadius: '2px', padding: '8px 12px', color: '#F0EDE6', fontSize: '13px', cursor: 'pointer', outline: 'none' }}
         >
           <option value="todos">Todos os status</option>
@@ -162,7 +208,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
         </select>
         <select
           value={filtroTipo}
-          onChange={(e) => setFiltroTipo(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFiltroTipo(e.target.value)}
           style={{ background: '#232324', border: '1px solid rgba(201,168,76,0.14)', borderRadius: '2px', padding: '8px 12px', color: '#F0EDE6', fontSize: '13px', cursor: 'pointer', outline: 'none' }}
         >
           <option value="todos">Todos os tipos</option>
@@ -171,7 +217,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
         </select>
         <select
           value={filtroScore}
-          onChange={(e) => setFiltroScore(Number(e.target.value))}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFiltroScore(Number(e.target.value))}
           style={{ background: '#232324', border: '1px solid rgba(201,168,76,0.14)', borderRadius: '2px', padding: '8px 12px', color: '#F0EDE6', fontSize: '13px', cursor: 'pointer', outline: 'none' }}
         >
           <option value={0}>Qualquer score</option>

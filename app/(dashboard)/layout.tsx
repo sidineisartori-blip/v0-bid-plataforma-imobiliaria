@@ -22,18 +22,32 @@ export default async function DashboardLayout({
     { data: corretor },
     { data: meusImoveis },
     { data: minhasSols },
-    { count: chatNaoLidos },
+    { data: minhasNegociacoes },
     { count: notifsNaoLidas },
   ] = await Promise.all([
     supabase.from('corretores').select('full_name, creci, plano, deals_closed').eq('id', user.id).single(),
     supabase.from('imoveis').select('id').eq('corretor_id', user.id),
     supabase.from('solicitacoes').select('id').eq('corretor_id', user.id),
-    supabase.from('mensagens').select('*', { count: 'exact', head: true }).eq('lida', false).neq('remetente_id', user.id),
+    // Busca IDs das negociações do corretor para filtrar mensagens corretamente
+    supabase.from('negociacoes').select('id').eq('corretor_id', user.id),
     supabase.from('notificacoes').select('*', { count: 'exact', head: true }).eq('corretor_id', user.id).eq('lida', false),
   ])
 
-  const imoveisIds = meusImoveis?.map((i) => i.id) || []
-  const solsIds = minhasSols?.map((s) => s.id) || []
+  // Conta mensagens não-lidas APENAS das negociações que pertencem ao corretor
+  let chatNaoLidos = 0
+  const negIds = minhasNegociacoes?.map((n: { id: string }) => n.id) || []
+  if (negIds.length > 0) {
+    const { count } = await supabase
+      .from('mensagens')
+      .select('*', { count: 'exact', head: true })
+      .in('negociacao_id', negIds)
+      .eq('lida', false)
+      .neq('remetente_id', user.id)
+    chatNaoLidos = count || 0
+  }
+
+  const imoveisIds = meusImoveis?.map((i: { id: string }) => i.id) || []
+  const solsIds = minhasSols?.map((s: { id: string }) => s.id) || []
 
   let matchesPendentes = 0
   if (imoveisIds.length > 0 || solsIds.length > 0) {
