@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { TIPO_IMOVEL_OPTIONS } from '@/lib/format'
 
 interface CorretorPublico {
@@ -64,13 +63,13 @@ function formatCurrency(value: number): string {
 }
 
 export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
-  const supabase = createClient()
   const formRef = useRef<HTMLDivElement>(null)
   const catalogoRef = useRef<HTMLDivElement>(null)
 
   const [activeTab, setActiveTab] = useState<'proprietario' | 'comprador'>('proprietario')
   const [enviado, setEnviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
+  const [erroForm, setErroForm] = useState('')
   const [imovelSelecionado, setImovelSelecionado] = useState<ImovelPublico | null>(null)
 
   const [formProprietario, setFormProprietario] = useState({
@@ -100,49 +99,105 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
   async function enviarProprietario(e: React.FormEvent) {
     e.preventDefault()
     setEnviando(true)
-    await supabase.from('imoveis').insert({
-      corretor_id: corretor.id,
-      titulo: `Captação - ${formProprietario.tipo_imovel} em ${formProprietario.cidade}`,
-      status: 'aguardando_assinatura',
-      matching_ativo: false,
-      tipo_negocio: formProprietario.tipo_negocio,
-      tipo_imovel: formProprietario.tipo_imovel,
-      cidade: formProprietario.cidade,
-      bairro: formProprietario.bairro || null,
-      valor: Number(formProprietario.valor.replace(/\D/g, '')) || 0,
-      prop_nome: formProprietario.nome,
-      prop_whatsapp: formProprietario.whatsapp,
-      prop_email: formProprietario.email || null,
-      quartos: 0, banheiros: 0, vagas: 0,
-      publico_no_site: false,
-    })
-    setEnviando(false)
-    setEnviado(true)
+    setErroForm('')
+    
+    try {
+      const res = await fetch('/api/public/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'imovel',
+          corretorId: corretor.id,
+          dados: {
+            nome: formProprietario.nome,
+            whatsapp: formProprietario.whatsapp.replace(/\D/g, ''),
+            email: formProprietario.email || '',
+            tipo_negocio: formProprietario.tipo_negocio,
+            tipo_imovel: formProprietario.tipo_imovel,
+            cidade: formProprietario.cidade,
+            bairro: formProprietario.bairro || '',
+            valor: Number(formProprietario.valor.replace(/\D/g, '')) || 0,
+            observacoes: formProprietario.observacoes || '',
+          },
+        }),
+      })
+      
+      const data = await res.json()
+      
+      if (res.status === 429) {
+        setErroForm('Muitas tentativas. Aguarde antes de enviar novamente.')
+        setEnviando(false)
+        return
+      }
+      
+      if (!res.ok) {
+        const msg = data.details 
+          ? Object.values(data.details).flat().join(', ')
+          : data.error || 'Erro ao enviar. Tente novamente.'
+        setErroForm(msg)
+        setEnviando(false)
+        return
+      }
+      
+      setEnviando(false)
+      setEnviado(true)
+    } catch {
+      setErroForm('Erro de conexao. Verifique sua internet.')
+      setEnviando(false)
+    }
   }
 
   async function enviarComprador(e: React.FormEvent) {
     e.preventDefault()
     setEnviando(true)
-    await supabase.from('solicitacoes').insert({
-      corretor_id: corretor.id,
-      status: 'ativa',
-      source: 'landing_page',
-      cliente_nome: formComprador.nome,
-      cliente_phone: formComprador.whatsapp,
-      cliente_email: formComprador.email || null,
-      tipo_negocio: formComprador.tipo_negocio,
-      tipo_imovel: formComprador.tipo_imovel,
-      cidade: formComprador.cidade,
-      bairro_desejado: formComprador.bairro_desejado || null,
-      valor_min: Number(formComprador.valor_min.replace(/\D/g, '')) || null,
-      valor_max: Number(formComprador.valor_max.replace(/\D/g, '')) || null,
-      quartos: Number(formComprador.quartos) || null,
-      tem_animal: formComprador.tem_animal === 'sim',
-      prazo_fechar: '3 meses',
-      vagas: 0,
-    })
-    setEnviando(false)
-    setEnviado(true)
+    setErroForm('')
+    
+    try {
+      const res = await fetch('/api/public/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'busca',
+          corretorId: corretor.id,
+          dados: {
+            nome: formComprador.nome,
+            whatsapp: formComprador.whatsapp.replace(/\D/g, ''),
+            email: formComprador.email || '',
+            tipo_negocio: formComprador.tipo_negocio,
+            tipo_imovel: formComprador.tipo_imovel,
+            cidade: formComprador.cidade,
+            bairro_desejado: formComprador.bairro_desejado || '',
+            valor_min: Number(formComprador.valor_min.replace(/\D/g, '')) || undefined,
+            valor_max: Number(formComprador.valor_max.replace(/\D/g, '')) || undefined,
+            quartos: Number(formComprador.quartos) || undefined,
+            tem_animal: formComprador.tem_animal === 'sim',
+          },
+        }),
+      })
+      
+      const data = await res.json()
+      
+      if (res.status === 429) {
+        setErroForm('Muitas tentativas. Aguarde antes de enviar novamente.')
+        setEnviando(false)
+        return
+      }
+      
+      if (!res.ok) {
+        const msg = data.details 
+          ? Object.values(data.details).flat().join(', ')
+          : data.error || 'Erro ao enviar. Tente novamente.'
+        setErroForm(msg)
+        setEnviando(false)
+        return
+      }
+      
+      setEnviando(false)
+      setEnviado(true)
+    } catch {
+      setErroForm('Erro de conexao. Verifique sua internet.')
+      setEnviando(false)
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -517,6 +572,18 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
             </div>
           ) : activeTab === 'proprietario' ? (
             <form onSubmit={enviarProprietario} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {erroForm && (
+                <div style={{
+                  backgroundColor: 'rgba(224,92,92,0.1)',
+                  border: '1px solid rgba(224,92,92,0.3)',
+                  borderRadius: '2px',
+                  padding: '12px 16px',
+                  fontSize: '13px',
+                  color: '#E05C5C',
+                }}>
+                  {erroForm}
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Nome completo *</label>
@@ -636,6 +703,18 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
             </form>
           ) : (
             <form onSubmit={enviarComprador} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {erroForm && (
+                <div style={{
+                  backgroundColor: 'rgba(224,92,92,0.1)',
+                  border: '1px solid rgba(224,92,92,0.3)',
+                  borderRadius: '2px',
+                  padding: '12px 16px',
+                  fontSize: '13px',
+                  color: '#E05C5C',
+                }}>
+                  {erroForm}
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Nome completo *</label>
