@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
+import { createAdminToken } from '@/lib/admin-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,15 +45,24 @@ export async function POST(request: Request) {
       .update({ last_login: new Date().toISOString() })
       .eq('id', adminUser.id)
 
-    return NextResponse.json({
-      ok: true,
-      admin: {
-        id: adminUser.id,
-        email: adminUser.email,
-        role: adminUser.role,
-        full_name: adminUser.full_name,
-      },
+    // Gera token JWT e retorna como cookie httpOnly
+    const token = await createAdminToken({
+      id: adminUser.id,
+      email: adminUser.email,
+      role: adminUser.role,
+      full_name: adminUser.full_name,
     })
+
+    const response = NextResponse.json({ ok: true })
+    response.cookies.set('admin_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 8, // 8 horas
+      path: '/',
+    })
+
+    return response
   } catch {
     return NextResponse.json({ error: 'Erro interno. Tente novamente.' }, { status: 500 })
   }

@@ -37,7 +37,6 @@ interface AdminSession {
   email: string
   role: string
   full_name: string
-  expires: number
 }
 
 const PLANOS = [
@@ -72,22 +71,22 @@ export default function AdminPainelPage() {
   })
 
   useEffect(() => {
-    // Verifica sessao admin
-    const stored = localStorage.getItem('admin_session')
-    if (!stored) {
-      router.push('/admin/login')
-      return
+    // Verifica sessao admin via cookie httpOnly
+    async function verificarSessao() {
+      try {
+        const res = await fetch('/api/admin/me')
+        if (!res.ok) {
+          router.push('/admin/login')
+          return
+        }
+        const data = await res.json()
+        setSession(data)
+        carregarDados()
+      } catch {
+        router.push('/admin/login')
+      }
     }
-
-    const parsed = JSON.parse(stored) as AdminSession
-    if (parsed.expires < Date.now()) {
-      localStorage.removeItem('admin_session')
-      router.push('/admin/login')
-      return
-    }
-
-    setSession(parsed)
-    carregarDados()
+    verificarSessao()
   }, [])
 
   async function carregarDados() {
@@ -218,8 +217,8 @@ export default function AdminPainelPage() {
     setAtualizando(null)
   }
 
-  function logout() {
-    localStorage.removeItem('admin_session')
+  async function logout() {
+    await fetch('/api/admin/logout', { method: 'POST' })
     router.push('/admin/login')
   }
 
