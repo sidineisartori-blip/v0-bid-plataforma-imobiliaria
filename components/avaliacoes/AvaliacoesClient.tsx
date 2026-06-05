@@ -79,10 +79,10 @@ export default function AvaliacoesClient({
       {/* Titulo */}
       <div>
         <h1 style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '22px', fontWeight: 700, color: '#F0EDE6', margin: '0 0 4px' }}>
-          Avaliacoes & Ranking
+          Avaliações &amp; Ranking
         </h1>
         <p style={{ fontSize: '13px', color: '#9B9690', margin: 0 }}>
-          Sua reputacao na plataforma BID.
+          Sua reputação na plataforma BID.
         </p>
       </div>
 
@@ -90,7 +90,7 @@ export default function AvaliacoesClient({
       <div style={{ display: 'flex', gap: '12px' }}>
         {/* Nota media */}
         <div style={metricaStyle}>
-          <p style={{ fontSize: '10px', color: '#9B9690', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 8px' }}>Nota Media</p>
+          <p style={{ fontSize: '10px', color: '#9B9690', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 8px' }}>Nota Média</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '28px', fontWeight: 700, color: '#C9A84C' }}>
               {notaMedia > 0 ? notaMedia.toFixed(1) : '—'}
@@ -104,7 +104,7 @@ export default function AvaliacoesClient({
 
         {/* Avaliacoes recebidas */}
         <div style={metricaStyle}>
-          <p style={{ fontSize: '10px', color: '#9B9690', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 8px' }}>Avaliacoes Recebidas</p>
+          <p style={{ fontSize: '10px', color: '#9B9690', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 8px' }}>Avaliações Recebidas</p>
           <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '28px', fontWeight: 700, color: '#F0EDE6', margin: '0 0 8px' }}>
             {totalAvaliacoes}
           </p>
@@ -117,7 +117,7 @@ export default function AvaliacoesClient({
 
         {/* Negocios fechados */}
         <div style={metricaStyle}>
-          <p style={{ fontSize: '10px', color: '#9B9690', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 8px' }}>Negocios Fechados</p>
+          <p style={{ fontSize: '10px', color: '#9B9690', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 8px' }}>Negócios Fechados</p>
           <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '28px', fontWeight: 700, color: '#F0EDE6', margin: '0 0 8px' }}>
             {dealsClosed}
           </p>
@@ -127,7 +127,7 @@ export default function AvaliacoesClient({
                 <div style={{ height: '100%', backgroundColor: '#C9A84C', width: `${Math.min(100, (dealsClosed / proximo.metaNegocios) * 100)}%`, borderRadius: '2px' }} />
               </div>
               <p style={{ fontSize: '11px', color: '#9B9690', margin: 0 }}>
-                {dealsClosed}/{proximo.metaNegocios} para proximo nivel
+                {dealsClosed}/{proximo.metaNegocios} para próximo nível
               </p>
             </div>
           )}
@@ -141,7 +141,7 @@ export default function AvaliacoesClient({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <p style={{ fontSize: '11px', color: '#9B9690', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
-              Avaliacoes Recebidas
+              Avaliações Recebidas
             </p>
             <button
               onClick={() => setModalAberto(true)}
@@ -192,8 +192,22 @@ export default function AvaliacoesClient({
             Ranking da Plataforma
           </p>
 
+
           <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-            {ranking.map((cor, i) => {
+            {ranking.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center' }}>
+                <div style={{ fontSize: '32px', marginBottom: '12px' }}>★</div>
+                <div style={{ fontSize: '15px', color: '#F0EDE6', fontWeight: 500, marginBottom: '8px' }}>
+                  Ranking em construção
+                </div>
+                <div style={{ fontSize: '13px', color: '#9B9690', lineHeight: 1.6, maxWidth: '280px', margin: '0 auto' }}>
+                  Complete negociações e receba avaliações para aparecer no ranking da plataforma.
+                </div>
+                <div style={{ marginTop: '16px', fontSize: '12px', color: '#9B9690', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '2px', padding: '10px 14px' }}>
+                  Composição: 50% avaliações · 30% negócios fechados · 20% tempo ativo
+                </div>
+              </div>
+            ) : ranking.map((cor, i) => {
               const eEu = cor.id === corretorId
               const seloRank = getSelo(cor.nota_media, cor.deals_closed)
               const posColor = i === 0 ? '#C9A84C' : i < 3 ? '#E8C96A' : '#9B9690'
@@ -224,7 +238,7 @@ export default function AvaliacoesClient({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '13px', color: eEu ? '#C9A84C' : '#F0EDE6', fontWeight: eEu ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {cor.full_name}
-                        {eEu && <span style={{ fontSize: '10px', color: '#9B9690', marginLeft: '4px' }}>(voce)</span>}
+                        {eEu && <span style={{ fontSize: '10px', color: '#9B9690', marginLeft: '4px' }}>(você)</span>}
                       </span>
                     </div>
                     <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '2px', border: `1px solid ${seloRank.cor}30`, color: seloRank.cor, backgroundColor: `${seloRank.cor}10` }}>
@@ -246,9 +260,9 @@ export default function AvaliacoesClient({
           </div>
 
           {minhaPos >= 10 && (
-            <p style={{ fontSize: '12px', color: '#9B9690', textAlign: 'center' }}>
-              Sua posicao atual: #{minhaPos + 1}
-            </p>
+          <p style={{ fontSize: '12px', color: '#9B9690', textAlign: 'center' }}>
+            Sua posição atual: #{minhaPos + 1}
+          </p>
           )}
         </div>
       </div>

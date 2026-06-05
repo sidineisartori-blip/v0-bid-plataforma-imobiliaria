@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import SiteCorretorPublico from './SiteCorretorPublico'
 
 interface CorretorConfig {
   id: string
@@ -40,37 +39,13 @@ interface ImovelPrevia {
 }
 
 const MODELOS = [
-  { value: '01', label: '01 · Noir Luxo' },
-  { value: '02', label: '02 · Branco Premium' },
-  { value: '03', label: '03 · Urbano Bold' },
-  { value: '04', label: '04 · Terra & Natureza' },
-  { value: '05', label: '05 · Tech Futurista' },
+  { value: '01', label: 'Noir Luxo' },
+  { value: '02', label: 'Branco Premium' },
+  { value: '03', label: 'Urbano Bold' },
 ]
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  backgroundColor: '#181819',
-  border: '1px solid #232324',
-  borderRadius: '2px',
-  padding: '9px 12px',
-  fontSize: '13px',
-  color: '#F0EDE6',
-  outline: 'none',
-  boxSizing: 'border-box',
-}
-
-const labelStyle: React.CSSProperties = {
-  fontSize: '11px',
-  color: '#9B9690',
-  letterSpacing: '0.05em',
-  textTransform: 'uppercase' as const,
-  marginBottom: '6px',
-  display: 'block',
-}
 
 export default function SiteConfigClient({
   corretor: corretorInicial,
-  imoveisPrevia,
 }: {
   corretor: CorretorConfig
   imoveisPrevia: ImovelPrevia[]
@@ -83,16 +58,12 @@ export default function SiteConfigClient({
   const [boasVindas, setBoasVindas] = useState(corretorInicial.site_boas_vindas || '')
   const [status, setStatus] = useState(corretorInicial.site_ativo ? 'Ativa' : 'Pausada')
   const [salvando, setSalvando] = useState(false)
-  const [copiado, setCopiado] = useState(false)
+  const [copiado, setCopiado] = useState<string | null>(null)
   const [erro, setErro] = useState('')
+  const [abaAtiva, setAbaAtiva] = useState<'config' | 'share' | 'embed'>('config')
 
-  const linkPublico = `bid.app.br/corretor/${slug}`
-
-  const corretorPrevia = {
-    ...corretorInicial,
-    site_boas_vindas: boasVindas,
-    site_modelo: modelo,
-  }
+  const linkPublico = `https://bid.app.br/corretor/${slug}`
+  const embedCode = `<iframe src="${linkPublico}?embed=true" width="100%" height="600" frameborder="0" style="border-radius:8px;"></iframe>`
 
   async function handleSalvar() {
     if (!slug.trim()) { setErro('O slug nao pode ser vazio.'); return }
@@ -117,132 +88,456 @@ export default function SiteConfigClient({
     }
   }
 
-  function handleCopiarLink() {
-    navigator.clipboard.writeText(`https://${linkPublico}`)
-    setCopiado(true)
-    setTimeout(() => setCopiado(false), 2000)
+  function handleCopiar(texto: string, tipo: string) {
+    navigator.clipboard.writeText(texto)
+    setCopiado(tipo)
+    setTimeout(() => setCopiado(null), 2500)
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    backgroundColor: '#181819',
+    border: '1px solid #2E2E30',
+    borderRadius: '2px',
+    padding: '12px 14px',
+    fontSize: '14px',
+    color: '#F0EDE6',
+    outline: 'none',
+    boxSizing: 'border-box',
+  }
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: '12px',
+    color: '#9B9690',
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase' as const,
+    marginBottom: '8px',
+    display: 'block',
+    fontWeight: 500,
+  }
+
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    flex: 1,
+    padding: '12px 8px',
+    backgroundColor: active ? 'rgba(201,168,76,0.1)' : 'transparent',
+    border: 'none',
+    borderBottom: active ? '2px solid #C9A84C' : '2px solid transparent',
+    color: active ? '#C9A84C' : '#9B9690',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    letterSpacing: '0.03em',
+  })
+
   return (
-    <div style={{ padding: '32px', display: 'flex', gap: '28px', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+    <div style={{ 
+      padding: '16px', 
+      minHeight: '100%',
+      maxWidth: '600px',
+      margin: '0 auto',
+    }}>
+      {/* Header */}
+      <div style={{ marginBottom: '20px' }}>
+        <h1 style={{ 
+          fontFamily: 'var(--font-serif, serif)', 
+          fontSize: '22px', 
+          fontWeight: 700, 
+          color: '#F0EDE6', 
+          margin: '0 0 6px' 
+        }}>
+          Meu Site
+        </h1>
+        <p style={{ fontSize: '13px', color: '#9B9690', margin: 0, lineHeight: 1.5 }}>
+          Configure e compartilhe sua pagina publica de corretor.
+        </p>
+      </div>
 
-      {/* CONFIGURACOES */}
-      <div style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
-        <div>
-          <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '18px', fontWeight: 700, color: '#F0EDE6', margin: '0 0 4px' }}>
-            Configurar Site
-          </p>
-          <p style={{ fontSize: '12px', color: '#9B9690', margin: 0 }}>
-            Personalize sua pagina publica de corretor.
-          </p>
+      {/* Status Card */}
+      <div style={{
+        backgroundColor: status === 'Ativa' ? 'rgba(92,184,138,0.08)' : 'rgba(224,92,92,0.08)',
+        border: `1px solid ${status === 'Ativa' ? 'rgba(92,184,138,0.25)' : 'rgba(224,92,92,0.25)'}`,
+        borderRadius: '2px',
+        padding: '14px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '20px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '10px', height: '10px', borderRadius: '50%',
+            backgroundColor: status === 'Ativa' ? '#5CB88A' : '#E05C5C',
+          }} />
+          <div>
+            <p style={{ fontSize: '14px', fontWeight: 600, color: '#F0EDE6', margin: 0 }}>
+              {status === 'Ativa' ? 'Site ativo' : 'Site pausado'}
+            </p>
+          </div>
         </div>
+        <a
+          href={`/corretor/${slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: '12px',
+            color: '#C9A84C',
+            textDecoration: 'none',
+            fontWeight: 500,
+          }}
+        >
+          Visualizar
+        </a>
+      </div>
 
-        {/* Slug */}
-        <div>
-          <label style={labelStyle}>Link publico</label>
-          <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#9B9690', userSelect: 'none' }}>
-              bid.app.br/corretor/
-            </span>
-            <input
-              value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-              style={{ ...inputStyle, paddingLeft: '160px' }}
-              placeholder="seu-nome"
+      {/* Tabs */}
+      <div style={{ 
+        display: 'flex', 
+        borderBottom: '1px solid #232324',
+        marginBottom: '20px',
+      }}>
+        <button style={tabStyle(abaAtiva === 'config')} onClick={() => setAbaAtiva('config')}>
+          Configuracoes
+        </button>
+        <button style={tabStyle(abaAtiva === 'share')} onClick={() => setAbaAtiva('share')}>
+          Compartilhar
+        </button>
+        <button style={tabStyle(abaAtiva === 'embed')} onClick={() => setAbaAtiva('embed')}>
+          Incorporar
+        </button>
+      </div>
+
+      {/* Tab: Configuracoes */}
+      {abaAtiva === 'config' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Slug */}
+          <div>
+            <label style={labelStyle}>Link publico</label>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              backgroundColor: '#181819',
+              border: '1px solid #2E2E30',
+              borderRadius: '2px',
+              overflow: 'hidden',
+            }}>
+              <span style={{ 
+                padding: '12px', 
+                fontSize: '13px', 
+                color: '#9B9690', 
+                backgroundColor: '#141415',
+                borderRight: '1px solid #2E2E30',
+                whiteSpace: 'nowrap',
+              }}>
+                bid.app.br/corretor/
+              </span>
+              <input
+                value={slug}
+                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                style={{ 
+                  ...inputStyle, 
+                  border: 'none',
+                  borderRadius: 0,
+                }}
+                placeholder="seu-nome"
+              />
+            </div>
+          </div>
+
+          {/* Modelo */}
+          <div>
+            <label style={labelStyle}>Modelo visual</label>
+            <select
+              value={modelo}
+              onChange={(e) => setModelo(e.target.value)}
+              style={{ ...inputStyle, cursor: 'pointer' }}
+            >
+              {MODELOS.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Boas-vindas */}
+          <div>
+            <label style={labelStyle}>Texto de apresentacao</label>
+            <textarea
+              value={boasVindas}
+              onChange={(e) => setBoasVindas(e.target.value)}
+              rows={4}
+              placeholder="Ex: Ola! Sou especialista em imoveis de alto padrao na regiao..."
+              style={{ ...inputStyle, resize: 'vertical', minHeight: '100px' }}
             />
           </div>
-          <p style={{ fontSize: '11px', color: '#9B9690', marginTop: '6px' }}>
-            {linkPublico}
-          </p>
-        </div>
 
-        {/* Modelo */}
-        <div>
-          <label style={labelStyle}>Modelo visual</label>
-          <select
-            value={modelo}
-            onChange={(e) => setModelo(e.target.value)}
-            style={{ ...inputStyle, cursor: 'pointer' }}
-          >
-            {MODELOS.map((m) => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
-        </div>
+          {/* Status */}
+          <div>
+            <label style={labelStyle}>Status da pagina</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              style={{ ...inputStyle, cursor: 'pointer' }}
+            >
+              <option value="Ativa">Ativa - visivel para todos</option>
+              <option value="Pausada">Pausada - apenas previa</option>
+            </select>
+          </div>
 
-        {/* Boas-vindas */}
-        <div>
-          <label style={labelStyle}>Texto de boas-vindas</label>
-          <textarea
-            value={boasVindas}
-            onChange={(e) => setBoasVindas(e.target.value)}
-            rows={4}
-            placeholder="Ola! Sou especialista em imoveis na sua regiao..."
-            style={{ ...inputStyle, resize: 'vertical' }}
-          />
-        </div>
+          {erro && (
+            <p style={{ 
+              fontSize: '13px', 
+              color: '#E05C5C', 
+              backgroundColor: 'rgba(224,92,92,0.08)', 
+              padding: '12px 14px', 
+              borderRadius: '2px', 
+              margin: 0 
+            }}>
+              {erro}
+            </p>
+          )}
 
-        {/* Status */}
-        <div>
-          <label style={labelStyle}>Status da pagina</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            style={{ ...inputStyle, cursor: 'pointer' }}
-          >
-            <option value="Ativa">Ativa</option>
-            <option value="Pausada">Pausada</option>
-          </select>
-        </div>
-
-        {erro && (
-          <p style={{ fontSize: '12px', color: '#E05C5C', backgroundColor: 'rgba(224,92,92,0.08)', padding: '8px 12px', borderRadius: '2px', margin: 0 }}>
-            {erro}
-          </p>
-        )}
-
-        {/* Botoes */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Botao Salvar */}
           <button
             onClick={handleSalvar}
             disabled={salvando}
-            style={{ backgroundColor: '#C9A84C', color: '#0E0E0F', border: 'none', borderRadius: '2px', padding: '11px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%' }}
+            style={{ 
+              backgroundColor: salvando ? '#a08840' : '#C9A84C', 
+              color: '#0E0E0F', 
+              border: 'none', 
+              borderRadius: '2px', 
+              padding: '14px', 
+              fontSize: '14px', 
+              fontWeight: 600, 
+              cursor: salvando ? 'not-allowed' : 'pointer', 
+              width: '100%',
+              marginTop: '8px',
+            }}
           >
-            {salvando ? 'Salvando...' : 'Salvar'}
-          </button>
-          <button
-            onClick={handleCopiarLink}
-            style={{ backgroundColor: 'transparent', color: copiado ? '#5CB88A' : '#C9A84C', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '2px', padding: '10px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', width: '100%' }}
-          >
-            {copiado ? 'Link copiado!' : 'Copiar link'}
+            {salvando ? 'Salvando...' : 'Salvar alteracoes'}
           </button>
         </div>
-      </div>
+      )}
 
-      {/* PREVIA */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <p style={{ fontSize: '11px', color: '#9B9690', marginBottom: '12px', letterSpacing: '0.05em' }}>
-          Previa — {MODELOS.find((m) => m.value === modelo)?.label}
-        </p>
-        <div style={{
-          flex: 1,
-          border: '1px solid rgba(201,168,76,0.1)',
-          borderRadius: '2px',
-          overflow: 'hidden',
-          position: 'relative',
-        }}>
+      {/* Tab: Compartilhar */}
+      {abaAtiva === 'share' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Link */}
+          <div>
+            <label style={labelStyle}>Link do seu site</label>
+            <div style={{ 
+              display: 'flex', 
+              gap: '8px',
+              flexDirection: 'column',
+            }}>
+              <input
+                value={linkPublico}
+                readOnly
+                style={{ ...inputStyle, backgroundColor: '#141415', color: '#9B9690' }}
+              />
+              <button
+                onClick={() => handleCopiar(linkPublico, 'link')}
+                style={{ 
+                  backgroundColor: copiado === 'link' ? 'rgba(92,184,138,0.15)' : 'rgba(201,168,76,0.1)', 
+                  color: copiado === 'link' ? '#5CB88A' : '#C9A84C', 
+                  border: `1px solid ${copiado === 'link' ? 'rgba(92,184,138,0.3)' : 'rgba(201,168,76,0.3)'}`, 
+                  borderRadius: '2px', 
+                  padding: '12px', 
+                  fontSize: '13px', 
+                  fontWeight: 600, 
+                  cursor: 'pointer', 
+                  width: '100%',
+                }}
+              >
+                {copiado === 'link' ? 'Link copiado!' : 'Copiar link'}
+              </button>
+            </div>
+          </div>
+
+          {/* QR Code placeholder */}
           <div style={{
-            position: 'absolute', inset: 0,
-            transform: 'scale(0.6)',
-            transformOrigin: 'top left',
-            width: '167%',
-            height: '167%',
-            overflowY: 'auto',
-            pointerEvents: 'none',
+            backgroundColor: '#141415',
+            border: '1px solid #232324',
+            borderRadius: '2px',
+            padding: '24px',
+            textAlign: 'center',
           }}>
-            <SiteCorretorPublico corretor={corretorPrevia} imoveis={imoveisPrevia} />
+            <div style={{
+              width: '140px',
+              height: '140px',
+              backgroundColor: '#F0EDE6',
+              margin: '0 auto 16px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '11px',
+              color: '#0E0E0F',
+              fontWeight: 600,
+            }}>
+              QR CODE
+            </div>
+            <p style={{ fontSize: '12px', color: '#9B9690', margin: 0 }}>
+              Escaneie para acessar seu site
+            </p>
+          </div>
+
+          {/* Redes Sociais */}
+          <div>
+            <label style={labelStyle}>Compartilhar nas redes</label>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {[
+                { nome: 'WhatsApp', cor: '#25D366', url: `https://wa.me/?text=${encodeURIComponent(`Confira meu catalogo de imoveis: ${linkPublico}`)}` },
+                { nome: 'Facebook', cor: '#1877F2', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(linkPublico)}` },
+                { nome: 'LinkedIn', cor: '#0A66C2', url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(linkPublico)}` },
+                { nome: 'X', cor: '#000000', url: `https://twitter.com/intent/tweet?url=${encodeURIComponent(linkPublico)}&text=${encodeURIComponent('Confira meu catalogo de imoveis!')}` },
+              ].map((rede) => (
+                <a
+                  key={rede.nome}
+                  href={rede.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flex: '1 1 calc(50% - 5px)',
+                    minWidth: '120px',
+                    padding: '12px',
+                    backgroundColor: rede.cor,
+                    color: '#fff',
+                    borderRadius: '2px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {rede.nome}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Tab: Incorporar */}
+      {abaAtiva === 'embed' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{
+            backgroundColor: 'rgba(201,168,76,0.05)',
+            border: '1px solid rgba(201,168,76,0.15)',
+            borderRadius: '2px',
+            padding: '14px 16px',
+          }}>
+            <p style={{ fontSize: '13px', color: '#F0EDE6', margin: '0 0 4px', fontWeight: 500 }}>
+              Incorpore seu catalogo em outros sites
+            </p>
+            <p style={{ fontSize: '12px', color: '#9B9690', margin: 0, lineHeight: 1.5 }}>
+              Cole o codigo abaixo no HTML de qualquer pagina para exibir seu catalogo de imoveis.
+            </p>
+          </div>
+
+          {/* Codigo iframe */}
+          <div>
+            <label style={labelStyle}>Codigo HTML (iframe)</label>
+            <textarea
+              value={embedCode}
+              readOnly
+              rows={4}
+              style={{ 
+                ...inputStyle, 
+                backgroundColor: '#141415', 
+                color: '#9B9690',
+                fontFamily: 'monospace',
+                fontSize: '12px',
+                lineHeight: 1.5,
+              }}
+            />
+            <button
+              onClick={() => handleCopiar(embedCode, 'iframe')}
+              style={{ 
+                backgroundColor: copiado === 'iframe' ? 'rgba(92,184,138,0.15)' : 'rgba(201,168,76,0.1)', 
+                color: copiado === 'iframe' ? '#5CB88A' : '#C9A84C', 
+                border: `1px solid ${copiado === 'iframe' ? 'rgba(92,184,138,0.3)' : 'rgba(201,168,76,0.3)'}`, 
+                borderRadius: '2px', 
+                padding: '12px', 
+                fontSize: '13px', 
+                fontWeight: 600, 
+                cursor: 'pointer', 
+                width: '100%',
+                marginTop: '10px',
+              }}
+            >
+              {copiado === 'iframe' ? 'Codigo copiado!' : 'Copiar codigo'}
+            </button>
+          </div>
+
+          {/* Link direto */}
+          <div>
+            <label style={labelStyle}>Link direto para catalogo</label>
+            <input
+              value={`${linkPublico}?embed=true`}
+              readOnly
+              style={{ ...inputStyle, backgroundColor: '#141415', color: '#9B9690', fontSize: '13px' }}
+            />
+            <button
+              onClick={() => handleCopiar(`${linkPublico}?embed=true`, 'embedlink')}
+              style={{ 
+                backgroundColor: copiado === 'embedlink' ? 'rgba(92,184,138,0.15)' : 'transparent', 
+                color: copiado === 'embedlink' ? '#5CB88A' : '#9B9690', 
+                border: '1px solid rgba(155,150,144,0.2)', 
+                borderRadius: '2px', 
+                padding: '12px', 
+                fontSize: '13px', 
+                fontWeight: 500, 
+                cursor: 'pointer', 
+                width: '100%',
+                marginTop: '10px',
+              }}
+            >
+              {copiado === 'embedlink' ? 'Link copiado!' : 'Copiar link'}
+            </button>
+          </div>
+
+          {/* Instrucoes */}
+          <div style={{
+            backgroundColor: '#141415',
+            border: '1px solid #232324',
+            borderRadius: '2px',
+            padding: '16px',
+          }}>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#C9A84C', margin: '0 0 10px' }}>
+              Como usar
+            </p>
+            <ol style={{ 
+              fontSize: '12px', 
+              color: '#9B9690', 
+              margin: 0, 
+              paddingLeft: '18px', 
+              lineHeight: 1.7 
+            }}>
+              <li>Copie o codigo HTML acima</li>
+              <li>Cole no editor HTML do seu site ou landing page</li>
+              <li>Ajuste width e height conforme necessario</li>
+              <li>Publique e pronto!</li>
+            </ol>
+          </div>
+        </div>
+      )}
+
+      {/* Rodape Info */}
+      <div style={{
+        backgroundColor: 'rgba(201,168,76,0.04)',
+        border: '1px solid rgba(201,168,76,0.1)',
+        borderRadius: '2px',
+        padding: '16px',
+        marginTop: '28px',
+      }}>
+        <p style={{ fontSize: '12px', fontWeight: 600, color: '#C9A84C', margin: '0 0 10px' }}>
+          O que os visitantes podem fazer?
+        </p>
+        <ul style={{ fontSize: '12px', color: '#9B9690', margin: 0, paddingLeft: '16px', lineHeight: 1.7 }}>
+          <li>Ver seu catalogo completo de imoveis</li>
+          <li>Enviar solicitacoes de busca personalizadas</li>
+          <li>Proprietarios podem cadastrar imoveis para voce vender</li>
+          <li>Contato direto via WhatsApp</li>
+        </ul>
       </div>
     </div>
   )

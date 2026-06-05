@@ -18,7 +18,7 @@ export default async function SitePage() {
 
   const { data: imoveisPrevia } = await supabase
     .from('imoveis')
-    .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
+    .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, area_total, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
     .eq('corretor_id', user.id)
     .eq('status', 'ativo')
     .eq('publico_no_site', true)

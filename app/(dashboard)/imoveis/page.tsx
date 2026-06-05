@@ -11,13 +11,14 @@ export default async function ImoveisPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: imoveis }, { data: cidades }] = await Promise.all([
+  const [{ data: imoveis }, { data: cidades }, { data: corretor }] = await Promise.all([
     supabase
       .from('imoveis')
       .select('*')
       .eq('corretor_id', user.id)
       .order('created_at', { ascending: false }),
     supabase.from('cities').select('id, name, state').eq('active', true).order('name'),
+    supabase.from('corretores').select('full_name, creci').eq('id', user.id).single(),
   ])
 
   return (
@@ -25,6 +26,8 @@ export default async function ImoveisPage() {
       imoveis={imoveis || []}
       cidades={cidades || []}
       corretorId={user.id}
+      corretorNome={corretor?.full_name || user.email || ''}
+      corretorCreci={corretor?.creci || ''}
     />
   )
 }

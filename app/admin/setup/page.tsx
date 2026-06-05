@@ -120,12 +120,29 @@ export default function AdminSetupPage() {
             style={{
               fontSize: '15px',
               color: '#9B9690',
-              margin: '0 0 32px',
+              margin: '0 0 24px',
               textAlign: 'center',
             }}
           >
             Configure o primeiro administrador da plataforma
           </p>
+
+          {/* Aviso de seguranca */}
+          <div
+            style={{
+              backgroundColor: 'rgba(232,201,106,0.08)',
+              border: '1px solid rgba(201,168,76,0.3)',
+              borderRadius: '2px',
+              padding: '14px 16px',
+              marginBottom: '24px',
+              fontSize: '13px',
+              color: '#E8C96A',
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>Atencao:</strong> Esta pagina so pode ser usada uma vez para criar o admin inicial. 
+            Apos o primeiro uso, remova a variavel ADMIN_SETUP_KEY do ambiente para desabilitar esta rota.
+          </div>
 
           {resultado?.error && (
             <div
@@ -292,7 +309,7 @@ export default function AdminSetupPage() {
                 }}
               />
               <p style={{ fontSize: '12px', color: '#9B9690', marginTop: '8px' }}>
-                A chave padrao e: BID_SETUP_2024
+                Defina a variavel de ambiente ADMIN_SETUP_KEY no servidor.
               </p>
             </div>
 
@@ -336,12 +353,15 @@ export default function AdminSetupPage() {
         <p
           style={{
             fontSize: '12px',
-            color: '#2E2E30',
+            color: '#E05C5C',
             textAlign: 'center',
             marginTop: '24px',
+            backgroundColor: 'rgba(224,92,92,0.08)',
+            padding: '12px 16px',
+            borderRadius: '2px',
           }}
         >
-          Esta pagina deve ser desabilitada em producao
+          Remova ADMIN_SETUP_KEY das variaveis de ambiente apos criar o admin.
         </p>
       </div>
     </div>

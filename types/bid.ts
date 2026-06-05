@@ -30,6 +30,11 @@ export interface Imovel {
   cidade: string
   bairro: string | null
   endereco: string | null
+  cep: string | null
+  estado: string | null
+  logradouro: string | null
+  numero: string | null
+  complemento: string | null
   quartos: number
   banheiros: number
   vagas: number
@@ -42,8 +47,28 @@ export interface Imovel {
   lancamento: boolean
   publico_no_site: boolean
   matching_ativo: boolean
+  // Proprietário
   prop_nome: string | null
+  prop_cpf_cnpj: string | null
+  prop_nacionalidade: string | null
+  prop_estado_civil: string | null
+  prop_profissao: string | null
+  prop_rg: string | null
   prop_whatsapp: string | null
+  prop_email: string | null
+  prop_conjuge_nome: string | null
+  prop_conjuge_cpf: string | null
+  prop_conjuge_whatsapp: string | null
+  // Imóvel
+  prop_matricula: string | null
+  cartorio_registro: string | null
+  // Condições financeiras
+  percentual_comissao: string | null
+  formas_pagamento: string[] | null
+  aceita_negociacao: string | null
+  // Prazo
+  validade_autorizacao: string | null
+  exclusividade: string | null
   match_count: number
   view_count: number
   created_at: string

@@ -12,25 +12,25 @@ interface SidebarWrapperProps {
   corretorId: string
   matchesPendentes: number
   chatNaoLidos?: number
+  planoAtual?: string
 }
 
 const pathToNav: Record<string, string> = {
-  '/dashboard': 'dashboard',
-  '/matches': 'matches',
-  '/crm': 'crm',
-  '/chat': 'chat',
-  '/imoveis': 'imoveis',
-  '/solicitacoes': 'solicitacoes',
-  '/hub': 'publicacao',
-  '/publicacao': 'publicacao',
-  '/website': 'website',
-  '/avaliacoes': 'avaliacoes',
-  '/plano': 'plano',
+  '/dashboard':      'dashboard',
+  '/matches':        'matches',
+  '/crm':            'crm',
+  '/chat':           'chat',
+  '/imoveis':        'imoveis',
+  '/solicitacoes':   'solicitacoes',
+  '/hub':            'hub',
+  '/site':           'site',
+  '/avaliacoes':     'avaliacoes',
+  '/plano':          'plano',
   '/credenciamento': 'credenciamento',
-  '/matching': 'matching',
-  '/notificacoes': 'notificacoes',
-  '/admin': 'admin',
-  '/erp': 'erp',
+  '/matching':       'matching',
+  '/notificacoes':   'notificacoes',
+  '/admin':          'admin',
+  '/erp':            'erp',
 }
 
 export default function SidebarWrapper({
@@ -40,6 +40,7 @@ export default function SidebarWrapper({
   corretorId,
   matchesPendentes,
   chatNaoLidos = 0,
+  planoAtual = 'free',
 }: SidebarWrapperProps) {
   const pathname = usePathname()
   const router = useRouter()
@@ -91,6 +92,7 @@ export default function SidebarWrapper({
       matchesPendentes={matchesPendentes}
       chatNaoLidos={chatNaoLidos}
       notifsNaoLidas={notifsNaoLidas}
+      planoAtual={planoAtual}
     />
   )
 }

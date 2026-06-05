@@ -66,11 +66,21 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
 
   const [modalMatch, setModalMatch] = useState<MatchItem | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
+  const [filtroStatus, setFiltroStatus] = useState('todos')
+  const [filtroTipo, setFiltroTipo] = useState('todos')
+  const [filtroScore, setFiltroScore] = useState(0)
 
   const corretorMap = Object.fromEntries(corretores.map((c) => [c.id, c]))
 
   const externos = matches.filter((m) => m.tipo === 'externo' && m.status === 'pendente')
   const internos = matches.filter((m) => m.tipo === 'interno' && m.status === 'pendente')
+
+  const matchesFiltrados = matches.filter((m) => {
+    if (filtroStatus !== 'todos' && m.status !== filtroStatus) return false
+    if (filtroTipo !== 'todos' && m.tipo !== filtroTipo) return false
+    if (m.score < filtroScore) return false
+    return true
+  })
 
   function getParceiro(match: MatchItem): Corretor | null {
     const id =
@@ -126,7 +136,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="font-serif text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
             Todos os Matches
@@ -138,8 +148,45 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
         </div>
       </div>
 
+      {/* Filtros */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <select
+          value={filtroStatus}
+          onChange={(e) => setFiltroStatus(e.target.value)}
+          style={{ background: '#232324', border: '1px solid rgba(201,168,76,0.14)', borderRadius: '2px', padding: '8px 12px', color: '#F0EDE6', fontSize: '13px', cursor: 'pointer', outline: 'none' }}
+        >
+          <option value="todos">Todos os status</option>
+          <option value="pendente">Pendentes</option>
+          <option value="aceito">Aceitos</option>
+          <option value="recusado">Recusados</option>
+        </select>
+        <select
+          value={filtroTipo}
+          onChange={(e) => setFiltroTipo(e.target.value)}
+          style={{ background: '#232324', border: '1px solid rgba(201,168,76,0.14)', borderRadius: '2px', padding: '8px 12px', color: '#F0EDE6', fontSize: '13px', cursor: 'pointer', outline: 'none' }}
+        >
+          <option value="todos">Todos os tipos</option>
+          <option value="externo">Externos</option>
+          <option value="interno">Internos</option>
+        </select>
+        <select
+          value={filtroScore}
+          onChange={(e) => setFiltroScore(Number(e.target.value))}
+          style={{ background: '#232324', border: '1px solid rgba(201,168,76,0.14)', borderRadius: '2px', padding: '8px 12px', color: '#F0EDE6', fontSize: '13px', cursor: 'pointer', outline: 'none' }}
+        >
+          <option value={0}>Qualquer score</option>
+          <option value={70}>Acima de 70%</option>
+          <option value={80}>Acima de 80%</option>
+          <option value={90}>Acima de 90%</option>
+          <option value={100}>100% (perfeito)</option>
+        </select>
+        <span style={{ fontSize: '12px', color: '#9B9690' }}>
+          {matchesFiltrados.length} resultado(s)
+        </span>
+      </div>
+
       {/* Lista */}
-      {matches.length === 0 ? (
+      {matchesFiltrados.length === 0 ? (
         <div
           className="rounded-sm border flex items-center justify-center py-20 text-sm"
           style={{
@@ -148,11 +195,13 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
             color: 'var(--color-muted)',
           }}
         >
-          Nenhum match ainda. Cadastre imoveis e clique em Motor de Matching para rodar o algoritmo.
+          {matches.length === 0
+            ? 'Nenhum match ainda. Cadastre imóveis e clique em Motor de Matching para rodar o algoritmo.'
+            : 'Nenhum resultado para os filtros selecionados.'}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {matches.map((match) => {
+          {matchesFiltrados.map((match) => {
             const parceiro = getParceiro(match)
             const selo = parceiro ? SELOS[parceiro.plano] || SELOS.basico : SELOS.basico
             const statusBadge = STATUS_BADGE[match.status] || STATUS_BADGE.pendente

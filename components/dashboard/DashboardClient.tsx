@@ -94,7 +94,7 @@ export default function DashboardClient({
             }}
           >
             <p style={{ fontSize: '15px', color: '#C9A84C' }}>
-              Voce tem {matchesExternos.length} interessado(s) em imoveis compativeis.
+              Você tem {matchesExternos.length} interessado(s) em imóveis compatíveis.
             </p>
             <Link
               href="/matches"
@@ -126,7 +126,7 @@ export default function DashboardClient({
             }}
           >
             <p style={{ fontSize: '15px', color: '#5C9BE0' }}>
-              Voce tem {matchesInternos.length} compatibilidade(s) interna(s) na sua carteira.
+              Você tem {matchesInternos.length} compatibilidade(s) interna(s) na sua carteira.
             </p>
             <Link
               href="/matches"
@@ -145,43 +145,62 @@ export default function DashboardClient({
           </div>
         )}
 
-        <div
-          style={{
-            backgroundColor: 'rgba(224,92,92,0.08)',
-            border: '1px solid rgba(224,92,92,0.25)',
-            borderRadius: '2px',
-            padding: '16px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <p style={{ fontSize: '15px', color: '#E05C5C' }}>
-            Parceria vence em 7 dias sem avanco no kanban.
-          </p>
-          <Link
-            href="/crm"
-            style={{
-              fontSize: '14px',
-              color: '#E05C5C',
-              border: '1px solid rgba(224,92,92,0.4)',
-              borderRadius: '2px',
-              padding: '6px 16px',
-              textDecoration: 'none',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Ver CRM
-          </Link>
-        </div>
+        {negociacoes
+          .filter((n) => {
+            const dias = Math.floor(
+              (Date.now() - new Date(n.updated_at).getTime()) / 86400000
+            )
+            return dias >= 15 && n.coluna !== 'Concluído'
+          })
+          .map((neg) => {
+            const dias = Math.floor(
+              (Date.now() - new Date(neg.updated_at).getTime()) / 86400000
+            )
+            const titulo =
+              (neg as any).parceria?.match?.imovel?.titulo ||
+              `Negociação #${neg.parceria_id.slice(0, 6)}`
+            return (
+              <div
+                key={neg.id}
+                style={{
+                  backgroundColor: 'rgba(224,92,92,0.08)',
+                  border: '1px solid rgba(224,92,92,0.25)',
+                  borderRadius: '2px',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <p style={{ fontSize: '15px', color: '#E05C5C' }}>
+                  <strong style={{ color: '#E05C5C' }}>{titulo} — {neg.coluna}</strong>
+                  {' '}sem atualização há {dias} {dias === 1 ? 'dia' : 'dias'}.
+                </p>
+                <Link
+                  href="/crm"
+                  style={{
+                    fontSize: '14px',
+                    color: '#E05C5C',
+                    border: '1px solid rgba(224,92,92,0.4)',
+                    borderRadius: '2px',
+                    padding: '6px 16px',
+                    textDecoration: 'none',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Ver Card
+                </Link>
+              </div>
+            )
+          })}
       </div>
 
       {/* Metricas */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-        <MetricCard label="Imoveis Ativos" value={imoveisAtivos} />
+        <MetricCard label="Imóveis Ativos" value={imoveisAtivos} />
         <MetricCard label="Matches Pendentes" value={matches.length} />
-        <MetricCard label="Negociacoes" value={negociacoes.length} accent="#9B9690" />
-        <MetricCard label="Solicitacoes Ativas" value={solicitacoes.length} accent="#9B9690" />
+        <MetricCard label="Negociações" value={negociacoes.length} accent="#9B9690" />
+        <MetricCard label="Solicitações Ativas" value={solicitacoes.length} accent="#9B9690" />
       </div>
 
       {/* CRM Kanban Mini */}
@@ -365,7 +384,7 @@ export default function DashboardClient({
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', fontWeight: 600, color: '#F0EDE6' }}>
-              Meus Imoveis
+              Meus Imóveis
             </p>
             <Link href="/imoveis" style={{ fontSize: '14px', color: '#C9A84C', textDecoration: 'none' }}>
               Ver todos &rarr;
@@ -373,8 +392,8 @@ export default function DashboardClient({
           </div>
 
           {imoveis.length === 0 ? (
-            <p style={{ fontSize: '15px', color: '#9B9690', textAlign: 'center', padding: '32px 0' }}>
-              Nenhum imovel cadastrado
+              <p style={{ fontSize: '15px', color: '#9B9690', textAlign: 'center', padding: '32px 0' }}>
+              Nenhum imóvel cadastrado
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

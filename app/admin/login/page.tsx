@@ -32,15 +32,7 @@ export default function AdminLoginPage() {
         return
       }
 
-      // Salva sessao no localStorage
-      localStorage.setItem('admin_session', JSON.stringify({
-        id: data.admin.id,
-        email: data.admin.email,
-        role: data.admin.role,
-        full_name: data.admin.full_name,
-        expires: Date.now() + (24 * 60 * 60 * 1000), // 24 horas
-      }))
-
+      // Cookie httpOnly ja foi definido pela API - apenas redireciona
       router.push('/admin/painel')
     } catch {
       setErro('Erro ao fazer login. Tente novamente.')

@@ -2,6 +2,8 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
@@ -13,44 +15,45 @@ interface SidebarProps {
   matchesPendentes: number
   chatNaoLidos: number
   notifsNaoLidas?: number
+  planoAtual?: string
 }
 
 const navigationGroups = [
   {
     title: 'PRINCIPAL',
     items: [
-      { id: 'dashboard', label: 'Dashboard', icon: '⊞' },
-      { id: 'matches', label: 'Matches', icon: '◎', badge: 'matchesPendentes' },
-      { id: 'crm', label: 'CRM Kanban', icon: '⊡' },
-      { id: 'chat', label: 'Chat', icon: '◉', badge: 'chatNaoLidos' },
+      { id: 'dashboard',   label: 'Dashboard',   icon: '⊞' },
+      { id: 'matches',     label: 'Matches',      icon: '◎', badge: 'matchesPendentes' },
+      { id: 'crm',         label: 'CRM Kanban',   icon: '⊡' },
+      { id: 'chat',        label: 'Chat',         icon: '◉', badge: 'chatNaoLidos' },
     ],
   },
   {
     title: 'CAPTAÇÃO',
     items: [
-      { id: 'imoveis', label: 'Meus Imóveis', icon: '🏠' },
-      { id: 'solicitacoes', label: 'Solicitações', icon: '🔍' },
-      { id: 'publicacao', label: 'Hub de Publicação', icon: '📡' },
-      { id: 'website', label: 'Meu Site', icon: '🌐' },
+      { id: 'imoveis',     label: 'Meus Imóveis',      icon: '⊟' },
+      { id: 'solicitacoes',label: 'Solicitações',       icon: '◧' },
+      { id: 'hub',         label: 'Hub de Publicação',  icon: '◈' },
+      { id: 'site',        label: 'Meu Site',           icon: '◻' },
     ],
   },
   {
     title: 'PLATAFORMA',
     items: [
-      { id: 'avaliacoes', label: 'Avaliações', icon: '⭐' },
-      { id: 'plano', label: 'Meu Plano', icon: '◈', badge: 'pro' },
-      { id: 'credenciamento', label: 'Credenciamento', icon: '🪪' },
-      { id: 'matching', label: 'Motor de Matching', icon: '⚙' },
-      { id: 'notificacoes', label: 'Notificacoes', icon: '🔔', badge: 'notifsNaoLidas' },
+      { id: 'avaliacoes',    label: 'Avaliações',        icon: '◇' },
+      { id: 'plano',         label: 'Meu Plano',         icon: '◈', badge: 'plano' },
+      { id: 'credenciamento',label: 'Credenciamento',    icon: '◆' },
+      { id: 'matching',      label: 'Motor de Matching', icon: '⊛' },
+      { id: 'notificacoes',  label: 'Notificações',      icon: '◎', badge: 'notifsNaoLidas' },
     ],
   },
   {
     title: 'ADMIN',
-    items: [{ id: 'admin', label: 'Painel Admin', icon: '🛡' }],
+    items: [{ id: 'admin', label: 'Painel Admin', icon: '◉' }],
   },
   {
     title: 'ERP',
-    items: [{ id: 'erp', label: 'ERP Imobiliária', icon: '🏢', badge: 'novo' }],
+    items: [{ id: 'erp', label: 'ERP Imobiliária', icon: '⊞', badge: 'novo' }],
   },
 ]
 
@@ -63,19 +66,39 @@ export function Sidebar({
   matchesPendentes,
   chatNaoLidos,
   notifsNaoLidas = 0,
+  planoAtual = 'free',
 }: SidebarProps) {
+  const router = useRouter()
+
+  async function handleLogout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  function getPlanoBadge(plano: string): string | null {
+    if (plano === 'free') return null
+    if (plano === 'pro') return 'PRO'
+    if (plano === 'premium') return 'PREMIUM'
+    if (plano === 'imobiliaria') return 'IMOB'
+    return null
+  }
+
   const getBadgeValue = (badge?: string) => {
     if (!badge) return null
     if (badge === 'matchesPendentes') return matchesPendentes || null
-    if (badge === 'chatNaoLidos')     return chatNaoLidos || null
-    if (badge === 'notifsNaoLidas')   return notifsNaoLidas || null
-    if (badge === 'pro')  return 'PRO'
+    if (badge === 'chatNaoLidos') return chatNaoLidos || null
+    if (badge === 'notifsNaoLidas') return notifsNaoLidas || null
+    if (badge === 'plano') {
+      const planoBadge = getPlanoBadge(planoAtual)
+      return planoBadge ? planoBadge : null
+    }
     if (badge === 'novo') return 'NOVO'
     return null
   }
 
   const getBadgeColor = (badge?: string) => {
-    if (badge === 'pro') return 'bg-blue-600 text-white'
+    if (badge === 'plano') return 'bg-amber-600 text-white'
     if (badge === 'novo') return 'bg-blue-600 text-white'
     return 'bg-red-600 text-white'
   }
@@ -91,7 +114,7 @@ export function Sidebar({
           BID
         </h1>
         <p className="text-[11px] uppercase tracking-widest text-[--color-muted] mt-2">
-          Plataforma Imobiliaria
+          Plataforma Imobiliária
         </p>
       </div>
 
@@ -156,6 +179,26 @@ export function Sidebar({
             <p className="text-[11px] text-[--color-gold] mt-0.5">{corretorSelo}</p>
           </div>
         </div>
+        <button
+          onClick={handleLogout}
+          style={{
+            width: '100%',
+            background: 'none',
+            border: 'none',
+            borderTop: '1px solid rgba(201,168,76,0.08)',
+            padding: '10px 14px',
+            color: '#9B9690',
+            fontSize: 12,
+            cursor: 'pointer',
+            textAlign: 'left',
+            marginTop: 6,
+            letterSpacing: '0.02em',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = '#E05C5C')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = '#9B9690')}
+        >
+          ⎋ Sair da conta
+        </button>
       </div>
     </aside>
   )

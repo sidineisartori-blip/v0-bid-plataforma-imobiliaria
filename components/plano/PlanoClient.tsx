@@ -32,9 +32,9 @@ const planos = [
     limite_imoveis: 2,
     limite_solicitacoes: 1,
     features: [
-      '2 imoveis ativos',
-      '1 solicitacao ativa',
-      'Matching basico',
+      '2 imóveis ativos',
+      '1 solicitação ativa',
+      'Matching básico',
       'CRM Kanban',
       'Landing simples',
     ],
@@ -48,12 +48,12 @@ const planos = [
     limite_imoveis: 20,
     limite_solicitacoes: 5,
     features: [
-      '20 imoveis ativos',
-      '5 solicitacoes ativas',
+      '20 imóveis ativos',
+      '5 solicitações ativas',
       'Hub com 3 canais',
-      'Site com portfolio',
+      'Site com portfólio',
       'WhatsApp alerts',
-      'Relatorio basico',
+      'Relatório básico',
     ],
     destaque: false,
   },
@@ -65,13 +65,13 @@ const planos = [
     limite_imoveis: 999,
     limite_solicitacoes: 999,
     features: [
-      'Imoveis ilimitados',
-      'Solicitacoes ilimitadas',
+      'Imóveis ilimitados',
+      'Solicitações ilimitadas',
       'Todos os canais',
-      'Site completo + lancamentos',
+      'Site completo + lançamentos',
       'IA completa',
-      'Gestao anuncios pagos',
-      'Relatorio avancado',
+      'Gestão anúncios pagos',
+      'Relatório avançado',
     ],
     destaque: true,
   },
@@ -83,12 +83,12 @@ const planos = [
     limite_imoveis: 999,
     limite_solicitacoes: 999,
     features: [
-      'Ate 10 usuarios',
-      'Painel gestor equipe',
-      'Relatorios consolidados',
+      'Até 10 usuários',
+      'Painel gestor de equipe',
+      'Relatórios consolidados',
       'Tudo do Premium',
       'API aberta',
-      'Suporte prioritario',
+      'Suporte prioritário',
     ],
     destaque: false,
   },
@@ -106,9 +106,19 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
   const limiteImoveis = planoAtualInfo.limite_imoveis
   const pctImoveis = limiteImoveis < 999 ? Math.min((imoveisUsados / limiteImoveis) * 100, 100) : 0
 
-  const dataInicio = corretor?.created_at
-    ? new Date(corretor.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-    : '—'
+  const ativoDesdeTxt = (() => {
+    if (assinatura?.created_at) {
+      return new Date(assinatura.created_at).toLocaleDateString('pt-BR', {
+        day: '2-digit', month: 'long', year: 'numeric',
+      })
+    }
+    if (corretor?.created_at) {
+      return `Desde ${new Date(corretor.created_at).toLocaleDateString('pt-BR', {
+        month: 'long', year: 'numeric',
+      })}`
+    }
+    return 'Plano ativo'
+  })()
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1060, minHeight: '100vh' }}>
@@ -137,18 +147,18 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
               {planoAtualInfo.nome}
             </div>
             <div style={{ fontSize: 12, color: '#9B9690' }}>
-              Ativo desde {dataInicio}
+              {ativoDesdeTxt}
               {limiteImoveis < 999 && (
-                <> · {Math.max(0, limiteImoveis - imoveisUsados)} imoveis restantes</>
+                <> · {Math.max(0, limiteImoveis - imoveisUsados)} imóveis restantes</>
               )}
-              {limiteImoveis >= 999 && <> · Imoveis ilimitados</>}
+              {limiteImoveis >= 999 && <> · Imóveis ilimitados</>}
             </div>
           </div>
           {assinatura && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: '#5CB88A', fontWeight: 600 }}>Ativa</div>
               <div style={{ fontSize: 11, color: '#9B9690', marginTop: 2 }}>
-                Renovacao mensal
+                Renovação mensal
               </div>
             </div>
           )}
@@ -158,7 +168,7 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
         {limiteImoveis < 999 && (
           <div style={{ marginTop: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11, color: '#9B9690' }}>Uso de imoveis</span>
+              <span style={{ fontSize: 11, color: '#9B9690' }}>Uso de imóveis</span>
               <span style={{ fontSize: 11, color: '#9B9690' }}>{imoveisUsados} / {limiteImoveis}</span>
             </div>
             <div style={{ height: 6, background: '#232324', borderRadius: 2 }}>
@@ -274,7 +284,7 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
       {/* Historico de faturamento */}
       <div>
         <p style={{ fontSize: 10, letterSpacing: '0.1em', color: '#9B9690', textTransform: 'uppercase', marginBottom: 16 }}>
-          Historico de Faturamento
+          Histórico de Faturamento
         </p>
         <div style={{ background: '#181819', border: '1px solid #232324', borderRadius: 2, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>

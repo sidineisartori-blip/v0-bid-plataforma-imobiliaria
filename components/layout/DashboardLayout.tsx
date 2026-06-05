@@ -1,13 +1,22 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 
 interface DashboardLayoutProps {
   children: ReactNode
   sidebar: ReactNode
+  onToggleSidebar?: (isOpen: boolean) => void
 }
 
-export function DashboardLayout({ children, sidebar }: DashboardLayoutProps) {
+export function DashboardLayout({ children, sidebar, onToggleSidebar }: DashboardLayoutProps) {
+  const [sidebarAberta, setSidebarAberta] = useState(true)
+
+  const handleToggle = () => {
+    const novoEstado = !sidebarAberta
+    setSidebarAberta(novoEstado)
+    onToggleSidebar?.(novoEstado)
+  }
+
   return (
     <div
       style={{
@@ -19,10 +28,13 @@ export function DashboardLayout({ children, sidebar }: DashboardLayoutProps) {
       {/* Sidebar */}
       <aside
         style={{
-          width: '216px',
+          width: sidebarAberta ? '216px' : '0px',
+          minWidth: sidebarAberta ? '216px' : '0px',
           flexShrink: 0,
-          borderRight: '1px solid var(--color-dark-3)',
+          borderRight: sidebarAberta ? '1px solid var(--color-dark-3)' : 'none',
           backgroundColor: 'var(--color-dark)',
+          overflow: 'hidden',
+          transition: 'width 0.2s ease, min-width 0.2s ease, border-right 0.2s ease',
         }}
       >
         {sidebar}
