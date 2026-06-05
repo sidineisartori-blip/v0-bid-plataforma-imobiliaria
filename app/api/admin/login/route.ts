@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,8 +32,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Esta conta foi desativada.' }, { status: 401 })
     }
 
-    // Compara a senha com o hash armazenado
-    if (senha !== adminUser.password_hash) {
+    // Compara a senha com o hash armazenado usando bcrypt
+    const senhaValida = await bcrypt.compare(senha, adminUser.password_hash)
+    if (!senhaValida) {
       return NextResponse.json({ error: 'Credenciais invalidas.' }, { status: 401 })
     }
 

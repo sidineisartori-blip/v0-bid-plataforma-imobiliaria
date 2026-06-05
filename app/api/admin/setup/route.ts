@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,12 +29,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Ja existe um admin cadastrado. Use o painel para adicionar mais.' }, { status: 400 })
   }
 
-  // Cria o admin user
+  // Cria o admin user com senha hasheada
+  const passwordHash = await bcrypt.hash(password, 12)
+
   const { data, error } = await supabase
     .from('admin_users')
     .insert({
       email: email.toLowerCase().trim(),
-      password_hash: password, // Em producao, fazer hash com bcrypt
+      password_hash: passwordHash,
       full_name,
       role: 'master',
       is_active: true,
