@@ -123,7 +123,7 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => e.target === e.currentTarget && onClose()}
     >
       <div
         style={{
@@ -151,13 +151,13 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
         {/* Tipo + Status */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <Field label="Tipo">
-            <select value={tipo} onChange={(e) => setTipo(e.target.value as 'locacao' | 'venda')} style={INPUT}>
+            <select value={tipo} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setTipo(e.target.value as 'locacao' | 'venda')} style={INPUT}>
               <option value="locacao">Locação</option>
               <option value="venda">Venda</option>
             </select>
           </Field>
           <Field label="Status">
-            <select value={status} onChange={(e) => setStatus(e.target.value)} style={INPUT}>
+            <select value={status} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setStatus(e.target.value)} style={INPUT}>
               <option value="rascunho">Rascunho</option>
               <option value="aguardando_assinatura">Ag. Assinatura</option>
               <option value="ativo">Ativo</option>
@@ -169,7 +169,7 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
 
         {/* Imóvel */}
         <Field label="Imóvel (opcional)">
-          <select value={imovelId} onChange={(e) => setImovelId(e.target.value)} style={INPUT}>
+          <select value={imovelId} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setImovelId(e.target.value)} style={INPUT}>
             <option value="">— Selecionar imóvel —</option>
             {imoveis.map((im) => (
               <option key={im.id} value={im.id}>
@@ -186,16 +186,16 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Field label="Nome *">
-              <input value={clienteNome} onChange={(e) => setClienteNome(e.target.value)} style={INPUT} placeholder="Nome completo" />
+              <input value={clienteNome} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setClienteNome(e.target.value)} style={INPUT} placeholder="Nome completo" />
             </Field>
             <Field label="CPF / CNPJ">
-              <input value={clienteCpf} onChange={(e) => setClienteCpf(e.target.value)} style={INPUT} placeholder="000.000.000-00" />
+              <input value={clienteCpf} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setClienteCpf(e.target.value)} style={INPUT} placeholder="000.000.000-00" />
             </Field>
             <Field label="E-mail">
-              <input type="email" value={clienteEmail} onChange={(e) => setClienteEmail(e.target.value)} style={INPUT} placeholder="email@exemplo.com" />
+              <input type="email" value={clienteEmail} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setClienteEmail(e.target.value)} style={INPUT} placeholder="email@exemplo.com" />
             </Field>
             <Field label="WhatsApp">
-              <input value={clienteWhats} onChange={(e) => setClienteWhats(e.target.value)} style={INPUT} placeholder="(11) 99999-9999" />
+              <input value={clienteWhats} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setClienteWhats(e.target.value)} style={INPUT} placeholder="(11) 99999-9999" />
             </Field>
           </div>
         </div>
@@ -207,18 +207,18 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <Field label={tipo === 'locacao' ? 'Valor Total (R$) *' : 'Valor de Venda (R$) *'}>
-              <input type="number" value={valorContrato} onChange={(e) => setValorContrato(e.target.value)} style={INPUT} placeholder="0,00" />
+              <input type="number" value={valorContrato} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setValorContrato(e.target.value)} style={INPUT} placeholder="0,00" />
             </Field>
             <Field label="Comissão (R$)">
-              <input type="number" value={valorComissao} onChange={(e) => setValorComissao(e.target.value)} style={INPUT} placeholder="0,00" />
+              <input type="number" value={valorComissao} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setValorComissao(e.target.value)} style={INPUT} placeholder="0,00" />
             </Field>
             <Field label="Comissão (%)">
-              <input type="number" value={percComissao} onChange={(e) => setPercComissao(e.target.value)} style={INPUT} placeholder="6" />
+              <input type="number" value={percComissao} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setPercComissao(e.target.value)} style={INPUT} placeholder="6" />
             </Field>
           </div>
           <div style={{ marginTop: 12 }}>
             <Field label="Forma de Pagamento">
-              <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value)} style={INPUT}>
+              <select value={formaPagamento} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setFormaPagamento(e.target.value)} style={INPUT}>
                 <option value="">— Selecionar —</option>
                 <option>À vista</option>
                 <option>Financiamento bancário</option>
@@ -233,15 +233,15 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
         {/* Datas */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           <Field label="Início do Contrato">
-            <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} style={INPUT} />
+            <input type="date" value={dataInicio} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setDataInicio(e.target.value)} style={INPUT} />
           </Field>
           {tipo === 'locacao' && (
             <Field label="Fim do Contrato">
-              <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} style={INPUT} />
+              <input type="date" value={dataFim} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setDataFim(e.target.value)} style={INPUT} />
             </Field>
           )}
           <Field label="Data de Assinatura">
-            <input type="date" value={dataAssinatura} onChange={(e) => setDataAssinatura(e.target.value)} style={INPUT} />
+            <input type="date" value={dataAssinatura} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setDataAssinatura(e.target.value)} style={INPUT} />
           </Field>
         </div>
 
@@ -253,13 +253,13 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
               <Field label="Aluguel (R$/mês)">
-                <input type="number" value={valorAluguel} onChange={(e) => setValorAluguel(e.target.value)} style={INPUT} placeholder="0,00" />
+                <input type="number" value={valorAluguel} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setValorAluguel(e.target.value)} style={INPUT} placeholder="0,00" />
               </Field>
               <Field label="Dia Vencimento">
-                <input type="number" min="1" max="31" value={diaVencimento} onChange={(e) => setDiaVencimento(e.target.value)} style={INPUT} placeholder="5" />
+                <input type="number" min="1" max="31" value={diaVencimento} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setDiaVencimento(e.target.value)} style={INPUT} placeholder="5" />
               </Field>
               <Field label="Índice Reajuste">
-                <select value={indiceReajuste} onChange={(e) => setIndiceReajuste(e.target.value)} style={INPUT}>
+                <select value={indiceReajuste} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setIndiceReajuste(e.target.value)} style={INPUT}>
                   <option>IGPM</option>
                   <option>IPCA</option>
                   <option>INPC</option>
@@ -267,7 +267,7 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
                 </select>
               </Field>
               <Field label="Garantia">
-                <select value={garantia} onChange={(e) => setGarantia(e.target.value)} style={INPUT}>
+                <select value={garantia} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setGarantia(e.target.value)} style={INPUT}>
                   <option value="">—</option>
                   <option>Caução</option>
                   <option>Fiador</option>
@@ -283,7 +283,7 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
         <Field label="Observações">
           <textarea
             value={observacoes}
-            onChange={(e) => setObservacoes(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setObservacoes(e.target.value)}
             rows={3}
             style={{ ...INPUT, resize: 'vertical' }}
             placeholder="Combinados, notas adicionais..."

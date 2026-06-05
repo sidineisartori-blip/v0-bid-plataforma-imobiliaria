@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Imovel, Cidade, ImovelStatus } from '@/types/bid'
 import { formatCurrency, STATUS_LABELS, STATUS_COLORS, getImovelEmoji } from '@/lib/format'
+import { exportarCSV, exportarXLS, imoveisParaExport } from '@/lib/exportCsv'
 import ModalImovel from './ModalImovel'
 
 interface ImoveisClientProps {
@@ -192,10 +193,23 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           </div>
         )}
 
-        {/* Contagem */}
-        <p style={{ fontSize: '14px', color: '#9B9690' }}>
-          {imoveisFiltrados.length} {imoveisFiltrados.length === 1 ? 'imovel' : 'imoveis'}
-        </p>
+        {/* Contagem + Export */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <p style={{ fontSize: '13px', color: '#9B9690' }}>
+            {imoveisFiltrados.length} {imoveisFiltrados.length === 1 ? 'imóvel' : 'imóveis'}
+            {imoveisFiltrados.length > 0 && ` · Total: ${formatCurrency(imoveisFiltrados.reduce((s, i) => s + i.valor, 0))}`}
+          </p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => exportarCSV(imoveisParaExport(imoveisFiltrados), 'imoveis')}
+              style={{ background: 'none', border: '1px solid #2E2E30', borderRadius: 2, padding: '4px 10px', fontSize: 11, color: '#9B9690', cursor: 'pointer' }}>
+              CSV
+            </button>
+            <button onClick={() => exportarXLS(imoveisParaExport(imoveisFiltrados), 'imoveis')}
+              style={{ background: 'none', border: '1px solid #2E2E30', borderRadius: 2, padding: '4px 10px', fontSize: 11, color: '#9B9690', cursor: 'pointer' }}>
+              XLS
+            </button>
+          </div>
+        </div>
 
         {/* Lista */}
         <div
@@ -333,7 +347,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
         {totalPaginas > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 4 }}>
             <button
-              onClick={() => setPagina((p) => Math.max(1, p - 1))}
+              onClick={() => setPagina((p: number) => Math.max(1, p - 1))}
               disabled={paginaAtual === 1}
               style={{
                 background: '#181819', border: '1px solid #232324', borderRadius: 2,
@@ -355,7 +369,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
               >{n}</button>
             ))}
             <button
-              onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+              onClick={() => setPagina((p: number) => Math.min(totalPaginas, p + 1))}
               disabled={paginaAtual === totalPaginas}
               style={{
                 background: '#181819', border: '1px solid #232324', borderRadius: 2,
