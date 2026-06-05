@@ -198,3 +198,47 @@ export interface Assinatura {
   periodo_inicio: string
   periodo_fim: string | null
 }
+
+export type ContratoStatus = 'rascunho' | 'aguardando_assinatura' | 'ativo' | 'encerrado' | 'cancelado'
+export type ContratoTipo   = 'locacao' | 'venda'
+
+export interface Contrato {
+  id: string
+  corretor_id: string
+  imovel_id: string | null
+  parceria_id: string | null
+  tipo: ContratoTipo
+  status: ContratoStatus
+  cliente_nome: string
+  cliente_cpf_cnpj: string | null
+  cliente_email: string | null
+  cliente_whatsapp: string | null
+  valor_contrato: number
+  valor_comissao: number | null
+  percentual_comissao: number | null
+  forma_pagamento: string | null
+  data_inicio: string | null
+  data_fim: string | null
+  data_assinatura: string | null
+  valor_aluguel: number | null
+  dia_vencimento: number | null
+  indice_reajuste: string | null
+  garantia: string | null
+  observacoes: string | null
+  arquivo_url: string | null
+  created_at: string
+  updated_at: string
+  imovel?: Pick<Imovel, 'titulo' | 'cidade' | 'bairro'> | null
+}
+
+export interface ContratoParcela {
+  id: string
+  contrato_id: string
+  corretor_id: string
+  competencia: string
+  valor: number
+  status: 'aberto' | 'pago' | 'atrasado' | 'isento'
+  data_pagamento: string | null
+  observacao: string | null
+  created_at: string
+}

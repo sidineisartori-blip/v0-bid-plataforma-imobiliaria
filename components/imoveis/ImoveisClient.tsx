@@ -37,6 +37,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   const [autorizandoId, setAutorizandoId] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState<ImovelStatus | ''>('')
   const [filtroCidade, setFiltroCidade] = useState('')
+  const [pagina, setPagina] = useState(1)
+  const PAGE_SIZE = 10
 
   const cidades_unicas = useMemo(
     () => [...new Set(imoveis.map((i) => i.cidade))].sort(),
@@ -52,6 +54,10 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
       }),
     [imoveis, filtroStatus, filtroCidade]
   )
+
+  const totalPaginas = Math.max(1, Math.ceil(imoveisFiltrados.length / PAGE_SIZE))
+  const paginaAtual  = Math.min(pagina, totalPaginas)
+  const imoveisVisiveis = imoveisFiltrados.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE)
 
   async function handleDeletar(id: string) {
     if (!confirm('Deseja realmente excluir este imóvel?')) return
@@ -135,7 +141,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             <select
               style={selectStyle}
               value={filtroStatus}
-              onChange={(e) => setFiltroStatus(e.target.value as ImovelStatus | '')}
+              onChange={(e) => { setFiltroStatus(e.target.value as ImovelStatus | ''); setPagina(1) }}
             >
               <option value="">Todos os status</option>
               <option value="ativo">Ativo</option>
@@ -147,7 +153,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             <select
               style={selectStyle}
               value={filtroCidade}
-              onChange={(e) => setFiltroCidade(e.target.value)}
+              onChange={(e) => { setFiltroCidade(e.target.value); setPagina(1) }}
             >
               <option value="">Todas as cidades</option>
               {cidades_unicas.map((c) => (
@@ -208,7 +214,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
               </p>
             </div>
           ) : (
-            imoveisFiltrados.map((imovel, i) => {
+            imoveisVisiveis.map((imovel, i) => {
               const sc = STATUS_COLORS[imovel.status]
               return (
                 <div
@@ -218,7 +224,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                     alignItems: 'center',
                     gap: '20px',
                     padding: '18px 24px',
-                    borderBottom: i < imoveisFiltrados.length - 1 ? '1px solid #232324' : 'none',
+                    borderBottom: i < imoveisVisiveis.length - 1 ? '1px solid #232324' : 'none',
                     transition: 'background-color 0.15s',
                   }}
                   onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
@@ -322,6 +328,43 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             })
           )}
         </div>
+
+        {/* Paginação */}
+        {totalPaginas > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 4 }}>
+            <button
+              onClick={() => setPagina((p) => Math.max(1, p - 1))}
+              disabled={paginaAtual === 1}
+              style={{
+                background: '#181819', border: '1px solid #232324', borderRadius: 2,
+                padding: '6px 14px', fontSize: 13, cursor: paginaAtual === 1 ? 'default' : 'pointer',
+                color: paginaAtual === 1 ? '#2E2E30' : '#9B9690',
+              }}
+            >←</button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                onClick={() => setPagina(n)}
+                style={{
+                  background: n === paginaAtual ? '#C9A84C' : '#181819',
+                  border: '1px solid ' + (n === paginaAtual ? '#C9A84C' : '#232324'),
+                  borderRadius: 2, padding: '6px 12px', fontSize: 13,
+                  color: n === paginaAtual ? '#0F0F10' : '#9B9690',
+                  cursor: 'pointer', fontWeight: n === paginaAtual ? 700 : 400,
+                }}
+              >{n}</button>
+            ))}
+            <button
+              onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+              disabled={paginaAtual === totalPaginas}
+              style={{
+                background: '#181819', border: '1px solid #232324', borderRadius: 2,
+                padding: '6px 14px', fontSize: 13, cursor: paginaAtual === totalPaginas ? 'default' : 'pointer',
+                color: paginaAtual === totalPaginas ? '#2E2E30' : '#9B9690',
+              }}
+            >→</button>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
