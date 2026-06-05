@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // Rotas protegidas — redireciona para login se não autenticado
+  // Todas as rotas protegidas do dashboard
   const protectedRoutes = [
     '/dashboard',
     '/imoveis',
@@ -36,6 +36,13 @@ export async function middleware(request: NextRequest) {
     '/crm',
     '/chat',
     '/plano',
+    '/hub',
+    '/site',
+    '/avaliacoes',
+    '/notificacoes',
+    '/credenciamento',
+    '/matching',
+    '/erp',
     '/admin',
   ]
 
@@ -43,6 +50,7 @@ export async function middleware(request: NextRequest) {
 
   if (!user && isProtected) {
     const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
