@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { Imovel, Cidade, ImovelStatus } from '@/types/bid'
 import { formatCurrency, STATUS_LABELS, STATUS_COLORS, getImovelEmoji } from '@/lib/format'
 import { exportarCSV, exportarXLS, imoveisParaExport } from '@/lib/exportCsv'
+import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
 import ModalImovel from './ModalImovel'
 
 interface ImoveisClientProps {
@@ -30,6 +31,7 @@ const btnIconStyle: React.CSSProperties = {
 export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNome = '', corretorCreci = '' }: ImoveisClientProps) {
   const router = useRouter()
   const supabase = createClient()
+  const [toasts, addToast, removerToast] = useToastSimples()
 
   const [modalAberto, setModalAberto] = useState(false)
   const [imovelEditando, setImovelEditando] = useState<Imovel | null>(null)
@@ -69,10 +71,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
       .eq('id', id)
       .eq('corretor_id', corretorId)
     setDeletandoId(null)
-    if (error) {
-      alert('Erro ao excluir imóvel: ' + error.message)
-      return
-    }
+    if (error) { addToast('erro', 'Erro ao excluir', error.message) }
+    else { addToast('sucesso', 'Imóvel excluído') }
     router.refresh()
   }
 
@@ -135,6 +135,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
 
   return (
     <>
+      <ToastContainer toasts={toasts} onRemover={removerToast} />
       <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Header com filtros e botao */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
@@ -142,7 +143,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             <select
               style={selectStyle}
               value={filtroStatus}
-              onChange={(e) => { setFiltroStatus(e.target.value as ImovelStatus | ''); setPagina(1) }}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroStatus(e.target.value as ImovelStatus | ''); setPagina(1) }}
             >
               <option value="">Todos os status</option>
               <option value="ativo">Ativo</option>
@@ -154,10 +155,10 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             <select
               style={selectStyle}
               value={filtroCidade}
-              onChange={(e) => { setFiltroCidade(e.target.value); setPagina(1) }}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroCidade(e.target.value); setPagina(1) }}
             >
               <option value="">Todas as cidades</option>
-              {cidades_unicas.map((c) => (
+              {cidades_unicas.map((c: string) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -197,7 +198,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <p style={{ fontSize: '13px', color: '#9B9690' }}>
             {imoveisFiltrados.length} {imoveisFiltrados.length === 1 ? 'imóvel' : 'imóveis'}
-            {imoveisFiltrados.length > 0 && ` · Total: ${formatCurrency(imoveisFiltrados.reduce((s, i) => s + i.valor, 0))}`}
+            {imoveisFiltrados.length > 0 && ` · Total: ${formatCurrency(imoveisFiltrados.reduce((s: number, i: Imovel) => s + i.valor, 0))}`}
           </p>
           <div style={{ display: 'flex', gap: 6 }}>
             <button onClick={() => exportarCSV(imoveisParaExport(imoveisFiltrados), 'imoveis')}
@@ -228,8 +229,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
               </p>
             </div>
           ) : (
-            imoveisVisiveis.map((imovel, i) => {
-              const sc = STATUS_COLORS[imovel.status]
+            imoveisVisiveis.map((imovel: Imovel, i: number) => {
+              const sc = STATUS_COLORS[imovel.status as ImovelStatus]
               return (
                 <div
                   key={imovel.id}
@@ -241,8 +242,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                     borderBottom: i < imoveisVisiveis.length - 1 ? '1px solid #232324' : 'none',
                     transition: 'background-color 0.15s',
                   }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
+                  onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
+                  onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
                 >
                   {/* Emoji */}
                   <span style={{ fontSize: '28px', flexShrink: 0 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
@@ -286,7 +287,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                     color: sc.text,
                     flexShrink: 0,
                   }}>
-                    {STATUS_LABELS[imovel.status]}
+                    {STATUS_LABELS[imovel.status as ImovelStatus]}
                   </span>
 
                   {/* Botoes */}

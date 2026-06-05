@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { formatCurrency } from '@/lib/format'
 import { calcVencimento, calcReajuste, mesAtual } from '@/lib/vencimento'
 import ModalContrato from './ModalContrato'
+import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
 import ERPCobrancas, { type Cobranca } from './ERPCobrancas'
 import ERPRepasses,  { type Repasse }  from './ERPRepasses'
 import ERPExtrato,   { type MovimentacaoExtrato } from './ERPExtrato'
@@ -81,6 +82,7 @@ export default function ERPClient({
   const [modalAberto, setModalAberto]   = useState(false)
   const [contratoEditando, setContratoEditando] = useState<Contrato | null>(null)
   const [deletandoId, setDeletandoId]   = useState<string | null>(null)
+  const [toasts, addToast, removerToast]  = useToastSimples()
 
   const filtrados = useMemo(() => {
     return contratos.filter((c) => {
@@ -128,8 +130,10 @@ export default function ERPClient({
   async function handleDeletar(id: string) {
     if (!confirm('Excluir este contrato? Esta ação não pode ser desfeita.')) return
     setDeletandoId(id)
-    await supabase.from('contratos').delete().eq('id', id).eq('corretor_id', corretorId)
+    const { error: delErr } = await supabase.from('contratos').delete().eq('id', id).eq('corretor_id', corretorId)
     setDeletandoId(null)
+    if (delErr) { addToast('erro', 'Erro ao excluir', delErr.message) }
+    else { addToast('sucesso', 'Contrato excluído') }
     router.refresh()
   }
 
@@ -152,6 +156,7 @@ export default function ERPClient({
 
   return (
     <div style={{ padding: '32px 24px', maxWidth: 1100, margin: '0 auto', color: '#F0EDE6' }}>
+      <ToastContainer toasts={toasts} onRemover={removerToast} />
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
@@ -392,6 +397,7 @@ export default function ERPClient({
           imoveis={imoveis}
           corretorId={corretorId}
           onClose={() => setModalAberto(false)}
+          onSucesso={(msg) => addToast('sucesso', msg)}
         />
       )}
     </div>

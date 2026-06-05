@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -16,44 +15,47 @@ interface SidebarProps {
   chatNaoLidos: number
   notifsNaoLidas?: number
   planoAtual?: string
+  erpAlertas?: number
 }
 
 const navigationGroups = [
   {
     title: 'PRINCIPAL',
     items: [
-      { id: 'dashboard',   label: 'Dashboard',   icon: '⊞' },
-      { id: 'matches',     label: 'Matches',      icon: '◎', badge: 'matchesPendentes' },
-      { id: 'crm',         label: 'CRM Kanban',   icon: '⊡' },
-      { id: 'chat',        label: 'Chat',         icon: '◉', badge: 'chatNaoLidos' },
+      { id: 'dashboard',    label: 'Dashboard',         icon: '⊞' },
+      { id: 'matches',      label: 'Matches',            icon: '◎', badge: 'matchesPendentes' },
+      { id: 'crm',          label: 'CRM Kanban',         icon: '⊡' },
+      { id: 'chat',         label: 'Chat',               icon: '◉', badge: 'chatNaoLidos' },
     ],
   },
   {
     title: 'CAPTAÇÃO',
     items: [
-      { id: 'imoveis',     label: 'Meus Imóveis',      icon: '⊟' },
-      { id: 'solicitacoes',label: 'Solicitações',       icon: '◧' },
-      { id: 'hub',         label: 'Hub de Publicação',  icon: '◈' },
-      { id: 'site',        label: 'Meu Site',           icon: '◻' },
+      { id: 'imoveis',      label: 'Meus Imóveis',       icon: '⊟' },
+      { id: 'solicitacoes', label: 'Solicitações',        icon: '◧' },
+      { id: 'hub',          label: 'Hub de Publicação',   icon: '◈' },
+      { id: 'site',         label: 'Meu Site',            icon: '◻' },
+    ],
+  },
+  {
+    title: 'FINANCEIRO',
+    items: [
+      { id: 'erp',          label: 'ERP Imobiliário',     icon: '⊞', badge: 'erpAlertas' },
     ],
   },
   {
     title: 'PLATAFORMA',
     items: [
-      { id: 'avaliacoes',    label: 'Avaliações',        icon: '◇' },
-      { id: 'plano',         label: 'Meu Plano',         icon: '◈', badge: 'plano' },
-      { id: 'credenciamento',label: 'Credenciamento',    icon: '◆' },
-      { id: 'matching',      label: 'Motor de Matching', icon: '⊛' },
-      { id: 'notificacoes',  label: 'Notificações',      icon: '◎', badge: 'notifsNaoLidas' },
+      { id: 'avaliacoes',     label: 'Avaliações',         icon: '◇' },
+      { id: 'notificacoes',   label: 'Notificações',       icon: '◎', badge: 'notifsNaoLidas' },
+      { id: 'credenciamento', label: 'Credenciamento',     icon: '◆' },
+      { id: 'matching',       label: 'Motor de Matching',  icon: '⊛' },
+      { id: 'plano',          label: 'Meu Plano',          icon: '◈', badge: 'plano' },
     ],
   },
   {
     title: 'ADMIN',
     items: [{ id: 'admin', label: 'Painel Admin', icon: '◉' }],
-  },
-  {
-    title: 'ERP',
-    items: [{ id: 'erp', label: 'ERP Imobiliária', icon: '⊞', badge: 'novo' }],
   },
 ]
 
@@ -67,6 +69,7 @@ export function Sidebar({
   chatNaoLidos,
   notifsNaoLidas = 0,
   planoAtual = 'free',
+  erpAlertas = 0,
 }: SidebarProps) {
   const router = useRouter()
 
@@ -84,72 +87,76 @@ export function Sidebar({
     return null
   }
 
-  const getBadgeValue = (badge?: string) => {
+  const getBadgeValue = (badge?: string): string | number | null => {
     if (!badge) return null
     if (badge === 'matchesPendentes') return matchesPendentes || null
-    if (badge === 'chatNaoLidos') return chatNaoLidos || null
-    if (badge === 'notifsNaoLidas') return notifsNaoLidas || null
+    if (badge === 'chatNaoLidos')     return chatNaoLidos || null
+    if (badge === 'notifsNaoLidas')   return notifsNaoLidas || null
+    if (badge === 'erpAlertas')       return erpAlertas || null
     if (badge === 'plano') {
       const planoBadge = getPlanoBadge(planoAtual)
-      return planoBadge ? planoBadge : null
+      return planoBadge ?? null
     }
-    if (badge === 'novo') return 'NOVO'
     return null
   }
 
-  const getBadgeColor = (badge?: string) => {
-    if (badge === 'plano') return 'bg-amber-600 text-white'
-    if (badge === 'novo') return 'bg-blue-600 text-white'
-    return 'bg-red-600 text-white'
+  const getBadgeStyle = (badge?: string): React.CSSProperties => {
+    if (badge === 'plano')      return { background: 'rgba(201,168,76,0.2)', color: '#C9A84C' }
+    if (badge === 'erpAlertas') return { background: 'rgba(224,92,92,0.15)', color: '#E05C5C' }
+    return { background: '#E05C5C', color: '#fff' }
   }
+
+  const iniciais = corretorNome
+    .split(' ')
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-[240px] flex flex-col bg-[--color-dark-2] border-r border-[--color-dark-3]">
       {/* Logo */}
-      <div className="px-6 py-8 border-b border-[--color-dark-3]">
-        <h1
-          className="font-serif text-[32px] font-bold text-[--color-gold]"
-          style={{ lineHeight: 1 }}
-        >
+      <div className="px-6 py-6 border-b border-[--color-dark-3]">
+        <h1 className="font-serif text-[30px] font-bold text-[--color-gold]" style={{ lineHeight: 1 }}>
           BID
         </h1>
-        <p className="text-[11px] uppercase tracking-widest text-[--color-muted] mt-2">
+        <p className="text-[10px] uppercase tracking-widest text-[--color-muted] mt-1">
           Plataforma Imobiliária
         </p>
       </div>
 
-      {/* Navigation Groups */}
-      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {navigationGroups.map((group) => (
           <div key={group.title}>
-            <p className="text-[11px] uppercase tracking-widest text-[--color-muted] px-2 mb-3 font-medium">
+            <p className="text-[10px] uppercase tracking-widest text-[--color-muted] px-2 mb-2 font-semibold opacity-60">
               {group.title}
             </p>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {group.items.map((item) => {
                 const isActive = activeNav === item.id
-                const badgeValue = getBadgeValue(item.badge as any)
+                const badgeValue = getBadgeValue(item.badge)
+                const badgeStyle = getBadgeStyle(item.badge)
 
                 return (
                   <button
                     key={item.id}
                     onClick={() => onNavChange(item.id)}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-3 text-[15px] transition-all rounded-sm border-l-2 border-transparent',
+                      'w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] transition-all rounded-sm border-l-2',
                       isActive
                         ? 'border-l-[--color-gold] bg-[rgba(201,168,76,0.07)] text-[--color-gold]'
-                        : 'text-[--color-text] hover:bg-[rgba(201,168,76,0.04)]'
+                        : 'border-l-transparent text-[--color-text] hover:bg-[rgba(201,168,76,0.04)] hover:text-[--color-gold]'
                     )}
                   >
-                    <span className="text-lg">{item.icon}</span>
+                    <span style={{ fontSize: 15, flexShrink: 0 }}>{item.icon}</span>
                     <span className="flex-1 text-left font-medium">{item.label}</span>
-                    {badgeValue && (
-                      <span
-                        className={cn(
-                          'text-[11px] px-2 py-0.5 rounded',
-                          getBadgeColor(item.badge as any)
-                        )}
-                      >
+                    {badgeValue !== null && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700,
+                        padding: '1px 6px', borderRadius: 9999,
+                        ...badgeStyle,
+                      }}>
                         {badgeValue}
                       </span>
                     )}
@@ -161,41 +168,36 @@ export function Sidebar({
         ))}
       </nav>
 
-      {/* Footer - User Profile */}
-      <div className="border-t border-[--color-dark-3] p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-[--color-gold] flex items-center justify-center text-[--color-dark] font-serif font-bold text-base">
-            {corretorNome
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .toUpperCase()}
+      {/* Footer */}
+      <div className="border-t border-[--color-dark-3] p-3">
+        <div className="flex items-center gap-2.5 p-2 rounded-sm">
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'rgba(201,168,76,0.15)',
+            border: '1px solid rgba(201,168,76,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#C9A84C', fontWeight: 700, fontSize: 13, flexShrink: 0,
+          }}>
+            {iniciais}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[--color-text] truncate">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {corretorNome}
             </p>
-            <p className="text-[12px] text-[--color-muted]">CRECI {corretorCreci}</p>
-            <p className="text-[11px] text-[--color-gold] mt-0.5">{corretorSelo}</p>
+            <p style={{ fontSize: 10, color: '#9B9690' }}>CRECI {corretorCreci}</p>
           </div>
         </div>
         <button
           onClick={handleLogout}
           style={{
-            width: '100%',
-            background: 'none',
-            border: 'none',
-            borderTop: '1px solid rgba(201,168,76,0.08)',
-            padding: '10px 14px',
-            color: '#9B9690',
-            fontSize: 12,
-            cursor: 'pointer',
-            textAlign: 'left',
-            marginTop: 6,
-            letterSpacing: '0.02em',
+            width: '100%', background: 'none', border: 'none',
+            borderTop: '1px solid rgba(255,255,255,0.04)',
+            padding: '8px 10px', color: '#9B9690', fontSize: 12,
+            cursor: 'pointer', textAlign: 'left', marginTop: 4,
+            borderRadius: 2, letterSpacing: '0.02em',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#E05C5C')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '#9B9690')}
+          onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => (e.currentTarget.style.color = '#E05C5C')}
+          onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => (e.currentTarget.style.color = '#9B9690')}
         >
           ⎋ Sair da conta
         </button>

@@ -14,6 +14,7 @@ interface SidebarWrapperProps {
   chatNaoLidos?: number
   notifsNaoLidas?: number
   planoAtual?: string
+  erpAlertas?: number
 }
 
 const pathToNav: Record<string, string> = {
@@ -43,6 +44,7 @@ export default function SidebarWrapper({
   chatNaoLidos = 0,
   notifsNaoLidas: notifsInicial = 0,
   planoAtual = 'free',
+  erpAlertas = 0,
 }: SidebarWrapperProps) {
   const pathname = usePathname()
   const router = useRouter()

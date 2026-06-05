@@ -10,6 +10,7 @@ interface ModalContratoProps {
   imoveis: { id: string; titulo: string; cidade: string; bairro: string | null }[]
   corretorId: string
   onClose: () => void
+  onSucesso?: (mensagem: string) => void
 }
 
 const INPUT = {
@@ -41,7 +42,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-export default function ModalContrato({ contrato, imoveis, corretorId, onClose }: ModalContratoProps) {
+export default function ModalContrato({ contrato, imoveis, corretorId, onClose, onSucesso }: ModalContratoProps) {
   const router = useRouter()
   const supabase = createClient()
   const isEdicao = !!contrato
@@ -111,6 +112,7 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose }
         if (e) throw e
       }
       router.refresh()
+      onSucesso?.(isEdicao ? 'Contrato atualizado com sucesso!' : 'Contrato criado com sucesso!')
       onClose()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar contrato.')

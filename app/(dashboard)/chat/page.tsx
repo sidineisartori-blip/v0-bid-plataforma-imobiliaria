@@ -31,7 +31,7 @@ export default async function ChatPage() {
     .eq('corretor_id', user.id)
     .order('updated_at', { ascending: false })
 
-  const negIds = negociacoes?.map((n) => n.id) || []
+  const negIds = negociacoes?.map((n: { id: string }) => n.id) || []
 
   const { data: naoLidas } = negIds.length
     ? await supabase
@@ -44,7 +44,7 @@ export default async function ChatPage() {
 
   return (
     <ChatClient
-      negociacoes={(negociacoes as ChatNegociacao[]) || []}
+      negociacoes={(negociacoes as any) || []}
       naoLidas={naoLidas || []}
       corretorId={user.id}
     />

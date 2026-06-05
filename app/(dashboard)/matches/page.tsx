@@ -17,8 +17,8 @@ export default async function MatchesPage() {
     supabase.from('solicitacoes').select('id').eq('corretor_id', user.id),
   ])
 
-  const imoveisIds = meusImoveis?.map((i) => i.id) || []
-  const solsIds = minhasSols?.map((s) => s.id) || []
+  const imoveisIds = meusImoveis?.map((i: { id: string }) => i.id) || []
+  const solsIds = minhasSols?.map((s: { id: string }) => s.id) || []
 
   let matches: MatchComRelacoes[] = []
   if (imoveisIds.length > 0 || solsIds.length > 0) {
@@ -56,7 +56,7 @@ export default async function MatchesPage() {
 
   return (
     <MatchesClient
-      matches={matches}
+      matches={matches as any}
       corretores={corretores || []}
       corretorId={user.id}
     />

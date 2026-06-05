@@ -67,7 +67,7 @@ export default function ModalAvaliacao({ corretorId, avaliadoId, avaliadoNome, c
 
   const todosPreenchidos = Object.values(notas).every((n) => n > 0)
   const notaFinal = todosPreenchidos
-    ? Object.values(notas).reduce((a, b) => a + b, 0) / 5
+    ? Object.values(notas).reduce((a: number, b: number) => a + b, 0) / 5
     : 0
 
   function setNota(key: CriterioKey, value: number) {

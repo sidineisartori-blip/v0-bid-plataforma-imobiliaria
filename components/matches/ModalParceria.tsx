@@ -106,6 +106,21 @@ export default function ModalParceria({ match, parceiro, corretorId, onClose }: 
         },
       ])
 
+      // Notifica o receptor da proposta de parceria
+      const tituloImovel =
+        match.imovel?.titulo ||
+        `Solicitação de ${match.solicitacao?.cliente_nome || '—'}`
+      if (parceiroId) {
+        await supabase.from('notificacoes').insert({
+          corretor_id: parceiroId,
+          tipo: 'parceria',
+          titulo: 'Nova proposta de parceria',
+          mensagem: `Você recebeu uma proposta de parceria para "${tituloImovel}". Acesse Matches para aceitar ou recusar.`,
+          rota: '/matches',
+          lida: false,
+        })
+      }
+
       router.refresh()
       onClose()
     } catch (err: unknown) {

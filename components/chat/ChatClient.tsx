@@ -76,6 +76,7 @@ export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatCl
     negociacoes[0] || null
   )
   const [texto, setTexto] = useState('')
+  const [enviando, setEnviando] = useState(false)
   const [fixarInput, setFixarInput] = useState(false)
   const [combinadoTexto, setCombinadoTexto] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -107,16 +108,24 @@ export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatCl
     return `Negociação #${neg.id.slice(0, 6)}`
   }
 
-  const mensagemFixada = mensagens.find((m) => m.fixada) || null
+  const mensagemFixada = mensagens.find((m: any) => m.fixada) || null
 
   async function handleEnviar() {
-    if (!texto.trim() || !parceriaId) return
-    await enviar(texto, parceriaId)
+    if (!texto.trim() || !parceriaId || enviando) return
+    setEnviando(true)
+    const textoParaEnviar = texto
+    setTexto('')
+    await enviar(textoParaEnviar, parceriaId)
+    setEnviando(false)
+    inputRef.current?.focus()
     setTexto('')
   }
 
   async function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') await handleEnviar()
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      await handleEnviar()
+    }
   }
 
   async function handleFixarCombinado() {
@@ -257,7 +266,7 @@ export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatCl
               </div>
             </div>
             <button
-              onClick={() => setFixarInput((v) => !v)}
+              onClick={() => setFixarInput((v: boolean) => !v)}
               className="text-[11px] px-3 py-1.5 rounded-sm border transition-colors"
               style={{
                 borderColor: fixarInput ? 'var(--color-gold)' : 'rgba(201,168,76,0.25)',
@@ -281,8 +290,8 @@ export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatCl
               <input
                 autoFocus
                 value={combinadoTexto}
-                onChange={(e) => setCombinadoTexto(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleFixarCombinado() }}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCombinadoTexto(e.target.value)}
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') handleFixarCombinado() }}
                 placeholder="Digite o combinado que será fixado..."
                 className="flex-1 bg-transparent outline-none text-[12px]"
                 style={{ color: 'var(--color-text)' }}
@@ -340,7 +349,7 @@ export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatCl
                 </p>
               </div>
             ) : (
-              mensagens.map((msg) => {
+              mensagens.map((msg: any) => {
                 const isEnviada = msg.remetente_id === corretorId
                 return (
                   <div
@@ -395,7 +404,7 @@ export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatCl
             <input
               ref={inputRef}
               value={texto}
-              onChange={(e) => setTexto(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTexto(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Digite uma mensagem... (Enter para enviar)"
               className="flex-1 rounded-sm px-3 py-2 text-[13px] outline-none"
@@ -407,7 +416,7 @@ export default function ChatClient({ negociacoes, naoLidas, corretorId }: ChatCl
             />
             <button
               onClick={handleEnviar}
-              disabled={!texto.trim()}
+              disabled={!texto.trim() || enviando}
               className="px-4 py-2 rounded-sm text-[13px] font-semibold transition-opacity"
               style={{
                 backgroundColor: 'var(--color-gold)',

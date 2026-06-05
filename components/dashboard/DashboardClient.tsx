@@ -31,7 +31,7 @@ interface DashboardClientProps {
 function AlertaBanner({
   cor, bg, border, href, texto, cta,
 }: {
-  cor: string; bg: string; border: string; href: string; texto: React.ReactNode; cta: string
+  key?: React.Key; cor: string; bg: string; border: string; href: string; texto: React.ReactNode; cta: string
 }) {
   return (
     <div style={{ backgroundColor: bg, border: `1px solid ${border}`, borderRadius: '2px', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -125,7 +125,7 @@ export default function DashboardClient({
           <AlertaBanner
             cor="#E05C5C" bg="rgba(224,92,92,0.06)" border="rgba(224,92,92,0.2)"
             href="/erp" cta="Ver contratos"
-            texto={<><strong>{contratosAReajustar.length}</strong> contrato(s) com reajuste nos próximos 30 dias ({contratosAReajustar.map(c => c.indice_reajuste || 'IGPM').filter((v, i, a) => a.indexOf(v) === i).join(', ')}).</>}
+            texto={<><strong>{contratosAReajustar.length}</strong> contrato(s) com reajuste nos próximos 30 dias ({contratosAReajustar.map((c: ContratoResumido) => c.indice_reajuste || 'IGPM').filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).join(', ')}).</>}
           />
         )}
 

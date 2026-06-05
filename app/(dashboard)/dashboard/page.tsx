@@ -43,8 +43,8 @@ export default async function DashboardPage() {
       .eq('status', 'pendente'),
   ])
 
-  const imoveisIds = (imoveis || []).map((i) => i.id)
-  const solicitacoesIds = (solicitacoes || []).map((s) => s.id)
+  const imoveisIds = (imoveis || []).map((i: { id: string }) => i.id)
+  const solicitacoesIds = (solicitacoes || []).map((s: { id: string }) => s.id)
 
   let matches: Match[] = []
   if (imoveisIds.length > 0 || solicitacoesIds.length > 0) {
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(50)
 
-    matches = (matchesData || []).map((m) => ({
+    matches = (matchesData || []).map((m: Record<string, unknown>) => ({
       ...m,
       imovel:     Array.isArray(m.imovel)     ? m.imovel[0]     || null : m.imovel,
       solicitacao: Array.isArray(m.solicitacao) ? m.solicitacao[0] || null : m.solicitacao,

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { Solicitacao, Cidade } from '@/types/bid'
 import { formatCurrency } from '@/lib/format'
 import { exportarCSV, exportarXLS, solicitacoesParaExport } from '@/lib/exportCsv'
+import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
 import ModalSolicitacao from './ModalSolicitacao'
 
 interface SolicitacoesClientProps {
@@ -27,6 +28,7 @@ const btnIconStyle: React.CSSProperties = {
 export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }: SolicitacoesClientProps) {
   const router = useRouter()
   const supabase = createClient()
+  const [toasts, addToast, removerToast] = useToastSimples()
 
   const [modalAberto, setModalAberto] = useState(false)
   const [editando, setEditando] = useState<Solicitacao | null>(null)
@@ -103,19 +105,20 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
 
   return (
     <>
+      <ToastContainer toasts={toasts} onRemover={removerToast} />
       <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <select style={selectStyle} value={filtroStatus} onChange={(e) => { setFiltroStatus(e.target.value); setPagina(1) }}>
+            <select style={selectStyle} value={filtroStatus} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroStatus(e.target.value); setPagina(1) }}>
               <option value="">Todos os status</option>
               <option value="ativa">Ativa</option>
               <option value="concluida">Concluida</option>
               <option value="cancelada">Cancelada</option>
             </select>
-            <select style={selectStyle} value={filtroCidade} onChange={(e) => { setFiltroCidade(e.target.value); setPagina(1) }}>
+            <select style={selectStyle} value={filtroCidade} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroCidade(e.target.value); setPagina(1) }}>
               <option value="">Todas as cidades</option>
-              {cidades_unicas.map((c) => (
+              {cidades_unicas.map((c: string) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -171,7 +174,7 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
               </p>
             </div>
           ) : (
-            visiveis.map((sol, i) => {
+            visiveis.map((sol: Solicitacao, i: number) => {
               const sc = statusColor(sol.status)
               return (
                 <div
@@ -184,8 +187,8 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
                     borderBottom: i < visiveis.length - 1 ? '1px solid #232324' : 'none',
                     transition: 'background-color 0.15s',
                   }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
+                  onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
+                  onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
                 >
                   {/* Icone */}
                   <span style={{ fontSize: '20px', flexShrink: 0 }}>&#128269;</span>

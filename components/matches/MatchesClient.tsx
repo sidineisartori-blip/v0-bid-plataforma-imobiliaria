@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ModalParceria from './ModalParceria'
+import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
 
 interface Corretor {
   id: string
@@ -63,6 +64,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
 export default function MatchesClient({ matches, corretores, corretorId }: MatchesClientProps) {
   const router = useRouter()
   const supabase = createClient()
+  const [toasts, addToast, removerToast] = useToastSimples()
 
   const [modalMatch, setModalMatch] = useState<MatchItem | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
@@ -92,8 +94,10 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
 
   async function handleRecusar(matchId: string) {
     setLoading(matchId)
-    await supabase.from('matches').update({ status: 'recusado' }).eq('id', matchId)
+    const { error } = await supabase.from('matches').update({ status: 'recusado' }).eq('id', matchId)
     setLoading(null)
+    if (error) { addToast('erro', 'Erro ao recusar match') }
+    else { addToast('info', 'Match recusado') }
     router.refresh()
   }
 
@@ -145,6 +149,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
 
     } catch (err) {
       console.error('Erro ao iniciar atendimento:', err)
+      addToast('erro', 'Erro ao iniciar atendimento')
     } finally {
       setLoading(null)
       router.refresh()
@@ -153,6 +158,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
 
   return (
     <div className="p-8" style={{ color: 'var(--color-text)' }}>
+      <ToastContainer toasts={toasts} onRemover={removerToast} />
       {/* Alertas */}
       <div className="flex flex-col gap-3 mb-8">
         {externos.length > 0 && (
