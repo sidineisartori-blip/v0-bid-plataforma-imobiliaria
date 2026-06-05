@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import SiteCorretorPublico from '@/components/site/SiteCorretorPublico'
 
@@ -10,7 +10,7 @@ export default async function SiteCorretorPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
 
   const { data: corretor } = await supabase
     .from('corretores')
@@ -23,7 +23,7 @@ export default async function SiteCorretorPage({
 
   const { data: imoveis } = await supabase
     .from('imoveis')
-    .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
+    .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, area_total, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
     .eq('corretor_id', corretor.id)
     .eq('status', 'ativo')
     .eq('publico_no_site', true)
@@ -40,7 +40,7 @@ export default async function SiteCorretorPage({
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createClient()
   const { data: corretor } = await supabase
     .from('corretores')
     .select('full_name, city, bio')
