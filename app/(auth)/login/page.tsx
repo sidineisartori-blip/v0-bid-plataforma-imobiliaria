@@ -29,7 +29,8 @@ function LoginForm() {
       setErro(traduzirErroAuth(error.message))
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      const redirect = searchParams.get('redirect')
+      router.push(redirect && redirect.startsWith('/') ? redirect : '/dashboard')
     }
   }
 

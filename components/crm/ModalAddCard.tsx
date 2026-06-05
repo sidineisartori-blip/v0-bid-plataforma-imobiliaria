@@ -14,10 +14,11 @@ const COLUNAS = [
 ] as const
 
 interface ModalAddCardProps {
+  corretorId: string
   onClose: () => void
 }
 
-export default function ModalAddCard({ onClose }: ModalAddCardProps) {
+export default function ModalAddCard({ corretorId, onClose }: ModalAddCardProps) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -34,6 +35,7 @@ export default function ModalAddCard({ onClose }: ModalAddCardProps) {
         coluna,
         titulo: titulo.trim(),
         detalhe: detalhe.trim() || null,
+        corretor_id: corretorId,
       })
       router.refresh()
       onClose()

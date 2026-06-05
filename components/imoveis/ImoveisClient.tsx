@@ -54,10 +54,18 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   )
 
   async function handleDeletar(id: string) {
-    if (!confirm('Deseja realmente excluir este imovel?')) return
+    if (!confirm('Deseja realmente excluir este imóvel?')) return
     setDeletandoId(id)
-    await supabase.from('imoveis').delete().eq('id', id)
+    const { error } = await supabase
+      .from('imoveis')
+      .delete()
+      .eq('id', id)
+      .eq('corretor_id', corretorId)
     setDeletandoId(null)
+    if (error) {
+      alert('Erro ao excluir imóvel: ' + error.message)
+      return
+    }
     router.refresh()
   }
 

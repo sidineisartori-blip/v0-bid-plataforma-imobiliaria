@@ -26,3 +26,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# v0 internal memories - may contain sensitive project info
+v0_memories/

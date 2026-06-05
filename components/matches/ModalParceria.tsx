@@ -92,15 +92,24 @@ export default function ModalParceria({ match, parceiro, corretorId, onClose }: 
 
       if (parceiroErr) throw parceiroErr
 
-      await supabase.from('negociacoes').insert({
-        parceria_id: parceria.id,
-        coluna: 'Parceria Ativa',
-      })
+      // Cria negociacao para AMBOS os corretores (proponente e receptor)
+      await supabase.from('negociacoes').insert([
+        {
+          parceria_id: parceria.id,
+          coluna: 'Parceria Ativa',
+          corretor_id: corretorId,
+        },
+        {
+          parceria_id: parceria.id,
+          coluna: 'Parceria Ativa',
+          corretor_id: parceiroId,
+        },
+      ])
 
       router.refresh()
       onClose()
-    } catch (err: any) {
-      setError(err.message || 'Erro ao enviar proposta.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao enviar proposta.')
     } finally {
       setLoading(false)
     }

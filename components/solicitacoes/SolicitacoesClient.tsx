@@ -52,8 +52,16 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
   async function handleDeletar(id: string) {
     if (!confirm('Deseja realmente excluir esta solicitacao?')) return
     setDeletandoId(id)
-    await supabase.from('solicitacoes').delete().eq('id', id)
+    const { error } = await supabase
+      .from('solicitacoes')
+      .delete()
+      .eq('id', id)
+      .eq('corretor_id', corretorId)
     setDeletandoId(null)
+    if (error) {
+      alert('Erro ao excluir solicitação: ' + error.message)
+      return
+    }
     router.refresh()
   }
 

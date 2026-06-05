@@ -275,7 +275,7 @@ export default function CRMClient({ negociacoes, corretorId }: CRMClientProps) {
           onClose={() => setCardSelecionado(null)}
         />
       )}
-      {showAddCard && <ModalAddCard onClose={() => setShowAddCard(false)} />}
+      {showAddCard && <ModalAddCard corretorId={corretorId} onClose={() => setShowAddCard(false)} />}
     </div>
   )
 }
