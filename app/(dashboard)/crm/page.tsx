@@ -1,8 +1,8 @@
-'use server'
-
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import CRMClient from '@/components/crm/CRMClient'
+
+export const dynamic = 'force-dynamic'
 
 export default async function CRMPage() {
   const supabase = await createServerSupabaseClient()
@@ -27,6 +27,7 @@ export default async function CRMPage() {
       )
     `
     )
+    .eq('corretor_id', user.id)
     .order('updated_at', { ascending: false })
 
   return <CRMClient negociacoes={negociacoes || []} corretorId={user.id} />

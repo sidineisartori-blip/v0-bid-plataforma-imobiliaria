@@ -116,11 +116,11 @@ export default function AdminPainelPage() {
 
     // Calcula metricas
     const assinaturasPagas = (assinaturasData || []).filter(
-      (a: any) => a.status === 'ativa' && a.plano !== 'free'
+      (a: Assinatura) => a.status === 'ativa' && a.plano !== 'free'
     ).length
     const mrrTotal = (assinaturasData || [])
-      .filter((a: any) => a.status === 'ativa')
-      .reduce((acc: number, a: any) => acc + (a.valor_mensal || 0), 0)
+      .filter((a: Assinatura) => a.status === 'ativa')
+      .reduce((acc: number, a: Assinatura) => acc + (a.valor_mensal || 0), 0)
 
     setMetricas({
       totalCorretores: totalCorretores || 0,

@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
-export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import ChatClient from '@/components/chat/ChatClient'
+import type { ChatNegociacao } from '@/types/bid'
+
+export const dynamic = 'force-dynamic'
 
 export default async function ChatPage() {
   const supabase = await createClient()
@@ -10,6 +12,7 @@ export default async function ChatPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // Filtra negociações onde o corretor é proponente ou receptor
   const { data: negociacoes } = await supabase
     .from('negociacoes')
     .select(`
@@ -25,6 +28,7 @@ export default async function ChatPage() {
         receptor:corretores!parcerias_corretor_receptor_id_fkey(id, full_name, avatar_url)
       )
     `)
+    .eq('corretor_id', user.id)
     .order('updated_at', { ascending: false })
 
   const negIds = negociacoes?.map((n) => n.id) || []
@@ -40,7 +44,7 @@ export default async function ChatPage() {
 
   return (
     <ChatClient
-      negociacoes={(negociacoes as any[]) || []}
+      negociacoes={(negociacoes as ChatNegociacao[]) || []}
       naoLidas={naoLidas || []}
       corretorId={user.id}
     />
