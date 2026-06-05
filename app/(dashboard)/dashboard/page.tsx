@@ -4,6 +4,8 @@ import DashboardClient from '@/components/dashboard/DashboardClient'
 
 export const dynamic = 'force-dynamic'
 
+import type { Match } from '@/types/bid'
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const {
@@ -36,7 +38,7 @@ export default async function DashboardPage() {
   const imoveisIds = (imoveis || []).map((i) => i.id)
   const solicitacoesIds = (solicitacoes || []).map((s) => s.id)
   
-  let matches: typeof imoveis extends Array<infer T> ? Array<{ imovel: T | null; solicitacao: unknown; [key: string]: unknown }> : never[] = []
+  let matches: Match[] = []
   
   if (imoveisIds.length > 0 || solicitacoesIds.length > 0) {
     // Busca matches onde o imovel OU a solicitacao pertencem ao corretor
@@ -47,14 +49,19 @@ export default async function DashboardPage() {
     const { data: matchesData } = await supabase
       .from('matches')
       .select(
-        '*, imovel:imoveis(titulo,bairro,cidade,valor), solicitacao:solicitacoes(cliente_nome,cidade)'
+        'id, imovel_id, solicitacao_id, score, tipo, status, created_at, imovel:imoveis(titulo,bairro,cidade,valor), solicitacao:solicitacoes(cliente_nome,cidade)'
       )
       .eq('status', 'pendente')
       .or(matchFilters.join(','))
       .order('created_at', { ascending: false })
       .limit(50)
     
-    matches = matchesData || []
+    // Transforma arrays de join em objetos únicos e converte para o tipo Match
+    matches = (matchesData || []).map((m) => ({
+      ...m,
+      imovel: Array.isArray(m.imovel) ? m.imovel[0] || null : m.imovel,
+      solicitacao: Array.isArray(m.solicitacao) ? m.solicitacao[0] || null : m.solicitacao,
+    })) as Match[]
   }
 
   return (

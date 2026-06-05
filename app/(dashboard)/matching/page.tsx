@@ -59,7 +59,7 @@ export default function MatchingPage() {
   const [bairro, setBairro] = useState(false)
   const [animal, setAnimal] = useState(false)
 
-  const base  = Object.values(pts).reduce((a, b) => a + b, 0)
+  const base  = Object.values(pts).reduce((a, b) => a + b, 0 as number)
   const bonus = (bairro ? 10 : 0) + (animal ? 10 : 0)
   const max   = 80 + (bairro ? 10 : 0) + (animal ? 10 : 0)
   const total = base + bonus

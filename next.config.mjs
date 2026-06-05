@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   experimental: {
     ppr: false,
   },
@@ -10,7 +7,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'glybcgawwsmztrkrnajx.supabase.co',
+        hostname: process.env.NEXT_PUBLIC_SUPABASE_HOSTNAME || 'glybcgawwsmztrkrnajx.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
     ],

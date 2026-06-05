@@ -25,12 +25,14 @@ const CHECKLIST_ITEMS = [
 interface Negociacao {
   id: string
   coluna: string
-  titulo?: string
-  detalhe?: string
+  titulo?: string | null
+  detalhe?: string | null
+  updated_at?: string
   parceria?: {
     id?: string
     comissao_split?: string
     status?: string
+    dados_liberados?: boolean
     corretor_proponente_id?: string
     corretor_receptor_id?: string
     match?: {
@@ -39,7 +41,7 @@ interface Negociacao {
       imovel?: { titulo?: string; bairro?: string; cidade?: string; valor?: number }
       solicitacao?: { cliente_nome?: string; cidade?: string }
     }
-  }
+  } | null
 }
 
 interface ModalCardProps {

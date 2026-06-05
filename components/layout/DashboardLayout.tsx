@@ -49,8 +49,7 @@ export function DashboardLayout({ children, sidebar, onToggleSidebar }: Dashboar
           overflow: 'hidden',
         }}
       >
-        {/* Exportar o estado para o children através de React Context se necessário */}
-        {typeof children === 'function' ? children({ sidebarAberta, onToggleSidebar: handleToggle }) : children}
+        {children}
       </main>
     </div>
   )
