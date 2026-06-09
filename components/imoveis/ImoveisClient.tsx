@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Imovel, Cidade, ImovelStatus } from '@/types/bid'
@@ -41,7 +41,19 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   const [filtroStatus, setFiltroStatus] = useState<ImovelStatus | ''>('')
   const [filtroCidade, setFiltroCidade] = useState('')
   const [pagina, setPagina] = useState(1)
+  const [view, setView] = useState<'lista' | 'grade'>('lista')
   const PAGE_SIZE = 10
+
+  // Carrega preferencia de visualizacao do localStorage
+  useEffect(() => {
+    const salvo = localStorage.getItem('bid_imoveis_view')
+    if (salvo === 'grade' || salvo === 'lista') setView(salvo)
+  }, [])
+
+  function alterarView(novo: 'lista' | 'grade') {
+    setView(novo)
+    localStorage.setItem('bid_imoveis_view', novo)
+  }
 
   const cidades_unicas = useMemo(
     () => [...new Set(imoveis.map((i) => i.cidade))].sort(),
@@ -162,6 +174,43 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+
+            {/* Toggle Grade / Lista */}
+            <div style={{ display: 'flex', border: '1px solid #232324', borderRadius: '2px', overflow: 'hidden' }}>
+              <button
+                onClick={() => alterarView('grade')}
+                title="Visualização em grade"
+                aria-label="Visualização em grade"
+                style={{
+                  background: view === 'grade' ? 'rgba(201,168,76,0.12)' : '#181819',
+                  border: 'none',
+                  color: view === 'grade' ? '#C9A84C' : '#9B9690',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  padding: '10px 14px',
+                  transition: 'color 0.15s, background-color 0.15s',
+                }}
+              >
+                ⊞
+              </button>
+              <button
+                onClick={() => alterarView('lista')}
+                title="Visualização em lista"
+                aria-label="Visualização em lista"
+                style={{
+                  background: view === 'lista' ? 'rgba(201,168,76,0.12)' : '#181819',
+                  border: 'none',
+                  borderLeft: '1px solid #232324',
+                  color: view === 'lista' ? '#C9A84C' : '#9B9690',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  padding: '10px 14px',
+                  transition: 'color 0.15s, background-color 0.15s',
+                }}
+              >
+                ☰
+              </button>
+            </div>
           </div>
           <button
             onClick={abrirNovo}
@@ -212,7 +261,118 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           </div>
         </div>
 
-        {/* Lista */}
+        {/* Empty state */}
+        {imoveisFiltrados.length === 0 && (
+          <div
+            style={{
+              backgroundColor: '#181819',
+              border: '1px solid rgba(201,168,76,0.1)',
+              borderRadius: '2px',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{ padding: '64px', textAlign: 'center' }}>
+              <p style={{ fontSize: '16px', color: '#9B9690' }}>Nenhum imovel encontrado.</p>
+              <p style={{ fontSize: '14px', color: '#2E2E30', marginTop: '10px' }}>
+                Clique em &ldquo;+ Cadastrar Imovel&rdquo; para adicionar.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Modo Grade */}
+        {imoveisFiltrados.length > 0 && view === 'grade' && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '16px',
+            }}
+          >
+            {imoveisVisiveis.map((imovel: Imovel) => {
+              const sc = STATUS_COLORS[imovel.status as ImovelStatus]
+              const temImagem = Array.isArray(imovel.image_urls) && imovel.image_urls.length > 0
+              return (
+                <div
+                  key={imovel.id}
+                  style={{
+                    backgroundColor: '#181819',
+                    border: '1px solid rgba(201,168,76,0.1)',
+                    borderRadius: '2px',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                    e.currentTarget.style.borderColor = 'rgba(201,168,76,0.3)'
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'
+                  }}
+                  onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                    e.currentTarget.style.borderColor = 'rgba(201,168,76,0.1)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
+                >
+                  {/* Thumbnail */}
+                  <div style={{ position: 'relative', height: '160px', backgroundColor: '#232324', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {temImagem ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imovel.image_urls[0] || "/placeholder.svg"}
+                        alt={imovel.titulo}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '48px' }} aria-hidden="true">{getImovelEmoji(imovel.tipo_imovel)}</span>
+                    )}
+                    <span style={{
+                      position: 'absolute', top: '10px', right: '10px',
+                      fontSize: '12px', padding: '4px 10px', borderRadius: '2px',
+                      backgroundColor: sc.bg, color: sc.text,
+                    }}>
+                      {STATUS_LABELS[imovel.status as ImovelStatus]}
+                    </span>
+                  </div>
+
+                  {/* Conteúdo */}
+                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <p style={{ fontSize: '16px', color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {imovel.titulo}
+                    </p>
+                    <p style={{ fontSize: '13px', color: '#9B9690' }}>
+                      {[imovel.cidade, imovel.bairro].filter(Boolean).join(' · ') || '—'}
+                    </p>
+                    <p style={{ fontSize: '18px', color: '#C9A84C', marginTop: '6px' }}>
+                      {formatCurrency(imovel.valor)}
+                    </p>
+
+                    {/* Botões de ação */}
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '12px' }}>
+                      <button
+                        title="Editar"
+                        style={btnIconStyle}
+                        onClick={() => abrirEdicao(imovel)}
+                      >
+                        ✏
+                      </button>
+                      <button
+                        title="Excluir"
+                        style={{ ...btnIconStyle, color: deletandoId === imovel.id ? '#E05C5C' : '#9B9690' }}
+                        disabled={deletandoId === imovel.id}
+                        onClick={() => handleDeletar(imovel.id)}
+                      >
+                        {deletandoId === imovel.id ? '...' : '✕'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Modo Lista */}
+        {imoveisFiltrados.length > 0 && view === 'lista' && (
         <div
           style={{
             backgroundColor: '#181819',
@@ -221,14 +381,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             overflow: 'hidden',
           }}
         >
-          {imoveisFiltrados.length === 0 ? (
-            <div style={{ padding: '64px', textAlign: 'center' }}>
-              <p style={{ fontSize: '16px', color: '#9B9690' }}>Nenhum imovel encontrado.</p>
-              <p style={{ fontSize: '14px', color: '#2E2E30', marginTop: '10px' }}>
-                Clique em &ldquo;+ Cadastrar Imovel&rdquo; para adicionar.
-              </p>
-            </div>
-          ) : (
+          {
             imoveisVisiveis.map((imovel: Imovel, i: number) => {
               const sc = STATUS_COLORS[imovel.status as ImovelStatus]
               return (

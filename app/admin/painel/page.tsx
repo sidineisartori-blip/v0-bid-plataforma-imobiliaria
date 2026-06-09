@@ -50,6 +50,23 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('pt-BR')
 }
 
+function getIniciais(nome: string): string {
+  return nome
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((n) => n[0] || '')
+    .join('')
+    .toUpperCase()
+}
+
+const CORES_AVATAR_PLANO: Record<string, string> = {
+  free: '#9B9690',
+  pro: '#5C9BE0',
+  premium: '#C9A84C',
+  enterprise: '#5CB88A',
+}
+
 export default function AdminPainelPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -61,6 +78,16 @@ export default function AdminPainelPage() {
   const [atualizando, setAtualizando] = useState<string | null>(null)
   const [busca, setBusca] = useState('')
   const [filtroPlano, setFiltroPlano] = useState<string>('todos')
+  const [linhaHover, setLinhaHover] = useState<string | null>(null)
+  const [telaEstreita, setTelaEstreita] = useState(false)
+
+  // Detecta viewport < 1200px para ocultar coluna CRECI
+  useEffect(() => {
+    const checar = () => setTelaEstreita(window.innerWidth < 1200)
+    checar()
+    window.addEventListener('resize', checar)
+    return () => window.removeEventListener('resize', checar)
+  }, [])
 
   // Metricas
   const [metricas, setMetricas] = useState({
@@ -357,6 +384,9 @@ export default function AdminPainelPage() {
         <div style={{ borderBottom: '1px solid #232324', marginBottom: '32px', display: 'flex' }}>
           {(['dashboard', 'corretores', 'planos', 'financeiro'] as Aba[]).map((id) => (
             <button key={id} style={btnAba(id)} onClick={() => setAba(id)}>
+              {aba === id && (
+                <span style={{ color: '#C9A84C', fontSize: '6px', marginRight: '8px', verticalAlign: 'middle', display: 'inline-block' }} aria-hidden="true">●</span>
+              )}
               {id === 'dashboard' && 'Dashboard'}
               {id === 'corretores' && 'Corretores'}
               {id === 'planos' && 'Gerenciar Planos'}
@@ -435,14 +465,16 @@ export default function AdminPainelPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 180px 120px 100px 80px 180px',
+                  gridTemplateColumns: telaEstreita ? '1fr 180px 100px 80px 180px' : '1fr 180px 120px 100px 80px 180px',
                   gap: '0',
                   padding: '14px 20px',
                   borderBottom: '1px solid #232324',
                   backgroundColor: '#232324',
                 }}
               >
-                {['Nome', 'E-mail', 'CRECI', 'Status', 'Plano', 'Acoes'].map((h) => (
+                {['Nome', 'E-mail', 'CRECI', 'Status', 'Plano', 'Acoes']
+                  .filter((h) => !(telaEstreita && h === 'CRECI'))
+                  .map((h) => (
                   <span
                     key={h}
                     style={{
@@ -463,13 +495,17 @@ export default function AdminPainelPage() {
                 return (
                   <div
                     key={cor.id}
+                    onMouseEnter={() => setLinhaHover(cor.id)}
+                    onMouseLeave={() => setLinhaHover(null)}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr 180px 120px 100px 80px 180px',
+                      gridTemplateColumns: telaEstreita ? '1fr 180px 100px 80px 180px' : '1fr 180px 120px 100px 80px 180px',
                       gap: '0',
                       padding: '16px 20px',
                       borderBottom: i < corretoresFiltrados.length - 1 ? '1px solid #232324' : 'none',
                       alignItems: 'center',
+                      backgroundColor: linhaHover === cor.id ? '#232324' : 'transparent',
+                      transition: 'background-color 0.1s',
                     }}
                   >
                     <span
@@ -479,9 +515,33 @@ export default function AdminPainelPage() {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
                       }}
                     >
-                      {cor.full_name}
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          backgroundColor: `${CORES_AVATAR_PLANO[cor.plano] || '#9B9690'}26`,
+                          border: `1px solid ${CORES_AVATAR_PLANO[cor.plano] || '#9B9690'}59`,
+                          color: CORES_AVATAR_PLANO[cor.plano] || '#9B9690',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {getIniciais(cor.full_name)}
+                      </span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {cor.full_name}
+                      </span>
                     </span>
                     <span
                       style={{
@@ -494,7 +554,9 @@ export default function AdminPainelPage() {
                     >
                       {cor.email || '—'}
                     </span>
-                    <span style={{ fontSize: '14px', color: '#9B9690' }}>{cor.creci || '—'}</span>
+                    {!telaEstreita && (
+                      <span style={{ fontSize: '14px', color: '#9B9690' }}>{cor.creci || '—'}</span>
+                    )}
                     <span
                       style={{
                         fontSize: '12px',

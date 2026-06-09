@@ -416,10 +416,12 @@ export default function CadastroPage() {
               <button
                 type="submit"
                 disabled={loading || (step === 2 && !aceitouTermos)}
+                onMouseEnter={() => setHoverBotao(true)}
+                onMouseLeave={() => setHoverBotao(false)}
                 style={{
                   flex: 1,
                   padding: '14px',
-                  backgroundColor: '#C9A84C',
+                  backgroundColor: hoverBotao && !(loading || (step === 2 && !aceitouTermos)) ? '#B8942F' : '#C9A84C',
                   color: '#0E0E0F',
                   border: 'none',
                   borderRadius: '2px',
@@ -429,7 +431,7 @@ export default function CadastroPage() {
                   opacity: loading || (step === 2 && !aceitouTermos) ? 0.6 : 1,
                   fontFamily: 'DM Sans, sans-serif',
                   letterSpacing: '0.05em',
-                  transition: 'opacity 0.2s',
+                  transition: 'opacity 0.2s, background-color 0.15s',
                 }}
               >
                 {loading ? 'Criando...' : step === 1 ? 'Proximo' : 'Criar Conta'}

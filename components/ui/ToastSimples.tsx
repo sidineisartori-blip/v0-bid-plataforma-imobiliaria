@@ -39,19 +39,26 @@ export function ToastContainer({ toasts, onRemover }: Props) {
 
 function ToastItem({ toast, onRemover }: { key?: React.Key; toast: ToastData; onRemover: (id: string) => void }) {
   const [saindo, setSaindo] = useState(false)
+  const [entrou, setEntrou] = useState(false)
   const c = CORES[toast.tipo]
+  const DURACAO = 3500
 
   useEffect(() => {
+    // Dispara a animacao de entrada apos montar
+    const entrada = requestAnimationFrame(() => setEntrou(true))
     const timer = setTimeout(() => {
       setSaindo(true)
-      setTimeout(() => onRemover(toast.id), 300)
-    }, 3500)
-    return () => clearTimeout(timer)
+      setTimeout(() => onRemover(toast.id), 250)
+    }, DURACAO)
+    return () => {
+      cancelAnimationFrame(entrada)
+      clearTimeout(timer)
+    }
   }, [toast.id, onRemover])
 
   return (
     <div
-      onClick={() => { setSaindo(true); setTimeout(() => onRemover(toast.id), 300) }}
+      onClick={() => { setSaindo(true); setTimeout(() => onRemover(toast.id), 250) }}
       style={{
         background: '#181819',
         border: `1px solid ${c.borda}`,
@@ -65,9 +72,17 @@ function ToastItem({ toast, onRemover }: { key?: React.Key; toast: ToastData; on
         maxWidth: 360,
         cursor: 'pointer',
         pointerEvents: 'all',
+        position: 'relative',
+        overflow: 'hidden',
         opacity: saindo ? 0 : 1,
-        transform: saindo ? 'translateX(20px)' : 'translateX(0)',
-        transition: 'opacity 0.3s, transform 0.3s',
+        transform: saindo
+          ? 'translateX(110%)'
+          : entrou
+          ? 'translateX(0)'
+          : 'translateX(100%)',
+        transition: saindo
+          ? 'opacity 0.2s, transform 0.2s ease'
+          : 'opacity 0.25s, transform 0.25s ease',
         boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
       }}
     >
@@ -85,6 +100,20 @@ function ToastItem({ toast, onRemover }: { key?: React.Key; toast: ToastData; on
           <p style={{ fontSize: 12, color: '#9B9690', lineHeight: 1.4 }}>{toast.mensagem}</p>
         )}
       </div>
+      {/* Barra de progresso */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          bottom: 0,
+          height: 3,
+          width: '100%',
+          background: c.cor,
+          transformOrigin: 'left',
+          animation: `bid-toast-progress ${DURACAO}ms linear forwards`,
+        }}
+      />
+      <style>{'@keyframes bid-toast-progress { from { transform: scaleX(1) } to { transform: scaleX(0) } }'}</style>
     </div>
   )
 }
@@ -98,7 +127,11 @@ export function useToastSimples(): [ToastData[], AddToast, (id: string) => void]
 
   const add: AddToast = (tipo, titulo, mensagem) => {
     const id = String(++contadorId)
-    setToasts((prev: ToastData[]) => [...prev, { id, tipo, titulo, mensagem }])
+    setToasts((prev: ToastData[]) => {
+      const novos = [...prev, { id, tipo, titulo, mensagem }]
+      // Maximo de 3 toasts: remove o(s) mais antigo(s)
+      return novos.slice(-3)
+    })
   }
 
   const remover = (id: string) => setToasts((prev: ToastData[]) => prev.filter((t: ToastData) => t.id !== id))
