@@ -58,6 +58,7 @@ export default function AdminPainelPage() {
   const [corretores, setCorretores] = useState<Corretor[]>([])
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
   const [loading, setLoading] = useState(true)
+  const [erroConexao, setErroConexao] = useState<string | null>(null)
   const [atualizando, setAtualizando] = useState<string | null>(null)
   const [busca, setBusca] = useState('')
   const [filtroPlano, setFiltroPlano] = useState<string>('todos')
@@ -91,43 +92,47 @@ export default function AdminPainelPage() {
 
   async function carregarDados() {
     setLoading(true)
+    setErroConexao(null)
 
-    const [
-      { data: corretoresData, count: totalCorretores },
-      { data: assinaturasData },
-      { count: corretoresAtivos },
-    ] = await Promise.all([
-      supabase
-        .from('corretores')
-        .select('id, full_name, email, creci, creci_status, plano, nota_media, created_at, phone', { count: 'exact' })
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('assinaturas')
-        .select('*, corretor:corretores(full_name, email)')
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('corretores')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true),
-    ])
+    try {
+      const [
+        { data: corretoresData, count: totalCorretores },
+        { data: assinaturasData },
+        { count: corretoresAtivos },
+      ] = await Promise.all([
+        supabase
+          .from('corretores')
+          .select('id, full_name, email, creci, creci_status, plano, nota_media, created_at, phone', { count: 'exact' })
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('assinaturas')
+          .select('*, corretor:corretores(full_name, email)')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('corretores')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true),
+      ])
 
-    setCorretores((corretoresData as Corretor[]) || [])
-    setAssinaturas((assinaturasData as Assinatura[]) || [])
+      setCorretores((corretoresData as Corretor[]) || [])
+      setAssinaturas((assinaturasData as Assinatura[]) || [])
 
-    // Calcula metricas
-    const assinaturasPagas = (assinaturasData || []).filter(
-      (a: Assinatura) => a.status === 'ativa' && a.plano !== 'free'
-    ).length
-    const mrrTotal = (assinaturasData || [])
-      .filter((a: Assinatura) => a.status === 'ativa')
-      .reduce((acc: number, a: Assinatura) => acc + (a.valor_mensal || 0), 0)
+      const assinaturasPagas = (assinaturasData || []).filter(
+        (a: Assinatura) => a.status === 'ativa' && a.plano !== 'free'
+      ).length
+      const mrrTotal = (assinaturasData || [])
+        .filter((a: Assinatura) => a.status === 'ativa')
+        .reduce((acc: number, a: Assinatura) => acc + (a.valor_mensal || 0), 0)
 
-    setMetricas({
-      totalCorretores: totalCorretores || 0,
-      corretoresAtivos: corretoresAtivos || 0,
-      assinaturasPagas,
-      mrrTotal,
-    })
+      setMetricas({
+        totalCorretores: totalCorretores || 0,
+        corretoresAtivos: corretoresAtivos || 0,
+        assinaturasPagas,
+        mrrTotal,
+      })
+    } catch {
+      setErroConexao('Falha ao conectar com o banco de dados. Verifique se as variáveis de ambiente do Supabase estão configuradas no Vercel.')
+    }
 
     setLoading(false)
   }
@@ -364,6 +369,39 @@ export default function AdminPainelPage() {
             </button>
           ))}
         </div>
+
+        {/* Banner de erro de conexão */}
+        {erroConexao && (
+          <div style={{
+            backgroundColor: 'rgba(224,92,92,0.1)',
+            border: '1px solid rgba(224,92,92,0.3)',
+            borderRadius: '2px',
+            padding: '16px 20px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+          }}>
+            <p style={{ fontSize: '15px', color: '#E05C5C', margin: 0 }}>{erroConexao}</p>
+            <button
+              onClick={() => carregarDados()}
+              style={{
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(224,92,92,0.4)',
+                color: '#E05C5C',
+                borderRadius: '2px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
 
         {/* Dashboard */}
         {aba === 'dashboard' && (
