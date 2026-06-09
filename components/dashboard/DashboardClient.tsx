@@ -247,26 +247,11 @@ export default function DashboardClient({
         {/* Meus Imóveis */}
         <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px', padding: '24px 28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-<<<<<<< HEAD
-            <p style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', fontWeight: 600, color: '#F0EDE6' }}>
-              Meus Imóveis
-            </p>
-            <Link href="/imoveis" style={{ fontSize: '14px', color: '#C9A84C', textDecoration: 'none' }}>
-              Ver todos &rarr;
-            </Link>
-=======
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', fontWeight: 600, color: '#F0EDE6' }}>Meus Imóveis</p>
             <Link href="/imoveis" style={{ fontSize: '14px', color: '#C9A84C', textDecoration: 'none' }}>Ver todos →</Link>
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
           </div>
           {imoveis.length === 0 ? (
-<<<<<<< HEAD
-              <p style={{ fontSize: '15px', color: '#9B9690', textAlign: 'center', padding: '32px 0' }}>
-              Nenhum imóvel cadastrado
-            </p>
-=======
             <p style={{ fontSize: '14px', color: '#9B9690', textAlign: 'center', padding: '28px 0' }}>Nenhum imóvel cadastrado</p>
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {imoveis.slice(0, 4).map((imovel) => {

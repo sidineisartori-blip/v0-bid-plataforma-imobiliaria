@@ -159,7 +159,7 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
             </select>
           </Field>
           <Field label="Status">
-            <select value={status} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setStatus(e.target.value)} style={INPUT}>
+            <select value={status} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setStatus(e.target.value as 'ativo' | 'aguardando_assinatura' | 'rascunho' | 'encerrado' | 'cancelado')} style={INPUT}>
               <option value="rascunho">Rascunho</option>
               <option value="aguardando_assinatura">Ag. Assinatura</option>
               <option value="ativo">Ativo</option>

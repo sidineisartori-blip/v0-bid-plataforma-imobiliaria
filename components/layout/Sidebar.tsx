@@ -1,10 +1,6 @@
 'use client'
 
 import React from 'react'
-<<<<<<< HEAD
-import Link from 'next/link'
-=======
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -19,38 +15,22 @@ interface SidebarProps {
   chatNaoLidos: number
   notifsNaoLidas?: number
   planoAtual?: string
-<<<<<<< HEAD
-=======
   erpAlertas?: number
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
 }
 
 const navigationGroups = [
   {
     title: 'PRINCIPAL',
     items: [
-<<<<<<< HEAD
-      { id: 'dashboard',   label: 'Dashboard',   icon: '⊞' },
-      { id: 'matches',     label: 'Matches',      icon: '◎', badge: 'matchesPendentes' },
-      { id: 'crm',         label: 'CRM Kanban',   icon: '⊡' },
-      { id: 'chat',        label: 'Chat',         icon: '◉', badge: 'chatNaoLidos' },
-=======
       { id: 'dashboard',    label: 'Dashboard',         icon: '⊞' },
       { id: 'matches',      label: 'Matches',            icon: '◎', badge: 'matchesPendentes' },
       { id: 'crm',          label: 'CRM Kanban',         icon: '⊡' },
       { id: 'chat',         label: 'Chat',               icon: '◉', badge: 'chatNaoLidos' },
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
     ],
   },
   {
     title: 'CAPTAÇÃO',
     items: [
-<<<<<<< HEAD
-      { id: 'imoveis',     label: 'Meus Imóveis',      icon: '⊟' },
-      { id: 'solicitacoes',label: 'Solicitações',       icon: '◧' },
-      { id: 'hub',         label: 'Hub de Publicação',  icon: '◈' },
-      { id: 'site',        label: 'Meu Site',           icon: '◻' },
-=======
       { id: 'imoveis',      label: 'Meus Imóveis',       icon: '⊟' },
       { id: 'solicitacoes', label: 'Solicitações',        icon: '◧' },
       { id: 'hub',          label: 'Hub de Publicação',   icon: '◈' },
@@ -61,37 +41,21 @@ const navigationGroups = [
     title: 'FINANCEIRO',
     items: [
       { id: 'erp',          label: 'ERP Imobiliário',     icon: '⊞', badge: 'erpAlertas' },
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
     ],
   },
   {
     title: 'PLATAFORMA',
     items: [
-<<<<<<< HEAD
-      { id: 'avaliacoes',    label: 'Avaliações',        icon: '◇' },
-      { id: 'plano',         label: 'Meu Plano',         icon: '◈', badge: 'plano' },
-      { id: 'credenciamento',label: 'Credenciamento',    icon: '◆' },
-      { id: 'matching',      label: 'Motor de Matching', icon: '⊛' },
-      { id: 'notificacoes',  label: 'Notificações',      icon: '◎', badge: 'notifsNaoLidas' },
-=======
       { id: 'avaliacoes',     label: 'Avaliações',         icon: '◇' },
       { id: 'notificacoes',   label: 'Notificações',       icon: '◎', badge: 'notifsNaoLidas' },
       { id: 'credenciamento', label: 'Credenciamento',     icon: '◆' },
       { id: 'matching',       label: 'Motor de Matching',  icon: '⊛' },
       { id: 'plano',          label: 'Meu Plano',          icon: '◈', badge: 'plano' },
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
     ],
   },
   {
     title: 'ADMIN',
     items: [{ id: 'admin', label: 'Painel Admin', icon: '◉' }],
-<<<<<<< HEAD
-  },
-  {
-    title: 'ERP',
-    items: [{ id: 'erp', label: 'ERP Imobiliária', icon: '⊞', badge: 'novo' }],
-=======
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
   },
 ]
 
@@ -105,10 +69,7 @@ export function Sidebar({
   chatNaoLidos,
   notifsNaoLidas = 0,
   planoAtual = 'free',
-<<<<<<< HEAD
-=======
   erpAlertas = 0,
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
 }: SidebarProps) {
   const router = useRouter()
 
@@ -126,25 +87,6 @@ export function Sidebar({
     return null
   }
 
-<<<<<<< HEAD
-  const getBadgeValue = (badge?: string) => {
-    if (!badge) return null
-    if (badge === 'matchesPendentes') return matchesPendentes || null
-    if (badge === 'chatNaoLidos') return chatNaoLidos || null
-    if (badge === 'notifsNaoLidas') return notifsNaoLidas || null
-    if (badge === 'plano') {
-      const planoBadge = getPlanoBadge(planoAtual)
-      return planoBadge ? planoBadge : null
-    }
-    if (badge === 'novo') return 'NOVO'
-    return null
-  }
-
-  const getBadgeColor = (badge?: string) => {
-    if (badge === 'plano') return 'bg-amber-600 text-white'
-    if (badge === 'novo') return 'bg-blue-600 text-white'
-    return 'bg-red-600 text-white'
-=======
   const getBadgeValue = (badge?: string): string | number | null => {
     if (!badge) return null
     if (badge === 'matchesPendentes') return matchesPendentes || null
@@ -162,7 +104,6 @@ export function Sidebar({
     if (badge === 'plano')      return { background: 'rgba(201,168,76,0.2)', color: '#C9A84C' }
     if (badge === 'erpAlertas') return { background: 'rgba(224,92,92,0.15)', color: '#E05C5C' }
     return { background: '#E05C5C', color: '#fff' }
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
   }
 
   const iniciais = corretorNome
@@ -179,11 +120,7 @@ export function Sidebar({
         <h1 className="font-serif text-[30px] font-bold text-[--color-gold]" style={{ lineHeight: 1 }}>
           BID
         </h1>
-<<<<<<< HEAD
-        <p className="text-[11px] uppercase tracking-widest text-[--color-muted] mt-2">
-=======
         <p className="text-[10px] uppercase tracking-widest text-[--color-muted] mt-1">
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
           Plataforma Imobiliária
         </p>
       </div>
@@ -253,22 +190,6 @@ export function Sidebar({
         <button
           onClick={handleLogout}
           style={{
-<<<<<<< HEAD
-            width: '100%',
-            background: 'none',
-            border: 'none',
-            borderTop: '1px solid rgba(201,168,76,0.08)',
-            padding: '10px 14px',
-            color: '#9B9690',
-            fontSize: 12,
-            cursor: 'pointer',
-            textAlign: 'left',
-            marginTop: 6,
-            letterSpacing: '0.02em',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#E05C5C')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '#9B9690')}
-=======
             width: '100%', background: 'none', border: 'none',
             borderTop: '1px solid rgba(255,255,255,0.04)',
             padding: '8px 10px', color: '#9B9690', fontSize: 12,
@@ -277,7 +198,6 @@ export function Sidebar({
           }}
           onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => (e.currentTarget.style.color = '#E05C5C')}
           onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => (e.currentTarget.style.color = '#9B9690')}
->>>>>>> b88ca3fdf00752f153a0ecf1d7e74a7ed25d5d7a
         >
           ⎋ Sair da conta
         </button>
