@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, ReactNode } from 'react'
+import { useState, useEffect, ReactNode } from 'react'
 
 interface DashboardShellProps {
   sidebar: ReactNode
@@ -9,14 +9,26 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ sidebar, children }: DashboardShellProps) {
   const [sidebarAberta, setSidebarAberta] = useState(true)
+  const [sidebarRecolhida, setSidebarRecolhida] = useState(false)
+
+  // Sincroniza a largura reservada com o estado de collapse da Sidebar
+  useEffect(() => {
+    const onCollapse = (e: Event) => {
+      setSidebarRecolhida((e as CustomEvent<boolean>).detail)
+    }
+    window.addEventListener('bid-sidebar-collapse', onCollapse)
+    return () => window.removeEventListener('bid-sidebar-collapse', onCollapse)
+  }, [])
+
+  const larguraSidebar = sidebarAberta ? (sidebarRecolhida ? '64px' : '240px') : '0px'
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#0E0E0F' }}>
       {/* Sidebar com transição */}
       <div
         style={{
-          width: sidebarAberta ? '240px' : '0px',
-          minWidth: sidebarAberta ? '240px' : '0px',
+          width: larguraSidebar,
+          minWidth: larguraSidebar,
           overflow: 'hidden',
           transition: 'width 0.2s ease, min-width 0.2s ease',
           flexShrink: 0,

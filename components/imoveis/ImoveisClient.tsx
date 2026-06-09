@@ -41,18 +41,20 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   const [filtroStatus, setFiltroStatus] = useState<ImovelStatus | ''>('')
   const [filtroCidade, setFiltroCidade] = useState('')
   const [pagina, setPagina] = useState(1)
-  const [view, setView] = useState<'lista' | 'grade'>('lista')
+  const [viewMode, setViewMode] = useState<'lista' | 'grade'>('lista')
   const PAGE_SIZE = 10
 
-  // Carrega preferencia de visualizacao do localStorage
+  // Restaura preferencia de visualizacao
   useEffect(() => {
-    const salvo = localStorage.getItem('bid_imoveis_view')
-    if (salvo === 'grade' || salvo === 'lista') setView(salvo)
+    try {
+      const salvo = localStorage.getItem('bid_imoveis_view')
+      if (salvo === 'grade' || salvo === 'lista') setViewMode(salvo)
+    } catch { /* ignore */ }
   }, [])
 
-  function alterarView(novo: 'lista' | 'grade') {
-    setView(novo)
-    localStorage.setItem('bid_imoveis_view', novo)
+  function mudarView(modo: 'lista' | 'grade') {
+    setViewMode(modo)
+    try { localStorage.setItem('bid_imoveis_view', modo) } catch { /* ignore */ }
   }
 
   const cidades_unicas = useMemo(
@@ -175,42 +177,47 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
               ))}
             </select>
 
-            {/* Toggle Grade / Lista */}
+            {/* Toggle de visualizacao */}
             <div style={{ display: 'flex', border: '1px solid #232324', borderRadius: '2px', overflow: 'hidden' }}>
               <button
-                onClick={() => alterarView('grade')}
-                title="Visualização em grade"
-                aria-label="Visualização em grade"
+                onClick={() => mudarView('grade')}
+                title="Visualizar em grade"
+                aria-label="Visualizar em grade"
+                aria-pressed={viewMode === 'grade'}
                 style={{
-                  background: view === 'grade' ? 'rgba(201,168,76,0.12)' : '#181819',
+                  background: viewMode === 'grade' ? 'rgba(201,168,76,0.15)' : 'transparent',
                   border: 'none',
-                  color: view === 'grade' ? '#C9A84C' : '#9B9690',
+                  color: viewMode === 'grade' ? '#C9A84C' : '#9B9690',
                   cursor: 'pointer',
                   fontSize: '16px',
-                  padding: '10px 14px',
+                  padding: '8px 12px',
+                  lineHeight: 1,
                   transition: 'color 0.15s, background-color 0.15s',
                 }}
               >
                 ⊞
               </button>
               <button
-                onClick={() => alterarView('lista')}
-                title="Visualização em lista"
-                aria-label="Visualização em lista"
+                onClick={() => mudarView('lista')}
+                title="Visualizar em lista"
+                aria-label="Visualizar em lista"
+                aria-pressed={viewMode === 'lista'}
                 style={{
-                  background: view === 'lista' ? 'rgba(201,168,76,0.12)' : '#181819',
+                  background: viewMode === 'lista' ? 'rgba(201,168,76,0.15)' : 'transparent',
                   border: 'none',
                   borderLeft: '1px solid #232324',
-                  color: view === 'lista' ? '#C9A84C' : '#9B9690',
+                  color: viewMode === 'lista' ? '#C9A84C' : '#9B9690',
                   cursor: 'pointer',
                   fontSize: '16px',
-                  padding: '10px 14px',
+                  padding: '8px 12px',
+                  lineHeight: 1,
                   transition: 'color 0.15s, background-color 0.15s',
                 }}
               >
                 ☰
               </button>
             </div>
+          </div>
           </div>
           <button
             onClick={abrirNovo}
@@ -494,8 +501,9 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                 </div>
               )
             })
-          )}
+          }
         </div>
+        )}
 
         {/* Paginação */}
         {totalPaginas > 1 && (
