@@ -98,27 +98,32 @@ export default function CadastroPage() {
       return
     }
     setLoading(true)
-    const { error } = await supabase.auth.signUp({
-      email,
-      password: senha,
-      options: {
-        data: {
-          full_name: nome,
-          phone: whatsapp,
-          creci,
-          estado_creci: estadoCreci,
-          tipo,
-          nome_imobiliaria: nomeImobiliaria,
-          cidade,
-          slug: nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').trim() + '-' + Date.now().toString(36),
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: {
+          data: {
+            full_name: nome,
+            phone: whatsapp,
+            creci,
+            estado_creci: estadoCreci,
+            tipo,
+            nome_imobiliaria: nomeImobiliaria,
+            cidade,
+            slug: nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').trim() + '-' + Date.now().toString(36),
+          },
         },
-      },
-    })
-    if (error) {
-      setErro(traduzirErroAuth(error.message))
+      })
+      if (error) {
+        setErro(traduzirErroAuth(error.message))
+        setLoading(false)
+      } else {
+        router.push(`/cadastro/confirmacao?email=${encodeURIComponent(email)}`)
+      }
+    } catch {
+      setErro('Falha de conexão. Verifique sua internet e tente novamente.')
       setLoading(false)
-    } else {
-      router.push(`/cadastro/confirmacao?email=${encodeURIComponent(email)}`)
     }
   }
 

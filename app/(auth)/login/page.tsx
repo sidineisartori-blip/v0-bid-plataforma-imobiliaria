@@ -24,13 +24,18 @@ function LoginForm() {
     e.preventDefault()
     setErro('')
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
-    if (error) {
-      setErro(traduzirErroAuth(error.message))
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
+      if (error) {
+        setErro(traduzirErroAuth(error.message))
+        setLoading(false)
+      } else {
+        const redirect = searchParams.get('redirect')
+        router.push(redirect && redirect.startsWith('/') ? redirect : '/dashboard')
+      }
+    } catch {
+      setErro('Falha de conexão. Verifique sua internet e tente novamente.')
       setLoading(false)
-    } else {
-      const redirect = searchParams.get('redirect')
-      router.push(redirect && redirect.startsWith('/') ? redirect : '/dashboard')
     }
   }
 
