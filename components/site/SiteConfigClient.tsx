@@ -233,7 +233,7 @@ export default function SiteConfigClient({
                 borderRight: '1px solid #2E2E30',
                 whiteSpace: 'nowrap',
               }}>
-                ${baseUrl.replace('https://','')}/corretor/
+                {baseUrl.replace('https://', '')}/corretor/
               </span>
               <input
                 value={slug}

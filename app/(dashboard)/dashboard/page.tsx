@@ -10,6 +10,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // Buscar IDs de imoveis e solicitacoes do corretor para filtrar matches
   const [
     { data: corretor },
     { data: imoveis },
@@ -43,6 +44,7 @@ export default async function DashboardPage() {
       .eq('status', 'pendente'),
   ])
 
+  // Filtrar matches apenas do corretor autenticado
   const imoveisIds = (imoveis || []).map((i: { id: string }) => i.id)
   const solicitacoesIds = (solicitacoes || []).map((s: { id: string }) => s.id)
 

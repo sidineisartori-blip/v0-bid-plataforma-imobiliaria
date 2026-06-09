@@ -38,7 +38,7 @@ export default async function AvaliacoesPage() {
       notaMedia={corretor?.nota_media || 0}
       totalAvaliacoes={corretor?.total_avaliacoes || 0}
       dealsClosed={corretor?.deals_closed || 0}
-      avaliacoesRecebidas={(avaliacoesRecebidas as Avaliacao[]) || []}
+      avaliacoesRecebidas={(avaliacoesRecebidas as unknown as Avaliacao[]) || []}
       ranking={ranking || []}
     />
   )
