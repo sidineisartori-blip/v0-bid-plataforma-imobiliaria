@@ -1,7 +1,7 @@
 'use client'
 
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -19,6 +19,17 @@ function LoginForm() {
   const [mostrarSenha, setMostrar] = useState(false)
   const [loading, setLoading]     = useState(false)
   const [erro, setErro]           = useState('')
+  const [montado, setMontado]     = useState(false)
+  const [hoverBotao, setHoverBotao] = useState(false)
+
+  useEffect(() => { setMontado(true) }, [])
+
+  const aplicarFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = '#C9A84C'
+  }
+  const removerFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = '#2E2E30'
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,6 +55,7 @@ function LoginForm() {
     fontSize: '16px',
     outline: 'none',
     fontFamily: 'DM Sans, sans-serif',
+    transition: 'border-color 0.15s',
   }
 
   const bannerGreen: React.CSSProperties = {
@@ -103,6 +115,9 @@ function LoginForm() {
           border: '1px solid rgba(201,168,76,0.2)',
           borderRadius: '2px',
           padding: '48px',
+          opacity: montado ? 1 : 0,
+          transform: montado ? 'translateY(0)' : 'translateY(8px)',
+          transition: 'opacity 0.3s ease, transform 0.3s ease',
         }}>
           {/* Banners de sucesso */}
           {cadastroSucesso && (
@@ -141,6 +156,8 @@ function LoginForm() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
+                onFocus={aplicarFocus}
+                onBlur={removerFocus}
                 placeholder="seu@email.com"
                 required
                 style={inputStyle}
@@ -157,6 +174,8 @@ function LoginForm() {
                   type={mostrarSenha ? 'text' : 'password'}
                   value={senha}
                   onChange={e => setSenha(e.target.value)}
+                  onFocus={aplicarFocus}
+                  onBlur={removerFocus}
                   placeholder="********"
                   required
                   style={{ ...inputStyle, paddingRight: '48px' }}
@@ -175,9 +194,11 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
+              onMouseEnter={() => setHoverBotao(true)}
+              onMouseLeave={() => setHoverBotao(false)}
               style={{
                 padding: '14px',
-                backgroundColor: '#C9A84C',
+                backgroundColor: hoverBotao && !loading ? '#B8942F' : '#C9A84C',
                 color: '#0E0E0F',
                 border: 'none',
                 borderRadius: '2px',
@@ -187,10 +208,22 @@ function LoginForm() {
                 opacity: loading ? 0.7 : 1,
                 fontFamily: 'DM Sans, sans-serif',
                 letterSpacing: '0.05em',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'background-color 0.15s',
               }}
             >
+              {loading && (
+                <svg width="18" height="18" viewBox="0 0 24 24" style={{ animation: 'bid-spin 0.7s linear infinite' }}>
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="#0E0E0F" strokeOpacity="0.25" strokeWidth="3" />
+                  <path d="M12 3a9 9 0 0 1 9 9" fill="none" stroke="#0E0E0F" strokeWidth="3" strokeLinecap="round" />
+                </svg>
+              )}
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
+            <style>{'@keyframes bid-spin { to { transform: rotate(360deg) } }'}</style>
           </form>
 
           <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid #232324', display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>

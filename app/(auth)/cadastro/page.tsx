@@ -1,7 +1,7 @@
 'use client'
 
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -45,6 +45,40 @@ export default function CadastroPage() {
   const [cidade, setCidade]             = useState('')
   const [aceitouTermos, setAceitou]     = useState(false)
 
+  // Animacao de transicao entre etapas e hover do botao
+  const [conteudoVisivel, setConteudoVisivel] = useState(true)
+  const [hoverBotao, setHoverBotao] = useState(false)
+
+  useEffect(() => {
+    setConteudoVisivel(false)
+    const t = setTimeout(() => setConteudoVisivel(true), 20)
+    return () => clearTimeout(t)
+  }, [step])
+
+  const aplicarFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.currentTarget.style.borderColor = '#C9A84C'
+  }
+  const removerFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.currentTarget.style.borderColor = '#2E2E30'
+  }
+
+  // Forca de senha: 0=vazia, 1=fraca, 2=media, 3=forte
+  const calcularForcaSenha = (s: string): number => {
+    if (s.length === 0) return 0
+    const temNumero = /\d/.test(s)
+    const temLetra = /[a-zA-Z]/.test(s)
+    if (s.length >= 10 && temLetra && temNumero) return 3
+    if (s.length >= 6) return 2
+    if (s.length < 6) return 1
+    return 1
+  }
+  const forcaSenha = calcularForcaSenha(senha)
+  const forcaConfig = [
+    { cor: '#E05C5C', label: 'Senha fraca', segmentos: 1 },
+    { cor: '#C9A84C', label: 'Senha media', segmentos: 2 },
+    { cor: '#5CB88A', label: 'Senha forte', segmentos: 3 },
+  ]
+
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '14px 16px',
@@ -55,6 +89,7 @@ export default function CadastroPage() {
     fontSize: '16px',
     outline: 'none',
     fontFamily: 'DM Sans, sans-serif',
+    transition: 'border-color 0.15s',
   }
 
   const labelStyle: React.CSSProperties = {
@@ -201,16 +236,21 @@ export default function CadastroPage() {
             onSubmit={step === 1 ? handleStep1 : handleCadastro}
             style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
           >
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: '20px',
+              opacity: conteudoVisivel ? 1 : 0,
+              transition: 'opacity 0.2s ease',
+            }}>
             {step === 1 ? (
               <>
                 <div>
                   <label style={labelStyle}>Nome Completo</label>
-                  <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Joao Silva" required style={inputStyle} />
+                  <input type="text" value={nome} onChange={e => setNome(e.target.value)} onFocus={aplicarFocus} onBlur={removerFocus} placeholder="Joao Silva" required style={inputStyle} />
                 </div>
 
                 <div>
                   <label style={labelStyle}>E-mail</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" required style={inputStyle} />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} onFocus={aplicarFocus} onBlur={removerFocus} placeholder="seu@email.com" required style={inputStyle} />
                 </div>
 
                 {/* WhatsApp com mascara (FIX 7) */}
@@ -220,6 +260,8 @@ export default function CadastroPage() {
                     type="tel"
                     value={whatsapp}
                     onChange={e => setWhatsapp(formatarWhatsApp(e.target.value))}
+                    onFocus={aplicarFocus}
+                    onBlur={removerFocus}
                     placeholder="(43) 98404-0576"
                     inputMode="numeric"
                     required
@@ -235,6 +277,8 @@ export default function CadastroPage() {
                       type={mostrarSenha ? 'text' : 'password'}
                       value={senha}
                       onChange={e => setSenha(e.target.value)}
+                      onFocus={aplicarFocus}
+                      onBlur={removerFocus}
                       placeholder="********"
                       required
                       style={{ ...inputStyle, paddingRight: '48px' }}
@@ -244,6 +288,28 @@ export default function CadastroPage() {
                       {mostrarSenha ? '○' : '●'}
                     </button>
                   </div>
+                  {/* Indicador de forca da senha */}
+                  {forcaSenha > 0 && (
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {[0, 1, 2].map((i) => (
+                          <div
+                            key={i}
+                            style={{
+                              flex: 1,
+                              height: '3px',
+                              borderRadius: '2px',
+                              backgroundColor: i < forcaConfig[forcaSenha - 1].segmentos ? forcaConfig[forcaSenha - 1].cor : '#2E2E30',
+                              transition: 'background-color 0.2s',
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <p style={{ fontSize: '12px', color: forcaConfig[forcaSenha - 1].cor, marginTop: '6px' }}>
+                        {forcaConfig[forcaSenha - 1].label}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -253,6 +319,8 @@ export default function CadastroPage() {
                       type={mostrarConf ? 'text' : 'password'}
                       value={confirmarSenha}
                       onChange={e => setConfirmar(e.target.value)}
+                      onFocus={aplicarFocus}
+                      onBlur={removerFocus}
                       placeholder="********"
                       required
                       style={{ ...inputStyle, paddingRight: '48px' }}
@@ -268,12 +336,12 @@ export default function CadastroPage() {
               <>
                 <div>
                   <label style={labelStyle}>CRECI</label>
-                  <input type="text" value={creci} onChange={e => setCreci(e.target.value)} placeholder="123456" required style={inputStyle} />
+                  <input type="text" value={creci} onChange={e => setCreci(e.target.value)} onFocus={aplicarFocus} onBlur={removerFocus} placeholder="123456" required style={inputStyle} />
                 </div>
 
                 <div>
                   <label style={labelStyle}>Estado do CRECI</label>
-                  <select value={estadoCreci} onChange={e => setEstadoCreci(e.target.value)} required
+                  <select value={estadoCreci} onChange={e => setEstadoCreci(e.target.value)} onFocus={aplicarFocus} onBlur={removerFocus} required
                     style={{ ...inputStyle, appearance: 'none' as const }}>
                     <option value="">Selecione...</option>
                     {ESTADOS_BR.map(uf => <option key={uf} value={uf}>{uf}</option>)}
@@ -295,13 +363,13 @@ export default function CadastroPage() {
                 {tipo === 'PJ' && (
                   <div>
                     <label style={labelStyle}>Nome da Imobiliaria</label>
-                    <input type="text" value={nomeImobiliaria} onChange={e => setNomeImob(e.target.value)} placeholder="Imobiliaria ABC" style={inputStyle} />
+                    <input type="text" value={nomeImobiliaria} onChange={e => setNomeImob(e.target.value)} onFocus={aplicarFocus} onBlur={removerFocus} placeholder="Imobiliaria ABC" style={inputStyle} />
                   </div>
                 )}
 
                 <div>
                   <label style={labelStyle}>Cidade de Atuacao</label>
-                  <input type="text" value={cidade} onChange={e => setCidade(e.target.value)} placeholder="Jacarezinho" required style={inputStyle} />
+                  <input type="text" value={cidade} onChange={e => setCidade(e.target.value)} onFocus={aplicarFocus} onBlur={removerFocus} placeholder="Jacarezinho" required style={inputStyle} />
                 </div>
 
                 {/* Checkbox de termos (FIX 10) */}
@@ -322,6 +390,7 @@ export default function CadastroPage() {
                 </div>
               </>
             )}
+            </div>
 
             {/* Botoes */}
             <div style={{ display: 'flex', gap: '16px', paddingTop: '12px' }}>
