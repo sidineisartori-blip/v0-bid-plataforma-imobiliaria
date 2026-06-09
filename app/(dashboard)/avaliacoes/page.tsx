@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import AvaliacoesClient from '@/components/avaliacoes/AvaliacoesClient'
+import type { Avaliacao } from '@/types/bid'
 
 export default async function AvaliacoesPage() {
   const supabase = await createClient()
@@ -37,7 +38,7 @@ export default async function AvaliacoesPage() {
       notaMedia={corretor?.nota_media || 0}
       totalAvaliacoes={corretor?.total_avaliacoes || 0}
       dealsClosed={corretor?.deals_closed || 0}
-      avaliacoesRecebidas={(avaliacoesRecebidas as any[]) || []}
+      avaliacoesRecebidas={(avaliacoesRecebidas as Avaliacao[]) || []}
       ranking={ranking || []}
     />
   )

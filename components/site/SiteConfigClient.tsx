@@ -62,11 +62,16 @@ export default function SiteConfigClient({
   const [erro, setErro] = useState('')
   const [abaAtiva, setAbaAtiva] = useState<'config' | 'share' | 'embed'>('config')
 
-  const linkPublico = `https://bid.app.br/corretor/${slug}`
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bid.app.br'
+  const linkPublico = `${baseUrl}/corretor/${slug}`
   const embedCode = `<iframe src="${linkPublico}?embed=true" width="100%" height="600" frameborder="0" style="border-radius:8px;"></iframe>`
 
   async function handleSalvar() {
-    if (!slug.trim()) { setErro('O slug nao pode ser vazio.'); return }
+    if (!slug.trim()) { setErro('O slug não pode ser vazio.'); return }
+    if (!/^[a-z0-9-]{3,50}$/.test(slug)) {
+      setErro('O slug deve ter entre 3 e 50 caracteres e conter apenas letras minúsculas, números e hífens.')
+      return
+    }
     setSalvando(true)
     setErro('')
 
@@ -228,7 +233,7 @@ export default function SiteConfigClient({
                 borderRight: '1px solid #2E2E30',
                 whiteSpace: 'nowrap',
               }}>
-                bid.app.br/corretor/
+                {baseUrl.replace('https://', '')}/corretor/
               </span>
               <input
                 value={slug}

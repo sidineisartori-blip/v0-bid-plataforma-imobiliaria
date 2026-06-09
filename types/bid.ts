@@ -121,3 +121,124 @@ export interface Cidade {
   name: string
   state: string
 }
+
+// Tipos para joins/relações usados nas páginas
+export interface MatchComRelacoes extends Match {
+  imovel?: Pick<Imovel, 'titulo' | 'bairro' | 'cidade' | 'valor'> & {
+    id?: string
+    quartos?: number
+    banheiros?: number
+    vagas?: number
+    tipo_imovel?: string
+    corretor_id?: string
+  }
+  solicitacao?: Pick<Solicitacao, 'cliente_nome' | 'cidade'> & {
+    id?: string
+    bairro_desejado?: string | null
+    valor_min?: number | null
+    valor_max?: number | null
+    quartos?: number | null
+    corretor_id?: string
+  }
+}
+
+export interface Avaliacao {
+  id: string
+  nota_final: number
+  comentario: string | null
+  created_at: string
+  avaliador?: { full_name: string } | null
+}
+
+export interface Parceria {
+  id: string
+  comissao_split: string | null
+  status: string
+  dados_liberados: boolean
+  corretor_proponente_id: string
+  corretor_receptor_id: string
+  match?: {
+    score?: number
+    tipo?: string
+    imovel?: Pick<Imovel, 'titulo' | 'bairro' | 'cidade' | 'valor'>
+    solicitacao?: Pick<Solicitacao, 'cliente_nome' | 'cidade'>
+  } | null
+}
+
+export interface NegociacaoComParceria extends Omit<Negociacao, 'parceria_id'> {
+  titulo?: string | null
+  detalhe?: string | null
+  parceria?: Parceria | null
+}
+
+export interface ChatNegociacao {
+  id: string
+  coluna: string
+  updated_at: string
+  parceria?: {
+    id: string
+    comissao_split: string | null
+    corretor_proponente_id: string
+    corretor_receptor_id: string
+    match?: {
+      imovel?: { titulo?: string; bairro?: string; cidade?: string }
+      solicitacao?: { cliente_nome?: string }
+    } | null
+    proponente?: { id: string; full_name: string; avatar_url: string | null } | null
+    receptor?: { id: string; full_name: string; avatar_url: string | null } | null
+  } | null
+}
+
+export interface Assinatura {
+  id: string
+  corretor_id: string
+  plano: string
+  status: string
+  valor_mensal: number
+  periodo_inicio: string
+  periodo_fim: string | null
+}
+
+export type ContratoStatus = 'rascunho' | 'aguardando_assinatura' | 'ativo' | 'encerrado' | 'cancelado'
+export type ContratoTipo   = 'locacao' | 'venda'
+
+export interface Contrato {
+  id: string
+  corretor_id: string
+  imovel_id: string | null
+  parceria_id: string | null
+  tipo: ContratoTipo
+  status: ContratoStatus
+  cliente_nome: string
+  cliente_cpf_cnpj: string | null
+  cliente_email: string | null
+  cliente_whatsapp: string | null
+  valor_contrato: number
+  valor_comissao: number | null
+  percentual_comissao: number | null
+  forma_pagamento: string | null
+  data_inicio: string | null
+  data_fim: string | null
+  data_assinatura: string | null
+  valor_aluguel: number | null
+  dia_vencimento: number | null
+  indice_reajuste: string | null
+  garantia: string | null
+  observacoes: string | null
+  arquivo_url: string | null
+  created_at: string
+  updated_at: string
+  imovel?: Pick<Imovel, 'titulo' | 'cidade' | 'bairro'> | null
+}
+
+export interface ContratoParcela {
+  id: string
+  contrato_id: string
+  corretor_id: string
+  competencia: string
+  valor: number
+  status: 'aberto' | 'pago' | 'atrasado' | 'isento'
+  data_pagamento: string | null
+  observacao: string | null
+  created_at: string
+}

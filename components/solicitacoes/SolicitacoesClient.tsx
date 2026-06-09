@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Solicitacao, Cidade } from '@/types/bid'
 import { formatCurrency } from '@/lib/format'
+import { exportarCSV, exportarXLS, solicitacoesParaExport } from '@/lib/exportCsv'
+import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
 import ModalSolicitacao from './ModalSolicitacao'
 
 interface SolicitacoesClientProps {
@@ -26,6 +28,7 @@ const btnIconStyle: React.CSSProperties = {
 export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }: SolicitacoesClientProps) {
   const router = useRouter()
   const supabase = createClient()
+  const [toasts, addToast, removerToast] = useToastSimples()
 
   const [modalAberto, setModalAberto] = useState(false)
   const [editando, setEditando] = useState<Solicitacao | null>(null)
@@ -33,6 +36,8 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
   const [matchingId, setMatchingId] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState('')
   const [filtroCidade, setFiltroCidade] = useState('')
+  const [pagina, setPagina] = useState(1)
+  const PAGE_SIZE = 10
 
   const cidades_unicas = useMemo(
     () => [...new Set(solicitacoes.map((s) => s.cidade))].sort(),
@@ -49,11 +54,23 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
     [solicitacoes, filtroStatus, filtroCidade]
   )
 
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / PAGE_SIZE))
+  const paginaAtual  = Math.min(pagina, totalPaginas)
+  const visiveis     = filtradas.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE)
+
   async function handleDeletar(id: string) {
     if (!confirm('Deseja realmente excluir esta solicitacao?')) return
     setDeletandoId(id)
-    await supabase.from('solicitacoes').delete().eq('id', id)
+    const { error } = await supabase
+      .from('solicitacoes')
+      .delete()
+      .eq('id', id)
+      .eq('corretor_id', corretorId)
     setDeletandoId(null)
+    if (error) {
+      alert('Erro ao excluir solicitação: ' + error.message)
+      return
+    }
     router.refresh()
   }
 
@@ -88,19 +105,20 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
 
   return (
     <>
+      <ToastContainer toasts={toasts} onRemover={removerToast} />
       <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <select style={selectStyle} value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
+            <select style={selectStyle} value={filtroStatus} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroStatus(e.target.value); setPagina(1) }}>
               <option value="">Todos os status</option>
               <option value="ativa">Ativa</option>
               <option value="concluida">Concluida</option>
               <option value="cancelada">Cancelada</option>
             </select>
-            <select style={selectStyle} value={filtroCidade} onChange={(e) => setFiltroCidade(e.target.value)}>
+            <select style={selectStyle} value={filtroCidade} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroCidade(e.target.value); setPagina(1) }}>
               <option value="">Todas as cidades</option>
-              {cidades_unicas.map((c) => (
+              {cidades_unicas.map((c: string) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -122,10 +140,22 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
           </button>
         </div>
 
-        {/* Contagem */}
-        <p style={{ fontSize: '12px', color: '#9B9690' }}>
-          {filtradas.length} {filtradas.length === 1 ? 'solicitacao' : 'solicitacoes'}
-        </p>
+        {/* Contagem + Export */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <p style={{ fontSize: '12px', color: '#9B9690' }}>
+            {filtradas.length} {filtradas.length === 1 ? 'solicitação' : 'solicitações'}
+          </p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => exportarCSV(solicitacoesParaExport(filtradas), 'solicitacoes')}
+              style={{ background: 'none', border: '1px solid #2E2E30', borderRadius: 2, padding: '4px 10px', fontSize: 11, color: '#9B9690', cursor: 'pointer' }}>
+              CSV
+            </button>
+            <button onClick={() => exportarXLS(solicitacoesParaExport(filtradas), 'solicitacoes')}
+              style={{ background: 'none', border: '1px solid #2E2E30', borderRadius: 2, padding: '4px 10px', fontSize: 11, color: '#9B9690', cursor: 'pointer' }}>
+              XLS
+            </button>
+          </div>
+        </div>
 
         {/* Lista */}
         <div
@@ -144,7 +174,7 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
               </p>
             </div>
           ) : (
-            filtradas.map((sol, i) => {
+            visiveis.map((sol: Solicitacao, i: number) => {
               const sc = statusColor(sol.status)
               return (
                 <div
@@ -154,11 +184,11 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
                     alignItems: 'center',
                     gap: '16px',
                     padding: '14px 20px',
-                    borderBottom: i < filtradas.length - 1 ? '1px solid #232324' : 'none',
+                    borderBottom: i < visiveis.length - 1 ? '1px solid #232324' : 'none',
                     transition: 'background-color 0.15s',
                   }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
+                  onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
+                  onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
                 >
                   {/* Icone */}
                   <span style={{ fontSize: '20px', flexShrink: 0 }}>&#128269;</span>
@@ -243,6 +273,29 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
             })
           )}
         </div>
+
+        {/* Paginação */}
+        {totalPaginas > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 4 }}>
+            <button
+              onClick={() => setPagina((p: number) => Math.max(1, p - 1))}
+              disabled={paginaAtual === 1}
+              style={{ background: '#181819', border: '1px solid #232324', borderRadius: 2, padding: '6px 14px', fontSize: 13, cursor: paginaAtual === 1 ? 'default' : 'pointer', color: paginaAtual === 1 ? '#2E2E30' : '#9B9690' }}
+            >←</button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                onClick={() => setPagina(n)}
+                style={{ background: n === paginaAtual ? '#C9A84C' : '#181819', border: '1px solid ' + (n === paginaAtual ? '#C9A84C' : '#232324'), borderRadius: 2, padding: '6px 12px', fontSize: 13, color: n === paginaAtual ? '#0F0F10' : '#9B9690', cursor: 'pointer', fontWeight: n === paginaAtual ? 700 : 400 }}
+              >{n}</button>
+            ))}
+            <button
+              onClick={() => setPagina((p: number) => Math.min(totalPaginas, p + 1))}
+              disabled={paginaAtual === totalPaginas}
+              style={{ background: '#181819', border: '1px solid #232324', borderRadius: 2, padding: '6px 14px', fontSize: 13, cursor: paginaAtual === totalPaginas ? 'default' : 'pointer', color: paginaAtual === totalPaginas ? '#2E2E30' : '#9B9690' }}
+            >→</button>
+          </div>
+        )}
       </div>
 
       {modalAberto && (

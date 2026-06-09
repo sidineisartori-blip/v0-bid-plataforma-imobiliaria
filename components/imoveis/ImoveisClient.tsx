@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Imovel, Cidade, ImovelStatus } from '@/types/bid'
 import { formatCurrency, STATUS_LABELS, STATUS_COLORS, getImovelEmoji } from '@/lib/format'
+import { exportarCSV, exportarXLS, imoveisParaExport } from '@/lib/exportCsv'
+import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
 import ModalImovel from './ModalImovel'
 
 interface ImoveisClientProps {
@@ -29,6 +31,7 @@ const btnIconStyle: React.CSSProperties = {
 export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNome = '', corretorCreci = '' }: ImoveisClientProps) {
   const router = useRouter()
   const supabase = createClient()
+  const [toasts, addToast, removerToast] = useToastSimples()
 
   const [modalAberto, setModalAberto] = useState(false)
   const [imovelEditando, setImovelEditando] = useState<Imovel | null>(null)
@@ -37,6 +40,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   const [autorizandoId, setAutorizandoId] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState<ImovelStatus | ''>('')
   const [filtroCidade, setFiltroCidade] = useState('')
+  const [pagina, setPagina] = useState(1)
+  const PAGE_SIZE = 10
 
   const cidades_unicas = useMemo(
     () => [...new Set(imoveis.map((i) => i.cidade))].sort(),
@@ -53,11 +58,21 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
     [imoveis, filtroStatus, filtroCidade]
   )
 
+  const totalPaginas = Math.max(1, Math.ceil(imoveisFiltrados.length / PAGE_SIZE))
+  const paginaAtual  = Math.min(pagina, totalPaginas)
+  const imoveisVisiveis = imoveisFiltrados.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE)
+
   async function handleDeletar(id: string) {
-    if (!confirm('Deseja realmente excluir este imovel?')) return
+    if (!confirm('Deseja realmente excluir este imóvel?')) return
     setDeletandoId(id)
-    await supabase.from('imoveis').delete().eq('id', id)
+    const { error } = await supabase
+      .from('imoveis')
+      .delete()
+      .eq('id', id)
+      .eq('corretor_id', corretorId)
     setDeletandoId(null)
+    if (error) { addToast('erro', 'Erro ao excluir', error.message) }
+    else { addToast('sucesso', 'Imóvel excluído') }
     router.refresh()
   }
 
@@ -120,6 +135,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
 
   return (
     <>
+      <ToastContainer toasts={toasts} onRemover={removerToast} />
       <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Header com filtros e botao */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
@@ -127,7 +143,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             <select
               style={selectStyle}
               value={filtroStatus}
-              onChange={(e) => setFiltroStatus(e.target.value as ImovelStatus | '')}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroStatus(e.target.value as ImovelStatus | ''); setPagina(1) }}
             >
               <option value="">Todos os status</option>
               <option value="ativo">Ativo</option>
@@ -139,10 +155,10 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             <select
               style={selectStyle}
               value={filtroCidade}
-              onChange={(e) => setFiltroCidade(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroCidade(e.target.value); setPagina(1) }}
             >
               <option value="">Todas as cidades</option>
-              {cidades_unicas.map((c) => (
+              {cidades_unicas.map((c: string) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -178,10 +194,23 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           </div>
         )}
 
-        {/* Contagem */}
-        <p style={{ fontSize: '14px', color: '#9B9690' }}>
-          {imoveisFiltrados.length} {imoveisFiltrados.length === 1 ? 'imovel' : 'imoveis'}
-        </p>
+        {/* Contagem + Export */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <p style={{ fontSize: '13px', color: '#9B9690' }}>
+            {imoveisFiltrados.length} {imoveisFiltrados.length === 1 ? 'imóvel' : 'imóveis'}
+            {imoveisFiltrados.length > 0 && ` · Total: ${formatCurrency(imoveisFiltrados.reduce((s: number, i: Imovel) => s + i.valor, 0))}`}
+          </p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => exportarCSV(imoveisParaExport(imoveisFiltrados), 'imoveis')}
+              style={{ background: 'none', border: '1px solid #2E2E30', borderRadius: 2, padding: '4px 10px', fontSize: 11, color: '#9B9690', cursor: 'pointer' }}>
+              CSV
+            </button>
+            <button onClick={() => exportarXLS(imoveisParaExport(imoveisFiltrados), 'imoveis')}
+              style={{ background: 'none', border: '1px solid #2E2E30', borderRadius: 2, padding: '4px 10px', fontSize: 11, color: '#9B9690', cursor: 'pointer' }}>
+              XLS
+            </button>
+          </div>
+        </div>
 
         {/* Lista */}
         <div
@@ -200,8 +229,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
               </p>
             </div>
           ) : (
-            imoveisFiltrados.map((imovel, i) => {
-              const sc = STATUS_COLORS[imovel.status]
+            imoveisVisiveis.map((imovel: Imovel, i: number) => {
+              const sc = STATUS_COLORS[imovel.status as ImovelStatus]
               return (
                 <div
                   key={imovel.id}
@@ -210,11 +239,11 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                     alignItems: 'center',
                     gap: '20px',
                     padding: '18px 24px',
-                    borderBottom: i < imoveisFiltrados.length - 1 ? '1px solid #232324' : 'none',
+                    borderBottom: i < imoveisVisiveis.length - 1 ? '1px solid #232324' : 'none',
                     transition: 'background-color 0.15s',
                   }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
+                  onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
+                  onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
                 >
                   {/* Emoji */}
                   <span style={{ fontSize: '28px', flexShrink: 0 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
@@ -258,7 +287,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                     color: sc.text,
                     flexShrink: 0,
                   }}>
-                    {STATUS_LABELS[imovel.status]}
+                    {STATUS_LABELS[imovel.status as ImovelStatus]}
                   </span>
 
                   {/* Botoes */}
@@ -314,6 +343,43 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             })
           )}
         </div>
+
+        {/* Paginação */}
+        {totalPaginas > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 4 }}>
+            <button
+              onClick={() => setPagina((p: number) => Math.max(1, p - 1))}
+              disabled={paginaAtual === 1}
+              style={{
+                background: '#181819', border: '1px solid #232324', borderRadius: 2,
+                padding: '6px 14px', fontSize: 13, cursor: paginaAtual === 1 ? 'default' : 'pointer',
+                color: paginaAtual === 1 ? '#2E2E30' : '#9B9690',
+              }}
+            >←</button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                onClick={() => setPagina(n)}
+                style={{
+                  background: n === paginaAtual ? '#C9A84C' : '#181819',
+                  border: '1px solid ' + (n === paginaAtual ? '#C9A84C' : '#232324'),
+                  borderRadius: 2, padding: '6px 12px', fontSize: 13,
+                  color: n === paginaAtual ? '#0F0F10' : '#9B9690',
+                  cursor: 'pointer', fontWeight: n === paginaAtual ? 700 : 400,
+                }}
+              >{n}</button>
+            ))}
+            <button
+              onClick={() => setPagina((p: number) => Math.min(totalPaginas, p + 1))}
+              disabled={paginaAtual === totalPaginas}
+              style={{
+                background: '#181819', border: '1px solid #232324', borderRadius: 2,
+                padding: '6px 14px', fontSize: 13, cursor: paginaAtual === totalPaginas ? 'default' : 'pointer',
+                color: paginaAtual === totalPaginas ? '#2E2E30' : '#9B9690',
+              }}
+            >→</button>
+          </div>
+        )}
       </div>
 
       {/* Modal */}

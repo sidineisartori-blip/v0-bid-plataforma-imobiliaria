@@ -59,7 +59,7 @@ export default function MatchingPage() {
   const [bairro, setBairro] = useState(false)
   const [animal, setAnimal] = useState(false)
 
-  const base  = Object.values(pts).reduce((a, b) => a + b, 0 as number)
+  const base  = Object.values(pts).reduce((a: number, b: number) => a + b, 0)
   const bonus = (bairro ? 10 : 0) + (animal ? 10 : 0)
   const max   = 80 + (bairro ? 10 : 0) + (animal ? 10 : 0)
   const total = base + bonus
@@ -108,7 +108,7 @@ export default function MatchingPage() {
                       key={o}
                       valor={o}
                       ativo={pts[id] === o}
-                      onClick={() => setPts(prev => ({ ...prev, [id]: o }))}
+                      onClick={() => setPts((prev: Record<string, PtsOpcao>) => ({ ...prev, [id]: o }))}
                     />
                   ))}
                 </div>
@@ -199,7 +199,7 @@ export default function MatchingPage() {
 
             {/* Detalhe por variavel */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {variáveis.map(({ id, label }) => {
+              {variáveis.map(({ id, label }: { id: string; label: string }) => {
                 const v = pts[id]
                 const maxV = id === 'p' ? 20 : 20
                 const fillPct = Math.round((v / maxV) * 100)

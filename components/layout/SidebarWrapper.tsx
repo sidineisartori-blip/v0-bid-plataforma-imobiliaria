@@ -12,7 +12,9 @@ interface SidebarWrapperProps {
   corretorId: string
   matchesPendentes: number
   chatNaoLidos?: number
+  notifsNaoLidas?: number
   planoAtual?: string
+  erpAlertas?: number
 }
 
 const pathToNav: Record<string, string> = {
@@ -40,26 +42,33 @@ export default function SidebarWrapper({
   corretorId,
   matchesPendentes,
   chatNaoLidos = 0,
+  notifsNaoLidas: notifsInicial = 0,
   planoAtual = 'free',
+  erpAlertas = 0,
 }: SidebarWrapperProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const [notifsNaoLidas, setNotifsNaoLidas] = useState(0)
+  // Inicia com valor do servidor, atualiza via realtime
+  const [notifsNaoLidas, setNotifsNaoLidas] = useState(notifsInicial)
+
+  useEffect(() => {
+    setNotifsNaoLidas(notifsInicial)
+  }, [notifsInicial])
 
   useEffect(() => {
     if (!corretorId) return
 
-    supabase
-      .from('notificacoes')
-      .select('id', { count: 'exact', head: true })
-      .eq('corretor_id', corretorId)
-      .eq('lida', false)
-      .then(({ count }) => setNotifsNaoLidas(count || 0))
-
     const channel = supabase
       .channel('notifs-count:' + corretorId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notificacoes', filter: `corretor_id=eq.${corretorId}` },
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notificacoes',
+          filter: `corretor_id=eq.${corretorId}`,
+        },
         async () => {
           const { count } = await supabase
             .from('notificacoes')
@@ -71,7 +80,9 @@ export default function SidebarWrapper({
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [corretorId])
 
   const activeNav =
