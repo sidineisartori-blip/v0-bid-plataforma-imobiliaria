@@ -60,6 +60,7 @@ export default function AdminPainelPage() {
   const [loading, setLoading] = useState(true)
   const [erroConexao, setErroConexao] = useState<string | null>(null)
   const [atualizando, setAtualizando] = useState<string | null>(null)
+  const [hoverRow, setHoverRow] = useState<string | null>(null)
   const [busca, setBusca] = useState('')
   const [filtroPlano, setFiltroPlano] = useState<string>('todos')
 
@@ -248,6 +249,9 @@ export default function AdminPainelPage() {
     padding: '12px 20px',
     cursor: 'pointer',
     transition: 'color 0.15s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   })
 
   const metricaBox = (valor: string | number, label: string, destaque?: string) => (
@@ -362,10 +366,10 @@ export default function AdminPainelPage() {
         <div style={{ borderBottom: '1px solid #232324', marginBottom: '32px', display: 'flex' }}>
           {(['dashboard', 'corretores', 'planos', 'financeiro'] as Aba[]).map((id) => (
             <button key={id} style={btnAba(id)} onClick={() => setAba(id)}>
-              {id === 'dashboard' && 'Dashboard'}
-              {id === 'corretores' && 'Corretores'}
-              {id === 'planos' && 'Gerenciar Planos'}
-              {id === 'financeiro' && 'Financeiro'}
+              {id === 'dashboard' && <>{aba === 'dashboard' && <span style={{fontSize:7, color:'#C9A84C'}}>●</span>}Dashboard</>}
+              {id === 'corretores' && <>{aba === 'corretores' && <span style={{fontSize:7, color:'#C9A84C'}}>●</span>}Corretores</>}
+              {id === 'planos' && <>{aba === 'planos' && <span style={{fontSize:7, color:'#C9A84C'}}>●</span>}Gerenciar Planos</>}
+              {id === 'financeiro' && <>{aba === 'financeiro' && <span style={{fontSize:7, color:'#C9A84C'}}>●</span>}Financeiro</>}
             </button>
           ))}
         </div>
@@ -498,9 +502,13 @@ export default function AdminPainelPage() {
 
               {corretoresFiltrados.slice(0, 50).map((cor, i) => {
                 const planoInfo = PLANOS.find((p) => p.id === cor.plano) || PLANOS[0]
+                const corIniciais = planoInfo.cor
+                const iniciais = cor.full_name.split(' ').slice(0,2).map((n: string) => n[0]).join('').toUpperCase()
                 return (
                   <div
                     key={cor.id}
+                    onMouseEnter={() => setHoverRow(cor.id)}
+                    onMouseLeave={() => setHoverRow(null)}
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '1fr 180px 120px 100px 80px 180px',
@@ -508,19 +516,24 @@ export default function AdminPainelPage() {
                       padding: '16px 20px',
                       borderBottom: i < corretoresFiltrados.length - 1 ? '1px solid #232324' : 'none',
                       alignItems: 'center',
+                      backgroundColor: hoverRow === cor.id ? '#232324' : 'transparent',
+                      transition: 'background-color 0.1s',
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: '15px',
-                        color: '#F0EDE6',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {cor.full_name}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                        backgroundColor: `${corIniciais}22`,
+                        border: `1px solid ${corIniciais}55`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 10, fontWeight: 700, color: corIniciais,
+                      }}>
+                        {iniciais}
+                      </div>
+                      <span style={{ fontSize: '15px', color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {cor.full_name}
+                      </span>
+                    </div>
                     <span
                       style={{
                         fontSize: '14px',

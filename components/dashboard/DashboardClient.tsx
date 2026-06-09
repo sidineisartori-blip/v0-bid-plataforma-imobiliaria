@@ -41,9 +41,10 @@ function AlertaBanner({
   )
 }
 
-function MetricCard({ label, value, accent, sub }: { label: string; value: number | string; accent?: string; sub?: string }) {
+function MetricCard({ label, value, accent, sub, icon }: { label: string; value: number | string; accent?: string; sub?: string; icon?: string }) {
   return (
     <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px', padding: '20px 24px' }}>
+      {icon && <p style={{ fontSize: 20, marginBottom: 8, lineHeight: 1 }}>{icon}</p>}
       <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', color: accent || '#C9A84C', marginBottom: '8px', fontWeight: 600 }}>{label}</p>
       <p style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 700, color: '#F0EDE6', lineHeight: 1 }}>{value}</p>
       {sub && <p style={{ fontSize: 11, color: '#9B9690', marginTop: 6 }}>{sub}</p>}
@@ -174,12 +175,12 @@ export default function DashboardClient({
 
       {/* ── KPIs ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: '14px' }}>
-        <MetricCard label="Imóveis Ativos"      value={imoveisAtivos} />
-        <MetricCard label="Matches Pendentes"    value={matches.length} />
-        <MetricCard label="Negociações"          value={negociacoes.length} accent="#9B9690" />
-        <MetricCard label="Solicitações Ativas"  value={solicitacoes.length} accent="#9B9690" />
-        <MetricCard label="Contratos Ativos"     value={contratosAtivos.length} accent="#5CB88A" />
-        <MetricCard label="Receita Mês"          value={formatCurrency(receitaMes)} accent="#5CB88A" sub="locações ativas" />
+        <MetricCard icon="🏠" label="Imóveis Ativos"      value={imoveisAtivos} />
+        <MetricCard icon="◎" label="Matches Pendentes"    value={matches.length} />
+        <MetricCard icon="🤝" label="Negociações"          value={negociacoes.length} accent="#9B9690" />
+        <MetricCard icon="📋" label="Solicitações Ativas"  value={solicitacoes.length} accent="#9B9690" />
+        <MetricCard icon="📄" label="Contratos Ativos"     value={contratosAtivos.length} accent="#5CB88A" />
+        <MetricCard icon="💰" label="Receita Mês"          value={formatCurrency(receitaMes)} accent="#5CB88A" sub="locações ativas" />
       </div>
 
       {/* ── CRM Kanban Mini ── */}

@@ -42,6 +42,17 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   const [filtroCidade, setFiltroCidade] = useState('')
   const [pagina, setPagina] = useState(1)
   const PAGE_SIZE = 10
+  const [viewMode, setViewMode] = useState<'lista' | 'grade'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('bid_imoveis_view') as 'lista' | 'grade') || 'lista'
+    }
+    return 'lista'
+  })
+
+  function toggleView(mode: 'lista' | 'grade') {
+    setViewMode(mode)
+    localStorage.setItem('bid_imoveis_view', mode)
+  }
 
   const cidades_unicas = useMemo(
     () => [...new Set(imoveis.map((i) => i.cidade))].sort(),
@@ -163,6 +174,31 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
               ))}
             </select>
           </div>
+          {/* Toggle Grade/Lista */}
+          <div style={{ display: 'flex', gap: 4, border: '1px solid #232324', borderRadius: 2, padding: 2 }}>
+            <button
+              onClick={() => toggleView('lista')}
+              title="Visualização em lista"
+              style={{
+                background: viewMode === 'lista' ? 'rgba(201,168,76,0.12)' : 'none',
+                border: 'none', borderRadius: 2,
+                color: viewMode === 'lista' ? '#C9A84C' : '#9B9690',
+                cursor: 'pointer', padding: '5px 10px', fontSize: 14, lineHeight: 1,
+                transition: 'all 0.15s',
+              }}
+            >☰</button>
+            <button
+              onClick={() => toggleView('grade')}
+              title="Visualização em grade"
+              style={{
+                background: viewMode === 'grade' ? 'rgba(201,168,76,0.12)' : 'none',
+                border: 'none', borderRadius: 2,
+                color: viewMode === 'grade' ? '#C9A84C' : '#9B9690',
+                cursor: 'pointer', padding: '5px 10px', fontSize: 14, lineHeight: 1,
+                transition: 'all 0.15s',
+              }}
+            >⊞</button>
+          </div>
           <button
             onClick={abrirNovo}
             style={{
@@ -212,7 +248,80 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           </div>
         </div>
 
+        {/* Grade de cards */}
+        {viewMode === 'grade' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {imoveisFiltrados.length === 0 ? (
+              <div style={{ gridColumn: '1/-1', padding: '64px', textAlign: 'center' }}>
+                <p style={{ fontSize: '16px', color: '#9B9690' }}>Nenhum imóvel encontrado.</p>
+              </div>
+            ) : imoveisFiltrados.map((imovel: Imovel) => {
+              const sc = STATUS_COLORS[imovel.status as ImovelStatus]
+              const thumb = imovel.image_urls?.[0]
+              return (
+                <div key={imovel.id} style={{
+                  backgroundColor: '#181819',
+                  border: '1px solid rgba(201,168,76,0.1)',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  transition: 'border-color 0.15s, box-shadow 0.15s',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLDivElement
+                  el.style.borderColor = 'rgba(201,168,76,0.3)'
+                  el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.3)'
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLDivElement
+                  el.style.borderColor = 'rgba(201,168,76,0.1)'
+                  el.style.boxShadow = 'none'
+                }}
+                >
+                  {/* Thumbnail */}
+                  <div style={{ height: 160, backgroundColor: '#232324', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+                    {thumb
+                      ? <img src={thumb} alt={imovel.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 48 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
+                    }
+                    <span style={{
+                      position: 'absolute', top: 8, right: 8,
+                      fontSize: 10, padding: '3px 8px', borderRadius: 2, fontWeight: 600,
+                      backgroundColor: sc?.bg || '#232324', color: sc?.text || '#9B9690',
+                    }}>
+                      {STATUS_LABELS[imovel.status] || imovel.status}
+                    </span>
+                  </div>
+                  {/* Info */}
+                  <div style={{ padding: '14px 16px' }}>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>
+                      {imovel.titulo}
+                    </p>
+                    <p style={{ fontSize: 12, color: '#9B9690', marginBottom: 8 }}>
+                      {[imovel.cidade, imovel.bairro].filter(Boolean).join(' · ')}
+                    </p>
+                    <p style={{ fontSize: 18, fontWeight: 700, color: '#C9A84C', marginBottom: 10 }}>
+                      {formatCurrency(imovel.valor)}
+                    </p>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => { setImovelEditando(imovel); setModalAberto(true) }}
+                        style={{ ...btnIconStyle, flex: 1, justifyContent: 'center', display: 'flex', fontSize: 13 }}>
+                        ✎ Editar
+                      </button>
+                      <button onClick={() => handleDeletar(imovel.id)} disabled={deletandoId === imovel.id}
+                        style={{ ...btnIconStyle, color: deletandoId === imovel.id ? '#E05C5C' : '#9B9690' }}>
+                        🗑
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         {/* Lista */}
+        {viewMode === 'lista' && <>
         <div
           style={{
             backgroundColor: '#181819',
@@ -380,6 +489,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             >→</button>
           </div>
         )}
+        </> /* fim viewMode lista */ }
       </div>
 
       {/* Modal */}

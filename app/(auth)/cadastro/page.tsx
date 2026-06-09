@@ -1,7 +1,7 @@
 'use client'
 
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -36,6 +36,8 @@ export default function CadastroPage() {
   const [confirmarSenha, setConfirmar]    = useState('')
   const [mostrarSenha, setMostrarSenha]   = useState(false)
   const [mostrarConf, setMostrarConf]     = useState(false)
+  const [mounted, setMounted]             = useState(false)
+  const [stepKey, setStepKey]             = useState(0)
 
   // Etapa 2
   const [creci, setCreci]               = useState('')
@@ -44,6 +46,21 @@ export default function CadastroPage() {
   const [nomeImobiliaria, setNomeImob]  = useState('')
   const [cidade, setCidade]             = useState('')
   const [aceitouTermos, setAceitou]     = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  function calcForcaSenha(s: string): 0 | 1 | 2 | 3 {
+    if (!s) return 0
+    if (s.length < 6) return 1
+    const temNumero = /[0-9]/.test(s)
+    const temLetra  = /[a-zA-Z]/.test(s)
+    if (s.length >= 10 && temNumero && temLetra) return 3
+    if (s.length >= 6) return 2
+    return 1
+  }
+  const forca = calcForcaSenha(senha)
+  const forcaCores = ['transparent', '#E05C5C', '#C9A84C', '#5CB88A']
+  const forcaLabels = ['', 'Fraca', 'Média', 'Forte']
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
@@ -55,6 +72,11 @@ export default function CadastroPage() {
     fontSize: '16px',
     outline: 'none',
     fontFamily: 'DM Sans, sans-serif',
+  }
+
+  const inputFocusHandlers = {
+    onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => { e.currentTarget.style.borderColor = '#C9A84C' },
+    onBlur:  (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => { e.currentTarget.style.borderColor = '#2E2E30' },
   }
 
   const labelStyle: React.CSSProperties = {
@@ -84,6 +106,7 @@ export default function CadastroPage() {
     }
     setErro('')
     setStep(2)
+    setStepKey((k) => k + 1)
   }
 
   const handleCadastro = async (e: React.FormEvent) => {
@@ -181,12 +204,16 @@ export default function CadastroPage() {
           </div>
         </div>
 
+        <style>{`@keyframes fadeInUp { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }`}</style>
         {/* Card */}
         <div style={{
           backgroundColor: '#181819',
           border: '1px solid rgba(201,168,76,0.2)',
           borderRadius: '2px',
           padding: '44px',
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateY(0)' : 'translateY(8px)',
+          transition: 'opacity 0.3s ease, transform 0.3s ease',
         }}>
           {erro && (
             <div style={{
@@ -206,6 +233,7 @@ export default function CadastroPage() {
             onSubmit={step === 1 ? handleStep1 : handleCadastro}
             style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
           >
+            <div key={stepKey} style={{ display: 'contents', animation: 'fadeInUp 0.2s ease' }}>
             {step === 1 ? (
               <>
                 <div>
@@ -250,6 +278,24 @@ export default function CadastroPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Indicador de força de senha */}
+                {senha.length > 0 && (
+                  <div style={{ marginTop: -12 }}>
+                    <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                      {[1,2,3].map((n) => (
+                        <div key={n} style={{
+                          flex: 1, height: 3, borderRadius: 2,
+                          backgroundColor: forca >= n ? forcaCores[forca] : '#2E2E30',
+                          transition: 'background-color 0.2s',
+                        }} />
+                      ))}
+                    </div>
+                    <p style={{ fontSize: 11, color: forcaCores[forca], margin: 0 }}>
+                      {forcaLabels[forca]}
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label style={labelStyle}>Confirmar Senha</label>
@@ -328,12 +374,14 @@ export default function CadastroPage() {
               </>
             )}
 
+            </div>{/* fim animação */}
+
             {/* Botoes */}
             <div style={{ display: 'flex', gap: '16px', paddingTop: '12px' }}>
               {step === 2 && (
                 <button
                   type="button"
-                  onClick={() => { setStep(1); setErro('') }}
+                  onClick={() => { setStep(1); setErro(''); setStepKey((k) => k + 1) }}
                   style={{
                     flex: 1,
                     padding: '14px',

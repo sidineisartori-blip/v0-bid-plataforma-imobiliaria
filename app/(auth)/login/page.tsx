@@ -1,7 +1,7 @@
 'use client'
 
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -19,6 +19,9 @@ function LoginForm() {
   const [mostrarSenha, setMostrar] = useState(false)
   const [loading, setLoading]     = useState(false)
   const [erro, setErro]           = useState('')
+  const [mounted, setMounted]       = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,6 +52,12 @@ function LoginForm() {
     fontSize: '16px',
     outline: 'none',
     fontFamily: 'DM Sans, sans-serif',
+    transition: 'border-color 0.15s',
+  }
+
+  const inputFocusHandlers = {
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.style.borderColor = '#C9A84C' },
+    onBlur:  (e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.style.borderColor = '#2E2E30' },
   }
 
   const bannerGreen: React.CSSProperties = {
@@ -108,6 +117,9 @@ function LoginForm() {
           border: '1px solid rgba(201,168,76,0.2)',
           borderRadius: '2px',
           padding: '48px',
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? 'translateY(0)' : 'translateY(8px)',
+          transition: 'opacity 0.3s ease, transform 0.3s ease',
         }}>
           {/* Banners de sucesso */}
           {cadastroSucesso && (
@@ -149,6 +161,7 @@ function LoginForm() {
                 placeholder="seu@email.com"
                 required
                 style={inputStyle}
+                {...inputFocusHandlers}
               />
             </div>
 
@@ -165,6 +178,7 @@ function LoginForm() {
                   placeholder="********"
                   required
                   style={{ ...inputStyle, paddingRight: '48px' }}
+                  {...inputFocusHandlers}
                 />
                 <button
                   type="button"
@@ -189,13 +203,27 @@ function LoginForm() {
                 fontSize: '15px',
                 fontWeight: 600,
                 cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.7 : 1,
+                opacity: loading ? 0.8 : 1,
                 fontFamily: 'DM Sans, sans-serif',
                 letterSpacing: '0.05em',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                transition: 'background-color 0.15s',
               }}
+              onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#B8942F' }}
+              onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#C9A84C' }}
             >
+              {loading && (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite', flexShrink: 0 }}>
+                  <circle cx="8" cy="8" r="6" stroke="rgba(14,14,15,0.3)" strokeWidth="2" />
+                  <path d="M8 2a6 6 0 0 1 6 6" stroke="#0E0E0F" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              )}
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </form>
 
           <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid #232324', display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>
