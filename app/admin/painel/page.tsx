@@ -61,6 +61,15 @@ export default function AdminPainelPage() {
   const [erroConexao, setErroConexao] = useState<string | null>(null)
   const [atualizando, setAtualizando] = useState<string | null>(null)
   const [hoverRow, setHoverRow] = useState<string | null>(null)
+  const [telaEstreita, setTelaEstreita] = useState(false)
+
+  // Oculta coluna CRECI em viewports < 1200px
+  useEffect(() => {
+    const checar = () => setTelaEstreita(window.innerWidth < 1200)
+    checar()
+    window.addEventListener('resize', checar)
+    return () => window.removeEventListener('resize', checar)
+  }, [])
   const [busca, setBusca] = useState('')
   const [filtroPlano, setFiltroPlano] = useState<string>('todos')
 
@@ -477,14 +486,14 @@ export default function AdminPainelPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 180px 120px 100px 80px 180px',
+                  gridTemplateColumns: telaEstreita ? '1fr 180px 100px 80px 180px' : '1fr 180px 120px 100px 80px 180px',
                   gap: '0',
                   padding: '14px 20px',
                   borderBottom: '1px solid #232324',
                   backgroundColor: '#232324',
                 }}
               >
-                {['Nome', 'E-mail', 'CRECI', 'Status', 'Plano', 'Acoes'].map((h) => (
+                {['Nome', 'E-mail', 'CRECI', 'Status', 'Plano', 'Acoes'].filter(h => !(telaEstreita && h === 'CRECI')).map((h) => (
                   <span
                     key={h}
                     style={{
@@ -511,7 +520,7 @@ export default function AdminPainelPage() {
                     onMouseLeave={() => setHoverRow(null)}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr 180px 120px 100px 80px 180px',
+                      gridTemplateColumns: telaEstreita ? '1fr 180px 100px 80px 180px' : '1fr 180px 120px 100px 80px 180px',
                       gap: '0',
                       padding: '16px 20px',
                       borderBottom: i < corretoresFiltrados.length - 1 ? '1px solid #232324' : 'none',
@@ -545,7 +554,7 @@ export default function AdminPainelPage() {
                     >
                       {cor.email || '—'}
                     </span>
-                    <span style={{ fontSize: '14px', color: '#9B9690' }}>{cor.creci || '—'}</span>
+                    {!telaEstreita && <span style={{ fontSize: '14px', color: '#9B9690' }}>{cor.creci || '—'}</span>}
                     <span
                       style={{
                         fontSize: '12px',
