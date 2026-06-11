@@ -18,6 +18,8 @@ interface SidebarProps {
   erpAlertas?: number
   collapsed?: boolean
   onCollapsedChange?: (v: boolean) => void
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
 const navigationGroups = [
@@ -74,6 +76,8 @@ export function Sidebar({
   erpAlertas = 0,
   collapsed = false,
   onCollapsedChange,
+  mobileOpen = false,
+  onMobileClose,
 }: SidebarProps) {
   const router = useRouter()
   const [tooltipItem, setTooltipItem] = useState<string | null>(null)
@@ -172,7 +176,19 @@ export function Sidebar({
         {collapsed && (
           <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 700, color: '#C9A84C' }}>B</span>
         )}
-        <button
+        {mobileOpen && (
+          <button
+            onClick={onMobileClose}
+            title="Fechar menu"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#9B9690', fontSize: 20, padding: 4, lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        )}
+        {!mobileOpen && <button
           onClick={() => onCollapsedChange?.(!collapsed)}
           title={collapsed ? 'Expandir menu' : 'Recolher menu'}
           style={{
@@ -197,7 +213,7 @@ export function Sidebar({
           }}
         >
           {collapsed ? '▶' : '◀'}
-        </button>
+        </button>}
       </div>
 
       {/* Navigation */}

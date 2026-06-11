@@ -1,5 +1,8 @@
 'use client'
 
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+
 interface Corretor {
   plano: string | null
   created_at: string
@@ -101,6 +104,37 @@ const historicoExemplo = [
 ]
 
 export default function PlanoClient({ corretor, assinatura, imoveisUsados, solicitacoesUsadas }: Props) {
+  const [modalPlano, setModalPlano] = useState<typeof planos[0] | null>(null)
+  const [solicitando, setSolicitando] = useState(false)
+  const [solicitado, setSolicitado] = useState(false)
+
+  async function handleAssinar(p: typeof planos[0]) {
+    setModalPlano(p)
+    setSolicitado(false)
+  }
+
+  async function confirmarSolicitacao() {
+    if (!modalPlano) return
+    setSolicitando(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from('assinaturas').insert({
+          corretor_id: user.id,
+          plano: modalPlano.id,
+          status: 'pendente',
+          valor: parseInt(modalPlano.preco.replace(/\D/g, '')) || 0,
+        })
+      }
+      setSolicitado(true)
+    } catch {
+      // best-effort
+    } finally {
+      setSolicitando(false)
+    }
+  }
+
   const planoAtual = corretor?.plano || 'free'
   const planoAtualInfo = planos.find(p => p.id === planoAtual) || planos[0]
   const limiteImoveis = planoAtualInfo.limite_imoveis
@@ -122,6 +156,76 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1060, minHeight: '100vh' }}>
+
+      {/* Modal de upgrade */}
+      {modalPlano && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }} onClick={() => setModalPlano(null)}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#181819', border: '1px solid rgba(201,168,76,0.3)',
+              borderRadius: 4, padding: '32px 36px', maxWidth: 400, width: '90%',
+            }}
+          >
+            {!solicitado ? (
+              <>
+                <h2 style={{ fontFamily: 'var(--font-serif)', color: '#C9A84C', fontSize: 22, marginBottom: 8 }}>
+                  Plano {modalPlano.nome}
+                </h2>
+                <p style={{ fontSize: 13, color: '#9B9690', marginBottom: 20, lineHeight: 1.6 }}>
+                  {modalPlano.preco}<span style={{ fontSize: 11 }}>{modalPlano.periodo}</span>
+                  <br />Nossa equipe entrará em contato para finalizar o pagamento via PIX ou boleto.
+                </p>
+                <button
+                  onClick={confirmarSolicitacao}
+                  disabled={solicitando}
+                  style={{
+                    width: '100%', padding: '10px', marginBottom: 10,
+                    background: '#C9A84C', border: 'none', borderRadius: 2,
+                    color: '#0E0E0F', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                  }}
+                >
+                  {solicitando ? 'Aguarde...' : 'Solicitar assinatura'}
+                </button>
+                <a
+                  href={`https://wa.me/5511999999999?text=${encodeURIComponent(`Olá! Quero assinar o plano ${modalPlano.nome} do BID (${modalPlano.preco}${modalPlano.periodo}).`)}`}
+                  target="_blank" rel="noreferrer"
+                  style={{
+                    display: 'block', width: '100%', padding: '10px',
+                    border: '1px solid #2E2E30', borderRadius: 2, textAlign: 'center',
+                    color: '#9B9690', fontSize: 13, textDecoration: 'none',
+                  }}
+                >
+                  Falar pelo WhatsApp
+                </a>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+                <h2 style={{ color: '#5CB88A', fontSize: 18, marginBottom: 8 }}>Solicitação enviada!</h2>
+                <p style={{ fontSize: 13, color: '#9B9690', lineHeight: 1.6 }}>
+                  Recebemos seu pedido para o plano <strong style={{ color: '#F0EDE6' }}>{modalPlano.nome}</strong>.
+                  Nossa equipe entrará em contato em breve.
+                </p>
+                <button
+                  onClick={() => setModalPlano(null)}
+                  style={{
+                    marginTop: 20, padding: '8px 20px',
+                    background: 'none', border: '1px solid #2E2E30',
+                    borderRadius: 2, color: '#9B9690', cursor: 'pointer',
+                  }}
+                >
+                  Fechar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
@@ -245,7 +349,7 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
                 </div>
               ) : (
                 <button
-                  onClick={() => alert('Em breve: integracao com gateway de pagamento.')}
+                  onClick={() => handleAssinar(p)}
                   style={{
                     background: 'none',
                     border: p.destaque ? '1px solid #C9A84C' : '1px solid #2E2E30',
