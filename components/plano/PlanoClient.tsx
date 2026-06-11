@@ -16,7 +16,7 @@ interface Assinatura {
   plano: string
   status: string
   created_at: string
-  valor: number
+  valor_mensal: number
 }
 
 interface Props {
@@ -156,6 +156,22 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1060, minHeight: '100vh' }}>
+      <style>{`
+        .bid-planos-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+          margin-bottom: 32px;
+        }
+        @media (max-width: 1024px) {
+          .bid-planos-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 560px) {
+          .bid-planos-grid { grid-template-columns: 1fr; }
+        }
+        .bid-fatura-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .bid-fatura-scroll table { min-width: 480px; }
+      `}</style>
 
       {/* Modal de upgrade */}
       {modalPlano && (
@@ -287,7 +303,7 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
       </div>
 
       {/* Grid de planos */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+      <div className="bid-planos-grid">
         {planos.map(p => {
           const isAtual = p.id === planoAtual
           return (
@@ -390,7 +406,7 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
         <p style={{ fontSize: 10, letterSpacing: '0.1em', color: '#9B9690', textTransform: 'uppercase', marginBottom: 16 }}>
           Histórico de Faturamento
         </p>
-        <div style={{ background: '#181819', border: '1px solid #232324', borderRadius: 2, overflow: 'hidden' }}>
+        <div className="bid-fatura-scroll" style={{ background: '#181819', border: '1px solid #232324', borderRadius: 2 }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #232324' }}>

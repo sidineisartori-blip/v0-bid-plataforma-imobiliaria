@@ -30,11 +30,51 @@ export default async function SiteCorretorPage({
     .order('lancamento', { ascending: false })
     .order('created_at', { ascending: false })
 
+  // JSON-LD: schema Person para SEO avançado (rich results)
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : 'http://localhost:3000')
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateAgent',
+    name: corretor.full_name,
+    url: `${baseUrl}/corretor/${slug}`,
+    ...(corretor.avatar_url ? { image: corretor.avatar_url } : {}),
+    ...(corretor.bio ? { description: corretor.bio } : {}),
+    ...(corretor.phone ? { telephone: corretor.phone } : {}),
+    jobTitle: 'Corretor de Imóveis',
+    ...(corretor.creci ? { identifier: { '@type': 'PropertyValue', name: 'CRECI', value: corretor.creci } } : {}),
+    ...(corretor.city
+      ? { address: { '@type': 'PostalAddress', addressLocality: corretor.city, addressCountry: 'BR' } }
+      : {}),
+    worksFor: { '@type': 'Organization', name: 'BID', url: baseUrl },
+    ...(corretor.total_avaliacoes && corretor.total_avaliacoes > 0 && corretor.nota_media
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: Number(corretor.nota_media).toFixed(1),
+            reviewCount: corretor.total_avaliacoes,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  }
+
   return (
-    <SiteCorretorPublico
-      corretor={corretor}
-      imoveis={imoveis || []}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <SiteCorretorPublico
+        corretor={corretor}
+        imoveis={imoveis || []}
+      />
+    </>
   )
 }
 

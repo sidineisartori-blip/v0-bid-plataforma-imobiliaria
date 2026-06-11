@@ -92,7 +92,8 @@ export default function ERPExtrato({ movimentacoes, saldoAnterior, mesInicial }:
           Sem movimentações em {formatarMes(mes)}.
         </div>
       ) : (
-        <div style={{ background: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 2 }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ background: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 2, minWidth: 520 }}>
           {/* Saldo anterior */}
           <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto auto', gap: 12, padding: '10px 18px', borderBottom: '1px solid #232324', alignItems: 'center' }}>
             <span style={{ fontSize: 11, color: '#9B9690' }}>Saldo ant.</span>
@@ -146,6 +147,7 @@ export default function ERPExtrato({ movimentacoes, saldoAnterior, mesInicial }:
             <span></span>
             <span style={{ fontSize: 15, fontWeight: 700, color: saldoFinal >= 0 ? '#5CB88A' : '#E05C5C', textAlign: 'right', minWidth: 110 }}>{fmtBRLFull(saldoFinal)}</span>
           </div>
+        </div>
         </div>
       )}
     </div>

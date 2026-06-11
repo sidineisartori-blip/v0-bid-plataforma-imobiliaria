@@ -13,21 +13,33 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : 'https://v0-bid-plataforma-imobiliaria.vercel.app')
+  ),
   title: {
     default: 'BID — Balcão Imobiliário Digital',
     template: '%s | BID',
   },
   description: 'Plataforma de matching imobiliário para corretores. Conecte imóveis a compradores, gerencie sua carteira e feche mais negócios.',
   keywords: ['corretor de imóveis', 'matching imobiliário', 'BID', 'balcão imobiliário', 'plataforma imobiliária', 'CRECI', 'imóveis'],
-  metadataBase: new URL('https://v0-bid-plataforma-imobiliaria.vercel.app'),
+  generator: 'v0.app',
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    url: 'https://v0-bid-plataforma-imobiliaria.vercel.app',
     siteName: 'BID — Balcão Imobiliário Digital',
     title: 'BID — Balcão Imobiliário Digital',
     description: 'Plataforma de matching imobiliário para corretores credenciados.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'BID Plataforma Imobiliária' }],
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'BID — Plataforma Imobiliária Inteligente',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',

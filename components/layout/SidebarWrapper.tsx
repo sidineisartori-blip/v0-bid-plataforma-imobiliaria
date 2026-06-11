@@ -15,8 +15,6 @@ interface SidebarWrapperProps {
   notifsNaoLidas?: number
   planoAtual?: string
   erpAlertas?: number
-  collapsed?: boolean
-  onCollapsedChange?: (v: boolean) => void
 }
 
 const pathToNav: Record<string, string> = {
@@ -47,8 +45,6 @@ export default function SidebarWrapper({
   notifsNaoLidas: notifsInicial = 0,
   planoAtual = 'free',
   erpAlertas = 0,
-  collapsed = false,
-  onCollapsedChange,
 }: SidebarWrapperProps) {
   const pathname = usePathname()
   const router = useRouter()
@@ -108,8 +104,6 @@ export default function SidebarWrapper({
       chatNaoLidos={chatNaoLidos}
       notifsNaoLidas={notifsNaoLidas}
       planoAtual={planoAtual}
-      collapsed={collapsed}
-      onCollapsedChange={onCollapsedChange}
     />
   )
 }
