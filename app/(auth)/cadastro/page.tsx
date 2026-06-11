@@ -122,7 +122,16 @@ export default function CadastroPage() {
     }
     setLoading(true)
     try {
-      const { error } = await supabase.auth.signUp({
+      const slugGerado = nome
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim() + '-' + Date.now().toString(36)
+
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password: senha,
         options: {
@@ -134,16 +143,48 @@ export default function CadastroPage() {
             tipo,
             nome_imobiliaria: nomeImobiliaria,
             cidade,
-            slug: nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').trim() + '-' + Date.now().toString(36),
+            slug: slugGerado,
           },
         },
       })
+
       if (error) {
         setErro(traduzirErroAuth(error.message))
         setLoading(false)
-      } else {
-        router.push(`/cadastro/confirmacao?email=${encodeURIComponent(email)}`)
+        return
       }
+
+      // Criar row na tabela corretores via API server-side (usa service_role)
+      const userId = signUpData?.user?.id
+      if (userId) {
+        try {
+          const resp = await fetch('/api/auth/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              full_name: nome,
+              email,
+              phone: whatsapp,
+              creci,
+              estado_creci: estadoCreci,
+              tipo,
+              nome_imobiliaria: nomeImobiliaria,
+              cidade,
+              slug: slugGerado,
+            }),
+          })
+          if (!resp.ok) {
+            const errData = await resp.json().catch(() => ({}))
+            console.error('[cadastro] onboarding falhou:', errData.error)
+            // Não bloquear — usuário criado no Auth, perfil pode ser retentado
+          }
+        } catch (onboardingErr) {
+          console.error('[cadastro] onboarding erro de rede:', onboardingErr)
+        }
+      }
+
+      router.push(`/cadastro/confirmacao?email=${encodeURIComponent(email)}`)
     } catch {
       setErro('Falha de conexão. Verifique sua internet e tente novamente.')
       setLoading(false)
