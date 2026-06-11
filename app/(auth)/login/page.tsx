@@ -35,13 +35,43 @@ function LoginForm() {
     e.preventDefault()
     setErro('')
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
-    if (error) {
-      setErro(traduzirErroAuth(error.message))
+    try {
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password: senha })
+      if (error) {
+        setErro(traduzirErroAuth(error.message))
+        setLoading(false)
+      } else {
+        // Garantia de onboarding: verifica se a row em corretores existe.
+        // Cobre usuários que se cadastraram antes do fix do trigger.
+        const userId = signInData?.user?.id
+        const userMeta = signInData?.user?.user_metadata
+        if (userId && userMeta?.creci) {
+          // Tem dados de corretor no metadata — tentar criar perfil se não existir
+          fetch('/api/auth/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              full_name: userMeta.full_name || email,
+              email,
+              phone: userMeta.phone || null,
+              creci: userMeta.creci,
+              estado_creci: userMeta.estado_creci || 'SP',
+              tipo: userMeta.tipo || 'PF',
+              nome_imobiliaria: userMeta.nome_imobiliaria || null,
+              cidade: userMeta.cidade || '',
+              slug: userMeta.slug || userId,
+            }),
+          }).catch(() => {
+            // Silencioso — não bloquear o login
+          })
+        }
+        const redirect = searchParams.get('redirect')
+        router.push(redirect && redirect.startsWith('/') ? redirect : '/dashboard')
+      }
+    } catch {
+      setErro('Falha de conexão. Verifique sua internet e tente novamente.')
       setLoading(false)
-    } else {
-      const redirect = searchParams.get('redirect')
-      router.push(redirect && redirect.startsWith('/') ? redirect : '/dashboard')
     }
   }
 

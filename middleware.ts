@@ -4,6 +4,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
+  const pathname = request.nextUrl.pathname
+
+  // Rotas do admin usam JWT proprio — nao requerem sessao Supabase
+  if (pathname.startsWith('/admin')) {
+    return supabaseResponse
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -25,9 +32,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const pathname = request.nextUrl.pathname
-
-  // Todas as rotas protegidas do dashboard
+  // Rotas protegidas do dashboard (requerem sessao Supabase)
   const protectedRoutes = [
     '/dashboard',
     '/imoveis',
@@ -43,7 +48,6 @@ export async function middleware(request: NextRequest) {
     '/credenciamento',
     '/matching',
     '/erp',
-    '/admin',
   ]
 
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route))
@@ -54,7 +58,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Redireciona usuário autenticado que tenta acessar login/cadastro
+  // Redireciona usuario autenticado que tenta acessar login/cadastro
   if (user && (pathname === '/login' || pathname === '/cadastro')) {
     const dashboardUrl = new URL('/dashboard', request.url)
     return NextResponse.redirect(dashboardUrl)
@@ -65,6 +69,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

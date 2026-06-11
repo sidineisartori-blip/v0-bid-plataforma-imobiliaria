@@ -76,18 +76,18 @@ export default function AdminPainelPage() {
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
   const [loading, setLoading] = useState(true)
   const [atualizando, setAtualizando] = useState<string | null>(null)
-  const [busca, setBusca] = useState('')
-  const [filtroPlano, setFiltroPlano] = useState<string>('todos')
-  const [linhaHover, setLinhaHover] = useState<string | null>(null)
   const [telaEstreita, setTelaEstreita] = useState(false)
 
-  // Detecta viewport < 1200px para ocultar coluna CRECI
+  // Oculta coluna CRECI em viewports < 1200px
   useEffect(() => {
     const checar = () => setTelaEstreita(window.innerWidth < 1200)
     checar()
     window.addEventListener('resize', checar)
     return () => window.removeEventListener('resize', checar)
   }, [])
+  const [busca, setBusca] = useState('')
+  const [filtroPlano, setFiltroPlano] = useState<string>('todos')
+  const [linhaHover, setLinhaHover] = useState<string | null>(null)
 
   // Metricas
   const [metricas, setMetricas] = useState({
