@@ -218,7 +218,6 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
               </button>
             </div>
           </div>
-          </div>
           <button
             onClick={abrirNovo}
             style={{
@@ -288,7 +287,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
         )}
 
         {/* Modo Grade */}
-        {imoveisFiltrados.length > 0 && view === 'grade' && (
+        {imoveisFiltrados.length > 0 && viewMode === 'grade' && (
           <div
             style={{
               display: 'grid',
@@ -379,7 +378,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
         )}
 
         {/* Modo Lista */}
-        {imoveisFiltrados.length > 0 && view === 'lista' && (
+        {imoveisFiltrados.length > 0 && viewMode === 'lista' && (
         <div
           style={{
             backgroundColor: '#181819',
