@@ -44,7 +44,7 @@ function AlertaBanner({
 function MetricCard({ label, value, accent, sub, icon }: { label: string; value: number | string; accent?: string; sub?: string; icon?: string }) {
   return (
     <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px', padding: '20px 24px' }}>
-      {icon && <p style={{ fontSize: 20, marginBottom: 8, lineHeight: 1 }}>{icon}</p>}
+      {icon && <p style={{ fontSize: '20px', lineHeight: 1, marginBottom: '8px' }} aria-hidden="true">{icon}</p>}
       <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', color: accent || '#C9A84C', marginBottom: '8px', fontWeight: 600 }}>{label}</p>
       <p style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 700, color: '#F0EDE6', lineHeight: 1 }}>{value}</p>
       {sub && <p style={{ fontSize: 11, color: '#9B9690', marginTop: 6 }}>{sub}</p>}
@@ -97,6 +97,25 @@ export default function DashboardClient({
           <p style={{ fontSize: 13, color: '#9B9690' }}>
             {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
+        </div>
+      )}
+
+      {/* ── Empty state inicial ── */}
+      {imoveis.length === 0 && solicitacoes.length === 0 && (
+        <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px', padding: '56px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '48px', lineHeight: 1 }} aria-hidden="true">🏗️</span>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 700, color: '#F0EDE6', marginTop: '8px' }}>Comece aqui</h2>
+          <p style={{ fontSize: '15px', color: '#9B9690', maxWidth: '420px', lineHeight: 1.5 }}>
+            Cadastre seu primeiro imóvel ou solicitação para ver o matching em ação.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Link href="/imoveis" style={{ fontSize: '14px', fontWeight: 600, color: '#0E0E0F', backgroundColor: '#C9A84C', borderRadius: '2px', padding: '12px 24px', textDecoration: 'none', letterSpacing: '0.03em' }}>
+              Cadastrar Imóvel
+            </Link>
+            <Link href="/solicitacoes" style={{ fontSize: '14px', fontWeight: 600, color: '#F0EDE6', backgroundColor: 'transparent', border: '1px solid #2E2E30', borderRadius: '2px', padding: '12px 24px', textDecoration: 'none', letterSpacing: '0.03em' }}>
+              Nova Solicitação
+            </Link>
+          </div>
         </div>
       )}
 
@@ -175,12 +194,12 @@ export default function DashboardClient({
 
       {/* ── KPIs ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: '14px' }}>
-        <MetricCard icon="🏠" label="Imóveis Ativos"      value={imoveisAtivos} />
-        <MetricCard icon="◎" label="Matches Pendentes"    value={matches.length} />
-        <MetricCard icon="🤝" label="Negociações"          value={negociacoes.length} accent="#9B9690" />
-        <MetricCard icon="📋" label="Solicitações Ativas"  value={solicitacoes.length} accent="#9B9690" />
-        <MetricCard icon="📄" label="Contratos Ativos"     value={contratosAtivos.length} accent="#5CB88A" />
-        <MetricCard icon="💰" label="Receita Mês"          value={formatCurrency(receitaMes)} accent="#5CB88A" sub="locações ativas" />
+        <MetricCard label="Imóveis Ativos"      value={imoveisAtivos} icon="🏠" />
+        <MetricCard label="Matches Pendentes"    value={matches.length} icon="🔗" />
+        <MetricCard label="Negociações"          value={negociacoes.length} accent="#9B9690" icon="🤝" />
+        <MetricCard label="Solicitações Ativas"  value={solicitacoes.length} accent="#9B9690" icon="📋" />
+        <MetricCard label="Contratos Ativos"     value={contratosAtivos.length} accent="#5CB88A" />
+        <MetricCard label="Receita Mês"          value={formatCurrency(receitaMes)} accent="#5CB88A" sub="locações ativas" />
       </div>
 
       {/* ── CRM Kanban Mini ── */}
@@ -200,7 +219,20 @@ export default function DashboardClient({
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minHeight: '48px' }}>
                   {cards.slice(0, 3).map((neg) => (
-                    <div key={neg.id} style={{ backgroundColor: '#232324', borderLeft: '2px solid #C9A84C', borderRadius: '1px', padding: '8px 10px', fontSize: '12px', color: '#9B9690' }}>
+                    <div
+                      key={neg.id}
+                      style={{ backgroundColor: '#232324', border: '1px solid transparent', borderLeft: '2px solid #C9A84C', borderRadius: '1px', padding: '8px 10px', fontSize: '12px', color: '#9B9690', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(201,168,76,0.3)'
+                        e.currentTarget.style.borderLeftColor = '#C9A84C'
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'transparent'
+                        e.currentTarget.style.borderLeftColor = '#C9A84C'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
                       #{neg.parceria_id.slice(0, 6)}
                     </div>
                   ))}

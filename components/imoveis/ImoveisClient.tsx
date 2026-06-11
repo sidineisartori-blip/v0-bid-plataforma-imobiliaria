@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Imovel, Cidade, ImovelStatus } from '@/types/bid'
@@ -41,17 +41,20 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   const [filtroStatus, setFiltroStatus] = useState<ImovelStatus | ''>('')
   const [filtroCidade, setFiltroCidade] = useState('')
   const [pagina, setPagina] = useState(1)
+  const [viewMode, setViewMode] = useState<'lista' | 'grade'>('lista')
   const PAGE_SIZE = 10
-  const [viewMode, setViewMode] = useState<'lista' | 'grade'>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('bid_imoveis_view') as 'lista' | 'grade') || 'lista'
-    }
-    return 'lista'
-  })
 
-  function toggleView(mode: 'lista' | 'grade') {
-    setViewMode(mode)
-    localStorage.setItem('bid_imoveis_view', mode)
+  // Restaura preferencia de visualizacao
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem('bid_imoveis_view')
+      if (salvo === 'grade' || salvo === 'lista') setViewMode(salvo)
+    } catch { /* ignore */ }
+  }, [])
+
+  function mudarView(modo: 'lista' | 'grade') {
+    setViewMode(modo)
+    try { localStorage.setItem('bid_imoveis_view', modo) } catch { /* ignore */ }
   }
 
   const cidades_unicas = useMemo(
@@ -173,31 +176,48 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+
+            {/* Toggle de visualizacao */}
+            <div style={{ display: 'flex', border: '1px solid #232324', borderRadius: '2px', overflow: 'hidden' }}>
+              <button
+                onClick={() => mudarView('grade')}
+                title="Visualizar em grade"
+                aria-label="Visualizar em grade"
+                aria-pressed={viewMode === 'grade'}
+                style={{
+                  background: viewMode === 'grade' ? 'rgba(201,168,76,0.15)' : 'transparent',
+                  border: 'none',
+                  color: viewMode === 'grade' ? '#C9A84C' : '#9B9690',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  padding: '8px 12px',
+                  lineHeight: 1,
+                  transition: 'color 0.15s, background-color 0.15s',
+                }}
+              >
+                ⊞
+              </button>
+              <button
+                onClick={() => mudarView('lista')}
+                title="Visualizar em lista"
+                aria-label="Visualizar em lista"
+                aria-pressed={viewMode === 'lista'}
+                style={{
+                  background: viewMode === 'lista' ? 'rgba(201,168,76,0.15)' : 'transparent',
+                  border: 'none',
+                  borderLeft: '1px solid #232324',
+                  color: viewMode === 'lista' ? '#C9A84C' : '#9B9690',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  padding: '8px 12px',
+                  lineHeight: 1,
+                  transition: 'color 0.15s, background-color 0.15s',
+                }}
+              >
+                ☰
+              </button>
+            </div>
           </div>
-          {/* Toggle Grade/Lista */}
-          <div style={{ display: 'flex', gap: 4, border: '1px solid #232324', borderRadius: 2, padding: 2 }}>
-            <button
-              onClick={() => toggleView('lista')}
-              title="Visualização em lista"
-              style={{
-                background: viewMode === 'lista' ? 'rgba(201,168,76,0.12)' : 'none',
-                border: 'none', borderRadius: 2,
-                color: viewMode === 'lista' ? '#C9A84C' : '#9B9690',
-                cursor: 'pointer', padding: '5px 10px', fontSize: 14, lineHeight: 1,
-                transition: 'all 0.15s',
-              }}
-            >☰</button>
-            <button
-              onClick={() => toggleView('grade')}
-              title="Visualização em grade"
-              style={{
-                background: viewMode === 'grade' ? 'rgba(201,168,76,0.12)' : 'none',
-                border: 'none', borderRadius: 2,
-                color: viewMode === 'grade' ? '#C9A84C' : '#9B9690',
-                cursor: 'pointer', padding: '5px 10px', fontSize: 14, lineHeight: 1,
-                transition: 'all 0.15s',
-              }}
-            >⊞</button>
           </div>
           <button
             onClick={abrirNovo}
@@ -248,69 +268,107 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           </div>
         </div>
 
-        {/* Grade de cards */}
-        {viewMode === 'grade' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-            {imoveisFiltrados.length === 0 ? (
-              <div style={{ gridColumn: '1/-1', padding: '64px', textAlign: 'center' }}>
-                <p style={{ fontSize: '16px', color: '#9B9690' }}>Nenhum imóvel encontrado.</p>
-              </div>
-            ) : imoveisFiltrados.map((imovel: Imovel) => {
+        {/* Empty state */}
+        {imoveisFiltrados.length === 0 && (
+          <div
+            style={{
+              backgroundColor: '#181819',
+              border: '1px solid rgba(201,168,76,0.1)',
+              borderRadius: '2px',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{ padding: '64px', textAlign: 'center' }}>
+              <p style={{ fontSize: '16px', color: '#9B9690' }}>Nenhum imovel encontrado.</p>
+              <p style={{ fontSize: '14px', color: '#2E2E30', marginTop: '10px' }}>
+                Clique em &ldquo;+ Cadastrar Imovel&rdquo; para adicionar.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Modo Grade */}
+        {imoveisFiltrados.length > 0 && view === 'grade' && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '16px',
+            }}
+          >
+            {imoveisVisiveis.map((imovel: Imovel) => {
               const sc = STATUS_COLORS[imovel.status as ImovelStatus]
-              const thumb = imovel.image_urls?.[0]
+              const temImagem = Array.isArray(imovel.image_urls) && imovel.image_urls.length > 0
               return (
-                <div key={imovel.id} style={{
-                  backgroundColor: '#181819',
-                  border: '1px solid rgba(201,168,76,0.1)',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  transition: 'border-color 0.15s, box-shadow 0.15s',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLDivElement
-                  el.style.borderColor = 'rgba(201,168,76,0.3)'
-                  el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.3)'
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLDivElement
-                  el.style.borderColor = 'rgba(201,168,76,0.1)'
-                  el.style.boxShadow = 'none'
-                }}
+                <div
+                  key={imovel.id}
+                  style={{
+                    backgroundColor: '#181819',
+                    border: '1px solid rgba(201,168,76,0.1)',
+                    borderRadius: '2px',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                    e.currentTarget.style.borderColor = 'rgba(201,168,76,0.3)'
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'
+                  }}
+                  onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                    e.currentTarget.style.borderColor = 'rgba(201,168,76,0.1)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
                 >
                   {/* Thumbnail */}
-                  <div style={{ height: 160, backgroundColor: '#232324', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
-                    {thumb
-                      ? <img src={thumb} alt={imovel.titulo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <span style={{ fontSize: 48 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
-                    }
+                  <div style={{ position: 'relative', height: '160px', backgroundColor: '#232324', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {temImagem ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imovel.image_urls[0] || "/placeholder.svg"}
+                        alt={imovel.titulo}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '48px' }} aria-hidden="true">{getImovelEmoji(imovel.tipo_imovel)}</span>
+                    )}
                     <span style={{
-                      position: 'absolute', top: 8, right: 8,
-                      fontSize: 10, padding: '3px 8px', borderRadius: 2, fontWeight: 600,
-                      backgroundColor: sc?.bg || '#232324', color: sc?.text || '#9B9690',
+                      position: 'absolute', top: '10px', right: '10px',
+                      fontSize: '12px', padding: '4px 10px', borderRadius: '2px',
+                      backgroundColor: sc.bg, color: sc.text,
                     }}>
-                      {STATUS_LABELS[imovel.status] || imovel.status}
+                      {STATUS_LABELS[imovel.status as ImovelStatus]}
                     </span>
                   </div>
-                  {/* Info */}
-                  <div style={{ padding: '14px 16px' }}>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>
+
+                  {/* Conteúdo */}
+                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <p style={{ fontSize: '16px', color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {imovel.titulo}
                     </p>
-                    <p style={{ fontSize: 12, color: '#9B9690', marginBottom: 8 }}>
-                      {[imovel.cidade, imovel.bairro].filter(Boolean).join(' · ')}
+                    <p style={{ fontSize: '13px', color: '#9B9690' }}>
+                      {[imovel.cidade, imovel.bairro].filter(Boolean).join(' · ') || '—'}
                     </p>
-                    <p style={{ fontSize: 18, fontWeight: 700, color: '#C9A84C', marginBottom: 10 }}>
+                    <p style={{ fontSize: '18px', color: '#C9A84C', marginTop: '6px' }}>
                       {formatCurrency(imovel.valor)}
                     </p>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => { setImovelEditando(imovel); setModalAberto(true) }}
-                        style={{ ...btnIconStyle, flex: 1, justifyContent: 'center', display: 'flex', fontSize: 13 }}>
-                        ✎ Editar
+
+                    {/* Botões de ação */}
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '12px' }}>
+                      <button
+                        title="Editar"
+                        style={btnIconStyle}
+                        onClick={() => abrirEdicao(imovel)}
+                      >
+                        ✏
                       </button>
-                      <button onClick={() => handleDeletar(imovel.id)} disabled={deletandoId === imovel.id}
-                        style={{ ...btnIconStyle, color: deletandoId === imovel.id ? '#E05C5C' : '#9B9690' }}>
-                        🗑
+                      <button
+                        title="Excluir"
+                        style={{ ...btnIconStyle, color: deletandoId === imovel.id ? '#E05C5C' : '#9B9690' }}
+                        disabled={deletandoId === imovel.id}
+                        onClick={() => handleDeletar(imovel.id)}
+                      >
+                        {deletandoId === imovel.id ? '...' : '✕'}
                       </button>
                     </div>
                   </div>
@@ -320,8 +378,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           </div>
         )}
 
-        {/* Lista */}
-        {viewMode === 'lista' && <>
+        {/* Modo Lista */}
+        {imoveisFiltrados.length > 0 && view === 'lista' && (
         <div
           style={{
             backgroundColor: '#181819',
@@ -330,14 +388,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             overflow: 'hidden',
           }}
         >
-          {imoveisFiltrados.length === 0 ? (
-            <div style={{ padding: '64px', textAlign: 'center' }}>
-              <p style={{ fontSize: '16px', color: '#9B9690' }}>Nenhum imovel encontrado.</p>
-              <p style={{ fontSize: '14px', color: '#2E2E30', marginTop: '10px' }}>
-                Clique em &ldquo;+ Cadastrar Imovel&rdquo; para adicionar.
-              </p>
-            </div>
-          ) : (
+          {
             imoveisVisiveis.map((imovel: Imovel, i: number) => {
               const sc = STATUS_COLORS[imovel.status as ImovelStatus]
               return (
@@ -450,8 +501,9 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                 </div>
               )
             })
-          )}
+          }
         </div>
+        )}
 
         {/* Paginação */}
         {totalPaginas > 1 && (
@@ -489,7 +541,6 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             >→</button>
           </div>
         )}
-        </> /* fim viewMode lista */ }
       </div>
 
       {/* Modal */}

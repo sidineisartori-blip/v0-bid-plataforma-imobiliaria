@@ -50,6 +50,23 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('pt-BR')
 }
 
+function getIniciais(nome: string): string {
+  return nome
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((n) => n[0] || '')
+    .join('')
+    .toUpperCase()
+}
+
+const CORES_AVATAR_PLANO: Record<string, string> = {
+  free: '#9B9690',
+  pro: '#5C9BE0',
+  premium: '#C9A84C',
+  enterprise: '#5CB88A',
+}
+
 export default function AdminPainelPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -58,11 +75,19 @@ export default function AdminPainelPage() {
   const [corretores, setCorretores] = useState<Corretor[]>([])
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
   const [loading, setLoading] = useState(true)
-  const [erroConexao, setErroConexao] = useState<string | null>(null)
   const [atualizando, setAtualizando] = useState<string | null>(null)
-  const [hoverRow, setHoverRow] = useState<string | null>(null)
   const [busca, setBusca] = useState('')
   const [filtroPlano, setFiltroPlano] = useState<string>('todos')
+  const [linhaHover, setLinhaHover] = useState<string | null>(null)
+  const [telaEstreita, setTelaEstreita] = useState(false)
+
+  // Detecta viewport < 1200px para ocultar coluna CRECI
+  useEffect(() => {
+    const checar = () => setTelaEstreita(window.innerWidth < 1200)
+    checar()
+    window.addEventListener('resize', checar)
+    return () => window.removeEventListener('resize', checar)
+  }, [])
 
   // Metricas
   const [metricas, setMetricas] = useState({
@@ -93,47 +118,43 @@ export default function AdminPainelPage() {
 
   async function carregarDados() {
     setLoading(true)
-    setErroConexao(null)
 
-    try {
-      const [
-        { data: corretoresData, count: totalCorretores },
-        { data: assinaturasData },
-        { count: corretoresAtivos },
-      ] = await Promise.all([
-        supabase
-          .from('corretores')
-          .select('id, full_name, email, creci, creci_status, plano, nota_media, created_at, phone', { count: 'exact' })
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('assinaturas')
-          .select('*, corretor:corretores(full_name, email)')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('corretores')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_active', true),
-      ])
+    const [
+      { data: corretoresData, count: totalCorretores },
+      { data: assinaturasData },
+      { count: corretoresAtivos },
+    ] = await Promise.all([
+      supabase
+        .from('corretores')
+        .select('id, full_name, email, creci, creci_status, plano, nota_media, created_at, phone', { count: 'exact' })
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('assinaturas')
+        .select('*, corretor:corretores(full_name, email)')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('corretores')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true),
+    ])
 
-      setCorretores((corretoresData as Corretor[]) || [])
-      setAssinaturas((assinaturasData as Assinatura[]) || [])
+    setCorretores((corretoresData as Corretor[]) || [])
+    setAssinaturas((assinaturasData as Assinatura[]) || [])
 
-      const assinaturasPagas = (assinaturasData || []).filter(
-        (a: Assinatura) => a.status === 'ativa' && a.plano !== 'free'
-      ).length
-      const mrrTotal = (assinaturasData || [])
-        .filter((a: Assinatura) => a.status === 'ativa')
-        .reduce((acc: number, a: Assinatura) => acc + (a.valor_mensal || 0), 0)
+    // Calcula metricas
+    const assinaturasPagas = (assinaturasData || []).filter(
+      (a: Assinatura) => a.status === 'ativa' && a.plano !== 'free'
+    ).length
+    const mrrTotal = (assinaturasData || [])
+      .filter((a: Assinatura) => a.status === 'ativa')
+      .reduce((acc: number, a: Assinatura) => acc + (a.valor_mensal || 0), 0)
 
-      setMetricas({
-        totalCorretores: totalCorretores || 0,
-        corretoresAtivos: corretoresAtivos || 0,
-        assinaturasPagas,
-        mrrTotal,
-      })
-    } catch {
-      setErroConexao('Falha ao conectar com o banco de dados. Verifique se as variáveis de ambiente do Supabase estão configuradas no Vercel.')
-    }
+    setMetricas({
+      totalCorretores: totalCorretores || 0,
+      corretoresAtivos: corretoresAtivos || 0,
+      assinaturasPagas,
+      mrrTotal,
+    })
 
     setLoading(false)
   }
@@ -249,9 +270,6 @@ export default function AdminPainelPage() {
     padding: '12px 20px',
     cursor: 'pointer',
     transition: 'color 0.15s',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
   })
 
   const metricaBox = (valor: string | number, label: string, destaque?: string) => (
@@ -366,46 +384,16 @@ export default function AdminPainelPage() {
         <div style={{ borderBottom: '1px solid #232324', marginBottom: '32px', display: 'flex' }}>
           {(['dashboard', 'corretores', 'planos', 'financeiro'] as Aba[]).map((id) => (
             <button key={id} style={btnAba(id)} onClick={() => setAba(id)}>
-              {id === 'dashboard' && <>{aba === 'dashboard' && <span style={{fontSize:7, color:'#C9A84C'}}>●</span>}Dashboard</>}
-              {id === 'corretores' && <>{aba === 'corretores' && <span style={{fontSize:7, color:'#C9A84C'}}>●</span>}Corretores</>}
-              {id === 'planos' && <>{aba === 'planos' && <span style={{fontSize:7, color:'#C9A84C'}}>●</span>}Gerenciar Planos</>}
-              {id === 'financeiro' && <>{aba === 'financeiro' && <span style={{fontSize:7, color:'#C9A84C'}}>●</span>}Financeiro</>}
+              {aba === id && (
+                <span style={{ color: '#C9A84C', fontSize: '6px', marginRight: '8px', verticalAlign: 'middle', display: 'inline-block' }} aria-hidden="true">●</span>
+              )}
+              {id === 'dashboard' && 'Dashboard'}
+              {id === 'corretores' && 'Corretores'}
+              {id === 'planos' && 'Gerenciar Planos'}
+              {id === 'financeiro' && 'Financeiro'}
             </button>
           ))}
         </div>
-
-        {/* Banner de erro de conexão */}
-        {erroConexao && (
-          <div style={{
-            backgroundColor: 'rgba(224,92,92,0.1)',
-            border: '1px solid rgba(224,92,92,0.3)',
-            borderRadius: '2px',
-            padding: '16px 20px',
-            marginBottom: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px',
-          }}>
-            <p style={{ fontSize: '15px', color: '#E05C5C', margin: 0 }}>{erroConexao}</p>
-            <button
-              onClick={() => carregarDados()}
-              style={{
-                backgroundColor: 'transparent',
-                border: '1px solid rgba(224,92,92,0.4)',
-                color: '#E05C5C',
-                borderRadius: '2px',
-                padding: '8px 16px',
-                fontSize: '13px',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
-            >
-              Tentar novamente
-            </button>
-          </div>
-        )}
 
         {/* Dashboard */}
         {aba === 'dashboard' && (
@@ -477,14 +465,16 @@ export default function AdminPainelPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 180px 120px 100px 80px 180px',
+                  gridTemplateColumns: telaEstreita ? '1fr 180px 100px 80px 180px' : '1fr 180px 120px 100px 80px 180px',
                   gap: '0',
                   padding: '14px 20px',
                   borderBottom: '1px solid #232324',
                   backgroundColor: '#232324',
                 }}
               >
-                {['Nome', 'E-mail', 'CRECI', 'Status', 'Plano', 'Acoes'].map((h) => (
+                {['Nome', 'E-mail', 'CRECI', 'Status', 'Plano', 'Acoes']
+                  .filter((h) => !(telaEstreita && h === 'CRECI'))
+                  .map((h) => (
                   <span
                     key={h}
                     style={{
@@ -502,38 +492,57 @@ export default function AdminPainelPage() {
 
               {corretoresFiltrados.slice(0, 50).map((cor, i) => {
                 const planoInfo = PLANOS.find((p) => p.id === cor.plano) || PLANOS[0]
-                const corIniciais = planoInfo.cor
-                const iniciais = cor.full_name.split(' ').slice(0,2).map((n: string) => n[0]).join('').toUpperCase()
                 return (
                   <div
                     key={cor.id}
-                    onMouseEnter={() => setHoverRow(cor.id)}
-                    onMouseLeave={() => setHoverRow(null)}
+                    onMouseEnter={() => setLinhaHover(cor.id)}
+                    onMouseLeave={() => setLinhaHover(null)}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr 180px 120px 100px 80px 180px',
+                      gridTemplateColumns: telaEstreita ? '1fr 180px 100px 80px 180px' : '1fr 180px 120px 100px 80px 180px',
                       gap: '0',
                       padding: '16px 20px',
                       borderBottom: i < corretoresFiltrados.length - 1 ? '1px solid #232324' : 'none',
                       alignItems: 'center',
-                      backgroundColor: hoverRow === cor.id ? '#232324' : 'transparent',
+                      backgroundColor: linhaHover === cor.id ? '#232324' : 'transparent',
                       transition: 'background-color 0.1s',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
-                      <div style={{
-                        width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                        backgroundColor: `${corIniciais}22`,
-                        border: `1px solid ${corIniciais}55`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 10, fontWeight: 700, color: corIniciais,
-                      }}>
-                        {iniciais}
-                      </div>
-                      <span style={{ fontSize: '15px', color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span
+                      style={{
+                        fontSize: '15px',
+                        color: '#F0EDE6',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          backgroundColor: `${CORES_AVATAR_PLANO[cor.plano] || '#9B9690'}26`,
+                          border: `1px solid ${CORES_AVATAR_PLANO[cor.plano] || '#9B9690'}59`,
+                          color: CORES_AVATAR_PLANO[cor.plano] || '#9B9690',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {getIniciais(cor.full_name)}
+                      </span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {cor.full_name}
                       </span>
-                    </div>
+                    </span>
                     <span
                       style={{
                         fontSize: '14px',
@@ -545,7 +554,9 @@ export default function AdminPainelPage() {
                     >
                       {cor.email || '—'}
                     </span>
-                    <span style={{ fontSize: '14px', color: '#9B9690' }}>{cor.creci || '—'}</span>
+                    {!telaEstreita && (
+                      <span style={{ fontSize: '14px', color: '#9B9690' }}>{cor.creci || '—'}</span>
+                    )}
                     <span
                       style={{
                         fontSize: '12px',

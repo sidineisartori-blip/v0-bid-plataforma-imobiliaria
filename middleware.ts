@@ -27,12 +27,6 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // Rotas públicas do admin (não requerem autenticação Supabase)
-  const adminPublicRoutes = ['/admin/login', '/admin/setup']
-  if (adminPublicRoutes.some((route) => pathname.startsWith(route))) {
-    return supabaseResponse
-  }
-
   // Todas as rotas protegidas do dashboard
   const protectedRoutes = [
     '/dashboard',
