@@ -1,4 +1,5 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+﻿import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import MatchesClient from '@/components/matches/MatchesClient'
 import type { MatchComRelacoes } from '@/types/bid'
@@ -41,13 +42,35 @@ export default async function MatchesPage() {
     matches = data || []
   }
 
-  // Busca apenas corretores relacionados aos matches (não todos)
+  // Coleta IDs de corretores dos joins (podem ser null por RLS em solicitacoes)
   const corretorIds = new Set<string>()
+  const missingSolicitacaoIds: string[] = []
+
   for (const m of matches) {
     if (m.imovel?.corretor_id) corretorIds.add(m.imovel.corretor_id)
-    if (m.solicitacao?.corretor_id) corretorIds.add(m.solicitacao.corretor_id)
+    if (m.solicitacao?.corretor_id) {
+      corretorIds.add(m.solicitacao.corretor_id)
+    } else if ((m as any).solicitacao_id) {
+      // solicitacao retornou null por RLS — busca corretor_id via admin
+      missingSolicitacaoIds.push((m as any).solicitacao_id)
+    }
   }
   corretorIds.add(user.id)
+
+  // Busca corretor_id das solicitacoes cujo join foi bloqueado por RLS
+  if (missingSolicitacaoIds.length > 0) {
+    const admin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    const { data: sols } = await admin
+      .from('solicitacoes')
+      .select('id, corretor_id')
+      .in('id', missingSolicitacaoIds)
+    for (const s of sols || []) {
+      if (s.corretor_id) corretorIds.add(s.corretor_id)
+    }
+  }
 
   const { data: corretores } = await supabase
     .from('corretores')
