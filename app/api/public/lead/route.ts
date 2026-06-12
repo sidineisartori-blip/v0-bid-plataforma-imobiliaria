@@ -174,7 +174,33 @@ export async function POST(request: NextRequest) {
         console.error('[v0] Erro ao inserir solicitacao:', error)
         return NextResponse.json({ error: 'Erro ao salvar dados' }, { status: 500 })
       }
-      
+
+      // Agenda primeiro follow-up em 2 dias
+      const { data: solCriada } = await supabase
+        .from('solicitacoes')
+        .select('id')
+        .eq('corretor_id', corretorId)
+        .eq('cliente_nome', d.nome)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (solCriada) {
+        const em2dias = new Date()
+        em2dias.setDate(em2dias.getDate() + 2)
+        await supabase.from('follow_ups').insert({
+          corretor_id: corretorId,
+          solicitacao_id: solCriada.id,
+          cliente_nome: d.nome,
+          cliente_phone: d.whatsapp,
+          tipo_negocio: d.tipo_negocio,
+          cidade: d.cidade,
+          agendado_para: em2dias.toISOString(),
+          status: 'pendente',
+          contador: 1,
+        })
+      }
+
       return NextResponse.json({ ok: true, message: 'Solicitacao cadastrada com sucesso' })
     }
     
