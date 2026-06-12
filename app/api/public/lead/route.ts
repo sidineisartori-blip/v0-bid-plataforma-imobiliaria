@@ -150,8 +150,8 @@ export async function POST(request: NextRequest) {
       
       const d = validado.data
       
-      // Insere solicitacao de busca
-      const { error } = await supabase.from('solicitacoes').insert({
+      // Insere solicitacao de busca e retorna o id criado
+      const { data: solCriada, error } = await supabase.from('solicitacoes').insert({
         corretor_id: corretorId,
         status: 'ativa',
         source: 'landing_page',
@@ -168,13 +168,30 @@ export async function POST(request: NextRequest) {
         tem_animal: d.tem_animal ?? false,
         prazo_fechar: '3 meses',
         vagas: 0,
-      })
-      
+      }).select('id').single()
+
       if (error) {
         console.error('[v0] Erro ao inserir solicitacao:', error)
         return NextResponse.json({ error: 'Erro ao salvar dados' }, { status: 500 })
       }
-      
+
+      // Agenda primeiro follow-up em 2 dias
+      if (solCriada) {
+        const em2dias = new Date()
+        em2dias.setDate(em2dias.getDate() + 2)
+        await supabase.from('follow_ups').insert({
+          corretor_id: corretorId,
+          solicitacao_id: solCriada.id,
+          cliente_nome: d.nome,
+          cliente_phone: d.whatsapp,
+          tipo_negocio: d.tipo_negocio,
+          cidade: d.cidade,
+          agendado_para: em2dias.toISOString(),
+          status: 'pendente',
+          contador: 1,
+        })
+      }
+
       return NextResponse.json({ ok: true, message: 'Solicitacao cadastrada com sucesso' })
     }
     
