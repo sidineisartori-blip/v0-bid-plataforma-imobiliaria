@@ -62,7 +62,15 @@ export default function SiteConfigClient({
   const [erro, setErro] = useState('')
   const [abaAtiva, setAbaAtiva] = useState<'config' | 'share' | 'embed'>('config')
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bid.app.br'
+  const [origin, setOrigin] = useState('')
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') setOrigin(window.location.origin)
+  }, [])
+  const baseUrl =
+    origin ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    ''
   const linkPublico = `${baseUrl}/corretor/${slug}`
   const embedCode = `<iframe src="${linkPublico}?embed=true" width="100%" height="600" frameborder="0" style="border-radius:8px;"></iframe>`
 
@@ -78,6 +86,7 @@ export default function SiteConfigClient({
     const { error } = await supabase
       .from('corretores')
       .update({
+        slug: slug,
         site_slug_custom: slug,
         site_ativo: status === 'Ativa',
         site_boas_vindas: boasVindas,

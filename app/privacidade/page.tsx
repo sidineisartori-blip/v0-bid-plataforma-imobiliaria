@@ -1,122 +1,200 @@
-import Link from 'next/link'
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = {
-  title: 'Política de Privacidade',
-  robots: { index: true, follow: true },
+export const metadata = {
+  title: 'Política de Privacidade — BID Plataforma Imobiliária',
 }
 
-const ulStyle: React.CSSProperties = {
-  paddingLeft: 20, lineHeight: 2, color: '#9B9690', fontSize: 14,
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+export default function PrivacidadePage() {
   return (
-    <div style={{ marginBottom: 32 }}>
-      <h2 style={{ fontSize: 16, color: '#F0EDE6', fontWeight: 600, marginBottom: 10 }}>{title}</h2>
-      <div style={{ fontSize: 14, color: '#9B9690', lineHeight: 1.8 }}>{children}</div>
-    </div>
-  )
-}
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#0E0E0F',
+        color: '#F0EDE6',
+        fontFamily: 'DM Sans, sans-serif',
+        padding: '60px 24px',
+      }}
+    >
+      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        {/* Cabeçalho */}
+        <div style={{ marginBottom: '48px' }}>
+          <a
+            href="/cadastro"
+            style={{
+              fontSize: '13px',
+              color: '#C9A84C',
+              textDecoration: 'none',
+              letterSpacing: '0.05em',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              marginBottom: '32px',
+            }}
+          >
+            ← Voltar ao cadastro
+          </a>
+          <h1
+            style={{
+              fontFamily: 'Playfair Display, serif',
+              fontSize: '40px',
+              fontWeight: 700,
+              color: '#F0EDE6',
+              margin: '0 0 12px',
+            }}
+          >
+            Política de Privacidade
+          </h1>
+          <p style={{ fontSize: '15px', color: '#9B9690', margin: 0 }}>
+            Última atualização: Janeiro de 2025
+          </p>
+        </div>
 
-export default function PoliticaPrivacidade() {
-  return (
-    <div style={{ backgroundColor: '#0E0E0F', minHeight: '100vh', color: '#F0EDE6', padding: '60px 24px' }}>
-      <div style={{ maxWidth: 760, margin: '0 auto' }}>
-        <Link href="/" style={{ fontSize: 13, color: '#9B9690', textDecoration: 'none', display: 'inline-block', marginBottom: 32 }}>
-          ← Voltar
-        </Link>
+        {/* Divider */}
+        <div style={{ height: '1px', backgroundColor: '#232324', marginBottom: '40px' }} />
 
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: '#C9A84C', marginBottom: 8 }}>
-          Política de Privacidade
-        </h1>
-        <p style={{ fontSize: 13, color: '#9B9690', marginBottom: 40 }}>Última atualização: 11 de junho de 2026</p>
+        {/* Conteúdo */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '36px', lineHeight: 1.8, fontSize: '16px', color: '#C8C2B8' }}>
 
-        <Section title="1. Quem somos">
-          O BID — Balcão Imobiliário Digital ("BID", "nós") é uma plataforma SaaS de matching imobiliário.
-          Para dúvidas sobre esta política, entre em contato pelo e-mail{' '}
-          <a href="mailto:privacidade@bid.imob.br" style={{ color: '#C9A84C' }}>privacidade@bid.imob.br</a>.
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              1. Introdução
+            </h2>
+            <p style={{ margin: 0 }}>
+              A BID Plataforma Imobiliária respeita a privacidade de seus usuários e está comprometida com a proteção de dados pessoais em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018). Esta política descreve como coletamos, usamos e protegemos suas informações.
+            </p>
+          </section>
 
-        <Section title="2. Dados que coletamos">
-          <ul style={ulStyle}>
-            <li><strong style={{ color: '#F0EDE6' }}>Cadastro:</strong> nome completo, e-mail, telefone/WhatsApp, número CRECI e estado.</li>
-            <li><strong style={{ color: '#F0EDE6' }}>Uso da plataforma:</strong> imóveis cadastrados, solicitações, matches, mensagens de chat e negociações.</li>
-            <li><strong style={{ color: '#F0EDE6' }}>Dados técnicos:</strong> endereço IP, navegador, páginas acessadas e timestamps (logs Vercel/Supabase).</li>
-            <li><strong style={{ color: '#F0EDE6' }}>Cookies:</strong> cookie de sessão de autenticação (necessário) e preferências de interface (opcional).</li>
-          </ul>
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              2. Dados Coletados
+            </h2>
+            <p style={{ margin: '0 0 12px' }}>Coletamos os seguintes dados:</p>
+            <ul style={{ margin: 0, paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <li><strong style={{ color: '#F0EDE6' }}>Dados de cadastro:</strong> nome completo, e-mail, WhatsApp, número do CRECI, estado/cidade de atuação;</li>
+              <li><strong style={{ color: '#F0EDE6' }}>Dados profissionais:</strong> tipo de atuação, nome da imobiliária (quando aplicável);</li>
+              <li><strong style={{ color: '#F0EDE6' }}>Dados de imóveis:</strong> informações inseridas voluntariamente sobre imóveis cadastrados;</li>
+              <li><strong style={{ color: '#F0EDE6' }}>Dados de uso:</strong> logs de acesso, interações com a plataforma, histórico de matches e parcerias;</li>
+              <li><strong style={{ color: '#F0EDE6' }}>Comunicações:</strong> mensagens trocadas via chat da plataforma.</li>
+            </ul>
+          </section>
 
-        <Section title="3. Finalidade do tratamento">
-          <ul style={ulStyle}>
-            <li>Autenticar e manter sua conta ativa na plataforma.</li>
-            <li>Realizar o matching entre imóveis e solicitações de corretores.</li>
-            <li>Enviar notificações sobre matches, parcerias e atualizações de CRECI.</li>
-            <li>Processar solicitações de assinatura e histórico financeiro.</li>
-            <li>Melhorar a experiência do produto com base em dados agregados de uso.</li>
-            <li>Cumprir obrigações legais e regulatórias.</li>
-          </ul>
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              3. Finalidade do Tratamento
+            </h2>
+            <p style={{ margin: '0 0 12px' }}>Seus dados são utilizados para:</p>
+            <ul style={{ margin: 0, paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <li>Criar e gerenciar sua conta na plataforma;</li>
+              <li>Realizar o matching entre imóveis, corretores e clientes;</li>
+              <li>Facilitar parcerias entre corretores;</li>
+              <li>Enviar notificações relevantes sobre atividades na plataforma;</li>
+              <li>Verificar a regularidade do CRECI;</li>
+              <li>Melhorar continuamente os serviços oferecidos;</li>
+              <li>Cumprir obrigações legais e regulatórias.</li>
+            </ul>
+          </section>
 
-        <Section title="4. Base legal (LGPD — Lei 13.709/2018)">
-          <ul style={ulStyle}>
-            <li><strong style={{ color: '#F0EDE6' }}>Execução de contrato</strong> (art. 7º, V): dados necessários para prestar o serviço contratado.</li>
-            <li><strong style={{ color: '#F0EDE6' }}>Consentimento</strong> (art. 7º, I): cookies não essenciais e comunicações de marketing.</li>
-            <li><strong style={{ color: '#F0EDE6' }}>Interesse legítimo</strong> (art. 7º, IX): segurança, prevenção a fraudes e melhoria do produto.</li>
-            <li><strong style={{ color: '#F0EDE6' }}>Cumprimento de obrigação legal</strong> (art. 7º, II): quando exigido por autoridade competente.</li>
-          </ul>
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              4. Compartilhamento de Dados
+            </h2>
+            <p style={{ margin: 0 }}>
+              Não vendemos seus dados pessoais. Podemos compartilhá-los com: (a) outros corretores cadastrados, apenas as informações profissionais necessárias para viabilizar parcerias; (b) prestadores de serviço tecnológico contratados pela BID (infraestrutura de nuvem, autenticação), sob contrato de confidencialidade; (c) autoridades públicas, quando exigido por lei.
+            </p>
+          </section>
 
-        <Section title="5. Compartilhamento de dados">
-          Seus dados <strong style={{ color: '#F0EDE6' }}>não são vendidos</strong> a terceiros. Compartilhamos apenas com:
-          <ul style={{ ...ulStyle, marginTop: 8 }}>
-            <li><strong style={{ color: '#F0EDE6' }}>Supabase Inc.</strong> — banco de dados e autenticação (infraestrutura, EUA, SCCs).</li>
-            <li><strong style={{ color: '#F0EDE6' }}>Vercel Inc.</strong> — hospedagem e CDN (EUA, Privacy Shield / SCCs).</li>
-            <li><strong style={{ color: '#F0EDE6' }}>Outros corretores na plataforma</strong> — nome, CRECI e informações profissionais visíveis para parceiros de match.</li>
-          </ul>
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              5. Segurança
+            </h2>
+            <p style={{ margin: 0 }}>
+              Adotamos medidas técnicas e organizacionais adequadas para proteger seus dados contra acesso não autorizado, alteração, divulgação ou destruição. Os dados são armazenados com criptografia em repouso e em trânsito. O acesso interno é restrito a colaboradores com necessidade legítima.
+            </p>
+          </section>
 
-        <Section title="6. Retenção de dados">
-          Mantemos seus dados enquanto sua conta estiver ativa. Após solicitação de exclusão, removemos ou
-          anonimizamos os dados em até <strong style={{ color: '#F0EDE6' }}>30 dias</strong>, salvo obrigação legal de retenção.
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              6. Retenção de Dados
+            </h2>
+            <p style={{ margin: 0 }}>
+              Mantemos seus dados pelo período necessário ao cumprimento das finalidades descritas nesta política, ou pelo prazo mínimo exigido por lei. Após o encerramento da conta, os dados podem ser retidos por até 5 anos para fins de auditoria e cumprimento de obrigações legais.
+            </p>
+          </section>
 
-        <Section title="7. Seus direitos (LGPD art. 18)">
-          Você pode, a qualquer momento:
-          <ul style={{ ...ulStyle, marginTop: 8 }}>
-            <li>Confirmar a existência de tratamento dos seus dados.</li>
-            <li>Acessar, corrigir ou atualizar seus dados.</li>
-            <li>Solicitar anonimização, bloqueio ou eliminação de dados desnecessários.</li>
-            <li>Revogar consentimento para cookies e comunicações de marketing.</li>
-            <li>Solicitar portabilidade dos seus dados em formato estruturado.</li>
-            <li>Excluir sua conta e todos os dados associados.</li>
-          </ul>
-          Para exercer seus direitos: <a href="mailto:privacidade@bid.imob.br" style={{ color: '#C9A84C' }}>privacidade@bid.imob.br</a>.
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              7. Seus Direitos (LGPD)
+            </h2>
+            <p style={{ margin: '0 0 12px' }}>Como titular de dados, você tem direito a:</p>
+            <ul style={{ margin: 0, paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <li>Confirmar a existência de tratamento de seus dados;</li>
+              <li>Acessar os dados que temos sobre você;</li>
+              <li>Corrigir dados incompletos, inexatos ou desatualizados;</li>
+              <li>Solicitar a anonimização, bloqueio ou eliminação de dados desnecessários;</li>
+              <li>Revogar o consentimento, quando aplicável;</li>
+              <li>Portabilidade dos dados a outro fornecedor de serviço.</li>
+            </ul>
+            <p style={{ margin: '12px 0 0' }}>
+              Para exercer esses direitos, envie solicitação para{' '}
+              <a href="mailto:privacidade@bid.app.br" style={{ color: '#C9A84C', textDecoration: 'none' }}>
+                privacidade@bid.app.br
+              </a>
+              .
+            </p>
+          </section>
 
-        <Section title="8. Segurança">
-          Adotamos: autenticação via Supabase Auth com JWT, Row Level Security no banco de dados,
-          HTTPS obrigatório e acesso restrito por função. Nenhum sistema é 100% inviolável.
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              8. Cookies
+            </h2>
+            <p style={{ margin: 0 }}>
+              Utilizamos cookies estritamente necessários para autenticação e funcionamento da plataforma. Não utilizamos cookies de rastreamento publicitário ou de terceiros para fins de marketing.
+            </p>
+          </section>
 
-        <Section title="9. Cookies">
-          Utilizamos cookies estritamente necessários para autenticação de sessão. Você pode recusar
-          cookies não essenciais pelo banner de consentimento sem perda de funcionalidade principal.
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              9. Alterações desta Política
+            </h2>
+            <p style={{ margin: 0 }}>
+              Podemos atualizar esta política periodicamente. Usuários cadastrados serão notificados por e-mail ou notificação na plataforma. O uso contínuo após as alterações implica aceitação da versão atualizada.
+            </p>
+          </section>
 
-        <Section title="10. Alterações">
-          Eventuais alterações serão publicadas nesta página. Para mudanças materiais, notificaremos
-          pelo e-mail cadastrado com antecedência de 15 dias.
-        </Section>
+          <section>
+            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: '#F0EDE6', margin: '0 0 16px' }}>
+              10. Encarregado de Dados (DPO)
+            </h2>
+            <p style={{ margin: 0 }}>
+              Dúvidas ou solicitações relacionadas à privacidade de dados devem ser direcionadas ao nosso Encarregado pelo e-mail{' '}
+              <a href="mailto:privacidade@bid.app.br" style={{ color: '#C9A84C', textDecoration: 'none' }}>
+                privacidade@bid.app.br
+              </a>
+              .
+            </p>
+          </section>
+        </div>
 
-        <Section title="11. Contato e DPO">
-          Encarregado de Proteção de Dados:{' '}
-          <a href="mailto:privacidade@bid.imob.br" style={{ color: '#C9A84C' }}>privacidade@bid.imob.br</a>
-        </Section>
-
-        <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid #232324', fontSize: 12, color: '#9B9690' }}>
-          <Link href="/termos" style={{ color: '#C9A84C', marginRight: 16 }}>Termos de Uso</Link>
-          <Link href="/" style={{ color: '#9B9690' }}>Voltar ao início</Link>
+        {/* Footer */}
+        <div
+          style={{
+            marginTop: '60px',
+            paddingTop: '32px',
+            borderTop: '1px solid #232324',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          <p style={{ fontSize: '13px', color: '#9B9690', margin: 0 }}>
+            © 2025 BID Plataforma Imobiliária. Todos os direitos reservados.
+          </p>
+          <a
+            href="/termos"
+            style={{ fontSize: '13px', color: '#C9A84C', textDecoration: 'none' }}
+          >
+            ← Termos de Uso
+          </a>
         </div>
       </div>
     </div>
