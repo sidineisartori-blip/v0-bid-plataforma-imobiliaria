@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail, emailFollowUpAlerta } from '@/lib/email'
 
 // Vercel Cron chama com Authorization: Bearer CRON_SECRET
 export async function GET(req: NextRequest) {
@@ -13,10 +14,10 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Busca follow-ups vencidos (agendado_para <= agora) ainda pendentes
+  // Busca follow-ups vencidos com email do corretor para notificação
   const { data: vencidos, error } = await admin
     .from('follow_ups')
-    .select('id, corretor_id, solicitacao_id, cliente_nome, cliente_phone, tipo_negocio, cidade, contador')
+    .select('id, corretor_id, solicitacao_id, cliente_nome, cliente_phone, tipo_negocio, cidade, contador, corretor:corretores(nome, email, whatsapp)')
     .eq('status', 'pendente')
     .lte('agendado_para', new Date().toISOString())
     .limit(100)
@@ -40,8 +41,19 @@ export async function GET(req: NextRequest) {
       continue
     }
 
-    // Cria notificação para o corretor
+    // Envia email + WhatsApp ao corretor
     const diasContador = fu.contador * 2
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://v0-bid-plataforma-imobiliaria.vercel.app'
+    const corretor = fu.corretor as { nome?: string; email?: string; whatsapp?: string } | null
+    if (corretor?.email) {
+      sendEmail({
+        to: corretor.email,
+        subject: `⏰ Follow-up: ligue para ${fu.cliente_nome ?? 'cliente'} hoje`,
+        html: emailFollowUpAlerta({ corretorNome: corretor.nome ?? '', clienteNome: fu.cliente_nome ?? '', clientePhone: fu.cliente_phone ?? '', tipoNegocio: fu.tipo_negocio ?? '', cidade: fu.cidade ?? '', diasDesde: diasContador, appUrl }),
+      })
+    }
+
+    // Cria notificação in-app para o corretor
     await admin.from('notificacoes').insert({
       corretor_id: fu.corretor_id,
       tipo: 'follow_up',

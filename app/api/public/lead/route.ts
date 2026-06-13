@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { sendEmail, emailNovoLead, emailConfirmacaoLead } from '@/lib/email'
 
 // Rate limit em memoria (5 envios por IP por hora)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
     // Verifica se o corretor existe e esta ativo
     const { data: corretor } = await supabase
       .from('corretores')
-      .select('id, site_ativo, whatsapp')
+      .select('id, site_ativo, whatsapp, nome, email')
       .eq('id', corretorId)
       .single()
     
@@ -222,7 +223,23 @@ export async function POST(request: NextRequest) {
         })
         if (fuErr) console.error('[v0] Erro ao agendar follow-up:', fuErr)
 
-        // Notifica o corretor via WhatsApp
+        // Notifica o corretor por email + WhatsApp
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://v0-bid-plataforma-imobiliaria.vercel.app'
+        if (corretor.email) {
+          sendEmail({
+            to: corretor.email,
+            subject: `🔔 Novo lead: ${d.nome} quer ${d.tipo_imovel} em ${d.cidade}`,
+            html: emailNovoLead({ corretorNome: corretor.nome, clienteNome: d.nome, clientePhone: d.whatsapp, tipoNegocio: d.tipo_negocio, tipoImovel: d.tipo_imovel, cidade: d.cidade, valorMax: d.valor_max, quartos: d.quartos, appUrl }),
+          })
+        }
+        if (d.email) {
+          sendEmail({
+            to: d.email,
+            subject: 'Solicitação recebida — BID Imobiliário',
+            html: emailConfirmacaoLead({ clienteNome: d.nome, corretorNome: corretor.nome ?? 'nosso corretor', tipoNegocio: d.tipo_negocio, tipoImovel: d.tipo_imovel, cidade: d.cidade }),
+            replyTo: corretor.email,
+          })
+        }
         if (corretor.whatsapp) {
           notificarCorretor(corretor.whatsapp,
             `🔔 *Novo lead no BID!*\n\n` +
