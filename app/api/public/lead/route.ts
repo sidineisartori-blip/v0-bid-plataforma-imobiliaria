@@ -5,6 +5,24 @@ import { z } from 'zod'
 // Rate limit em memoria (5 envios por IP por hora)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
+// Notifica o corretor via WhatsApp (Evolution API) — falha silenciosa para não bloquear o fluxo
+async function notificarCorretor(phone: string, mensagem: string) {
+  const evolutionUrl = process.env.EVOLUTION_API_URL
+  const evolutionKey = process.env.EVOLUTION_API_KEY
+  const evolutionInstance = process.env.EVOLUTION_INSTANCE || 'bid'
+  if (!evolutionUrl || !evolutionKey) return
+  try {
+    await fetch(`${evolutionUrl}/message/sendText/${evolutionInstance}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': evolutionKey },
+      body: JSON.stringify({ number: phone.replace(/\D/g, ''), text: mensagem }),
+      signal: AbortSignal.timeout(5000),
+    })
+  } catch {
+    // Silencioso — WhatsApp é best-effort
+  }
+}
+
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
   const entry = rateLimitMap.get(ip)
@@ -90,7 +108,7 @@ export async function POST(request: NextRequest) {
     // Verifica se o corretor existe e esta ativo
     const { data: corretor } = await supabase
       .from('corretores')
-      .select('id, site_ativo')
+      .select('id, site_ativo, whatsapp')
       .eq('id', corretorId)
       .single()
     
@@ -134,7 +152,20 @@ export async function POST(request: NextRequest) {
         console.error('[v0] Erro ao inserir imovel:', error)
         return NextResponse.json({ error: 'Erro ao salvar dados' }, { status: 500 })
       }
-      
+
+      // Notifica o corretor via WhatsApp
+      if (corretor.whatsapp) {
+        notificarCorretor(corretor.whatsapp,
+          `🏠 *Novo imóvel captado via BID!*\n\n` +
+          `*Proprietário:* ${d.nome}\n` +
+          `*WhatsApp:* ${d.whatsapp}\n` +
+          `*Tipo:* ${d.tipo_imovel} para ${d.tipo_negocio}\n` +
+          `*Cidade:* ${d.cidade}${d.bairro ? ` · ${d.bairro}` : ''}\n` +
+          `*Valor:* R$ ${d.valor.toLocaleString('pt-BR')}\n\n` +
+          `Acesse o BID para ver os detalhes.`
+        )
+      }
+
       return NextResponse.json({ ok: true, message: 'Imovel cadastrado com sucesso' })
     }
     
@@ -174,11 +205,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Erro ao salvar dados' }, { status: 500 })
       }
 
-      // Agenda primeiro follow-up em 2 dias
       if (solCriada) {
+        // Agenda primeiro follow-up em 2 dias
         const em2dias = new Date()
         em2dias.setDate(em2dias.getDate() + 2)
-        await supabase.from('follow_ups').insert({
+        const { error: fuErr } = await supabase.from('follow_ups').insert({
           corretor_id: corretorId,
           solicitacao_id: solCriada.id,
           cliente_nome: d.nome,
@@ -189,6 +220,21 @@ export async function POST(request: NextRequest) {
           status: 'pendente',
           contador: 1,
         })
+        if (fuErr) console.error('[v0] Erro ao agendar follow-up:', fuErr)
+
+        // Notifica o corretor via WhatsApp
+        if (corretor.whatsapp) {
+          notificarCorretor(corretor.whatsapp,
+            `🔔 *Novo lead no BID!*\n\n` +
+            `*Cliente:* ${d.nome}\n` +
+            `*WhatsApp:* ${d.whatsapp}\n` +
+            `*Busca:* ${d.tipo_imovel} para ${d.tipo_negocio}\n` +
+            `*Cidade:* ${d.cidade}\n` +
+            (d.valor_max ? `*Até:* R$ ${d.valor_max.toLocaleString('pt-BR')}\n` : '') +
+            (d.quartos ? `*Quartos:* ${d.quartos}+\n` : '') +
+            `\nAcesse o BID para contatar e agendar follow-up.`
+          )
+        }
       }
 
       return NextResponse.json({ ok: true, message: 'Solicitacao cadastrada com sucesso' })
