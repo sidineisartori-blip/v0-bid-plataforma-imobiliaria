@@ -154,7 +154,6 @@ export async function POST(request: NextRequest) {
       const { data: solCriada, error } = await supabase.from('solicitacoes').insert({
         corretor_id: corretorId,
         status: 'ativa',
-        source: 'landing_page',
         cliente_nome: d.nome,
         cliente_phone: d.whatsapp,
         cliente_email: d.email || null,
