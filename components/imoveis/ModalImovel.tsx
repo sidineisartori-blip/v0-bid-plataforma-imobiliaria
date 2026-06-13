@@ -108,6 +108,11 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
   const [cepLoading, setCepLoading] = useState(false)
   const [cepError, setCepError] = useState('')
   const [cepOk, setCepOk] = useState(false)
+  const [activeTab, setActiveTab] = useState<'dados' | 'compativeis'>('dados')
+  const [compativeis, setCompativeis] = useState<Record<string, unknown>[]>([])
+  const [compativeisLoading, setCompativeisLoading] = useState(false)
+  const [matchLoading, setMatchLoading] = useState<string | null>(null)
+  const [matchFeito, setMatchFeito] = useState<Set<string>>(new Set())
 
   // Fotos
   const [fotos, setFotos] = useState<File[]>([])
@@ -427,6 +432,40 @@ Plataforma BID | bid.app.br`
   }
 
   const totalFotos = fotos.length + fotosExistentes.length
+  async function fetchCompativeis() {
+    if (!imovel?.id) return
+    setCompativeisLoading(true)
+    try {
+      const res = await fetch(`/api/matching/preview?imovelId=${imovel.id}`)
+      const json = await res.json()
+      setCompativeis(json.compativeis || [])
+      const jaFeitos = new Set<string>(
+        (json.compativeis || []).filter((c: Record<string, unknown>) => c.jaTemMatch).map((c: Record<string, unknown>) => c.id as string)
+      )
+      setMatchFeito(jaFeitos)
+    } catch {
+      // silencioso
+    }
+    setCompativeisLoading(false)
+  }
+
+  async function proporParceria(solicitacaoId: string) {
+    setMatchLoading(solicitacaoId)
+    try {
+      const res = await fetch('/api/matching', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imovelId: imovel?.id, solicitacaoId }),
+      })
+      if (res.ok) {
+        setMatchFeito((prev) => new Set(prev).add(solicitacaoId))
+      }
+    } catch {
+      // silencioso
+    }
+    setMatchLoading(null)
+  }
+
   const loadingGeral = loading || fotosUploadando
 
   // Fecha ao pressionar Esc
@@ -488,7 +527,89 @@ Plataforma BID | bid.app.br`
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* Tabs — só exibe quando editando um imóvel existente */}
+        {imovel?.id && (
+          <div style={{ display: 'flex', borderBottom: '1px solid #232324', backgroundColor: '#181819', position: 'sticky', top: '61px', zIndex: 1 }}>
+            {(['dados', 'compativeis'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab)
+                  if (tab === 'compativeis' && compativeis.length === 0) fetchCompativeis()
+                }}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderBottom: activeTab === tab ? '2px solid #C9A84C' : '2px solid transparent',
+                  backgroundColor: 'transparent',
+                  color: activeTab === tab ? '#C9A84C' : '#9B9690',
+                  cursor: 'pointer',
+                  transition: 'color 0.15s',
+                }}
+              >
+                {tab === 'dados' ? 'Dados' : 'Compatíveis'}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Aba Compatíveis */}
+        {imovel?.id && activeTab === 'compativeis' && (
+          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {compativeisLoading && (
+              <p style={{ fontSize: '13px', color: '#9B9690', textAlign: 'center' }}>Calculando compatibilidades...</p>
+            )}
+            {!compativeisLoading && compativeis.length === 0 && (
+              <p style={{ fontSize: '13px', color: '#9B9690', textAlign: 'center' }}>Nenhuma solicitação compatível encontrada (score ≥ 70).</p>
+            )}
+            {compativeis.map((sol) => {
+              const id = sol.id as string
+              const jaFeito = matchFeito.has(id)
+              return (
+                <div key={id} style={{ backgroundColor: '#232324', border: '1px solid #2E2E30', borderRadius: '2px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#F0EDE6' }}>{sol.cliente_nome as string}</span>
+                      <span style={{ fontSize: '11px', backgroundColor: 'rgba(201,168,76,0.15)', color: '#C9A84C', padding: '2px 6px', borderRadius: '2px' }}>Score {sol.score as number}%</span>
+                      {(sol.corretor as Record<string, unknown>)?.nome && (
+                        <span style={{ fontSize: '11px', color: '#6b6860' }}>via {(sol.corretor as Record<string, unknown>).nome as string}</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#9B9690', margin: 0 }}>
+                      {sol.tipo_imovel as string} · {sol.tipo_negocio as string} · {sol.cidade as string}
+                      {sol.valor_max ? ` · até R$ ${(sol.valor_max as number).toLocaleString('pt-BR')}` : ''}
+                      {sol.quartos ? ` · ${sol.quartos as number}q` : ''}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={jaFeito || matchLoading === id}
+                    onClick={() => proporParceria(id)}
+                    style={{
+                      padding: '7px 14px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      borderRadius: '2px',
+                      border: jaFeito ? '1px solid #3d5a3e' : '1px solid #C9A84C',
+                      backgroundColor: jaFeito ? 'rgba(92,184,138,0.1)' : 'transparent',
+                      color: jaFeito ? '#5CB88A' : '#C9A84C',
+                      cursor: jaFeito ? 'default' : 'pointer',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {matchLoading === id ? 'Enviando...' : jaFeito ? '✓ Parceria proposta' : 'Propor parceria'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ padding: '24px', display: activeTab === 'dados' ? 'flex' : 'none', flexDirection: 'column', gap: '20px' }}>
 
           {/* Toast de sucesso (WhatsApp) */}
           {toast && (
