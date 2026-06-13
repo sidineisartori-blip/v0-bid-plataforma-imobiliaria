@@ -13,7 +13,9 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
   const key = process.env.RESEND_API_KEY
   if (!key) return // silencioso em dev sem chave
 
-  const from = payload.from ?? `BID Imobiliário <notificacoes@${process.env.RESEND_DOMAIN ?? 'bid.imobiliario.com.br'}>`
+  const from = payload.from ?? (process.env.RESEND_DOMAIN
+    ? `BID Imobiliário <notificacoes@${process.env.RESEND_DOMAIN}>`
+    : 'onboarding@resend.dev')
 
   try {
     const res = await fetch(RESEND_API, {
