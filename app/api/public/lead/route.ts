@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error('[v0] Erro ao inserir solicitacao:', error)
-        return NextResponse.json({ error: 'Erro ao salvar dados', detail: error.message, code: error.code }, { status: 500 })
+        return NextResponse.json({ error: 'Erro ao salvar dados' }, { status: 500 })
       }
 
       // Agenda primeiro follow-up em 2 dias
