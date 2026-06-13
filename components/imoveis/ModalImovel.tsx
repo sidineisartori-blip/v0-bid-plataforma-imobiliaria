@@ -574,7 +574,7 @@ Plataforma BID | bid.app.br`
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span style={{ fontSize: '13px', fontWeight: 600, color: '#F0EDE6' }}>{sol.cliente_nome as string}</span>
                       <span style={{ fontSize: '11px', backgroundColor: 'rgba(201,168,76,0.15)', color: '#C9A84C', padding: '2px 6px', borderRadius: '2px' }}>Score {sol.score as number}%</span>
-                      {(sol.corretor as Record<string, unknown>)?.nome && (
+                      {!!(sol.corretor as Record<string, unknown>)?.nome && (
                         <span style={{ fontSize: '11px', color: '#6b6860' }}>via {(sol.corretor as Record<string, unknown>).nome as string}</span>
                       )}
                     </div>

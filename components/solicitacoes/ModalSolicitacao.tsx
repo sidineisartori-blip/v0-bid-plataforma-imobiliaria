@@ -262,7 +262,7 @@ export default function ModalSolicitacao({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span style={{ fontSize: '13px', fontWeight: 600, color: '#F0EDE6' }}>{im.titulo as string}</span>
                       <span style={{ fontSize: '11px', backgroundColor: 'rgba(201,168,76,0.15)', color: '#C9A84C', padding: '2px 6px', borderRadius: '2px' }}>Score {im.score as number}%</span>
-                      {(im.corretor as Record<string, unknown>)?.nome && (
+                      {!!(im.corretor as Record<string, unknown>)?.nome && (
                         <span style={{ fontSize: '11px', color: '#6b6860' }}>via {(im.corretor as Record<string, unknown>).nome as string}</span>
                       )}
                     </div>
