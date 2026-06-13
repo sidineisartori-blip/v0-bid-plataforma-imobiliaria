@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { enviarWhatsApp } from '@/lib/whatsapp'
 
 // Vercel Cron chama com Authorization: Bearer CRON_SECRET
 export async function GET(req: NextRequest) {
@@ -25,6 +26,9 @@ export async function GET(req: NextRequest) {
   if (!vencidos?.length) return NextResponse.json({ processados: 0 })
 
   let processados = 0
+  let whatsappEnviados = 0
+  // Cache de nomes de corretores para evitar buscas repetidas no loop
+  const nomeCorretorCache = new Map<string, string>()
 
   for (const fu of vencidos) {
     // Verifica se a solicitação ainda está ativa
@@ -56,6 +60,38 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    // Envia WhatsApp automatico ao CLIENTE, em nome do corretor
+    if (fu.cliente_phone) {
+      // Resolve o nome do corretor (com cache)
+      let nomeCorretor = nomeCorretorCache.get(fu.corretor_id) || ''
+      if (!nomeCorretor) {
+        const { data: cor } = await admin
+          .from('corretores')
+          .select('full_name')
+          .eq('id', fu.corretor_id)
+          .single()
+        nomeCorretor = cor?.full_name || 'seu corretor'
+        nomeCorretorCache.set(fu.corretor_id, nomeCorretor)
+      }
+
+      const primeiroNome = (fu.cliente_nome || '').split(' ')[0] || 'Olá'
+      const negocio = (fu.tipo_negocio || '').toLowerCase()
+      const acao = negocio === 'alugar' || negocio === 'locação' ? 'alugar' : 'comprar'
+      const cidadeTxt = fu.cidade ? ` em ${fu.cidade}` : ''
+
+      const mensagem =
+        `Olá ${primeiroNome}! Aqui é ${nomeCorretor}. ` +
+        `Notei que você procura um imóvel para ${acao}${cidadeTxt} e queria saber se ainda está na busca. ` +
+        `Posso te ajudar a encontrar boas opções. Quando puder, me responda por aqui! 🏡`
+
+      const envio = await enviarWhatsApp(fu.cliente_phone, mensagem)
+      if (envio.ok) {
+        whatsappEnviados++
+      } else {
+        console.error('[v0] Falha ao enviar WhatsApp follow-up:', envio.error)
+      }
+    }
+
     // Marca este como enviado e agenda o próximo (+ 2 dias)
     const proximo = new Date()
     proximo.setDate(proximo.getDate() + 2)
@@ -78,5 +114,5 @@ export async function GET(req: NextRequest) {
     processados++
   }
 
-  return NextResponse.json({ processados, total: vencidos.length })
+  return NextResponse.json({ processados, whatsappEnviados, total: vencidos.length })
 }
