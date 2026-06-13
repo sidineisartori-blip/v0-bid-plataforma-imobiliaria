@@ -8,6 +8,7 @@ import { formatCurrency, STATUS_LABELS, STATUS_COLORS, getImovelEmoji } from '@/
 import { exportarCSV, exportarXLS, imoveisParaExport } from '@/lib/exportCsv'
 import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
 import ModalImovel from './ModalImovel'
+import PainelCompatibilidades from './PainelCompatibilidades'
 
 interface ImoveisClientProps {
   imoveis: Imovel[]
@@ -36,7 +37,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   const [modalAberto, setModalAberto] = useState(false)
   const [imovelEditando, setImovelEditando] = useState<Imovel | null>(null)
   const [deletandoId, setDeletandoId] = useState<string | null>(null)
-  const [matchingId, setMatchingId] = useState<string | null>(null)
+  const [imovelCompat, setImovelCompat] = useState<Imovel | null>(null)
   const [autorizandoId, setAutorizandoId] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState<ImovelStatus | ''>('')
   const [filtroCidade, setFiltroCidade] = useState('')
@@ -88,31 +89,6 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
     if (error) { addToast('erro', 'Erro ao excluir', error.message) }
     else { addToast('sucesso', 'Imóvel excluído') }
     router.refresh()
-  }
-
-  const [matchMsg, setMatchMsg] = useState<string | null>(null)
-
-  async function handleRodarMatching(id: string) {
-    setMatchingId(id)
-    setMatchMsg(null)
-    try {
-      const res = await fetch('/api/matching', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imovelId: id, corretorId }),
-      })
-      const data = await res.json()
-      if (data.matchesGerados > 0) {
-        setMatchMsg(`${data.matchesGerados} match(es) gerado(s)!`)
-      } else {
-        setMatchMsg('Nenhuma compatibilidade >= 70% encontrada.')
-      }
-      setTimeout(() => setMatchMsg(null), 4000)
-      router.refresh()
-    } catch {
-      setMatchMsg('Erro ao rodar matching.')
-    }
-    setMatchingId(null)
   }
 
   async function handleAutorizar(imovel: Imovel) {
@@ -235,20 +211,6 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           </button>
         </div>
 
-        {/* Toast matching */}
-        {matchMsg && (
-          <div style={{
-            backgroundColor: '#181819',
-            border: '1px solid rgba(201,168,76,0.3)',
-            borderRadius: '2px',
-            padding: '14px 20px',
-            fontSize: '15px',
-            color: '#C9A84C',
-          }}>
-            {matchMsg}
-          </div>
-        )}
-
         {/* Contagem + Export */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <p style={{ fontSize: '13px', color: '#9B9690' }}>
@@ -355,6 +317,13 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                     {/* Botões de ação */}
                     <div style={{ display: 'flex', gap: '4px', marginTop: '12px' }}>
                       <button
+                        title="Ver compatibilidades"
+                        style={btnIconStyle}
+                        onClick={() => setImovelCompat(imovel)}
+                      >
+                        ⚙
+                      </button>
+                      <button
                         title="Editar"
                         style={btnIconStyle}
                         onClick={() => abrirEdicao(imovel)}
@@ -407,8 +376,23 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                   {/* Emoji */}
                   <span style={{ fontSize: '28px', flexShrink: 0 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
 
-                  {/* Info principal */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Info principal — clicável para abrir compatibilidades */}
+                  <button
+                    type="button"
+                    onClick={() => setImovelCompat(imovel)}
+                    title="Ver compatibilidades"
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      margin: 0,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      color: 'inherit',
+                    }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                       <p style={{ fontSize: '16px', fontWeight: 500, color: '#F0EDE6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {imovel.titulo}
@@ -435,7 +419,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                       {' · '}
                       <span style={{ color: '#C9A84C' }}>{formatCurrency(imovel.valor)}</span>
                     </p>
-                  </div>
+                  </button>
 
                   {/* Badge status */}
                   <span style={{
@@ -474,12 +458,11 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                       </button>
                     )}
                     <button
-                      title="Rodar Matching"
+                      title="Ver compatibilidades"
                       style={btnIconStyle}
-                      disabled={matchingId === imovel.id}
-                      onClick={() => handleRodarMatching(imovel.id)}
+                      onClick={() => setImovelCompat(imovel)}
                     >
-                      {matchingId === imovel.id ? '...' : '⚙'}
+                      ⚙
                     </button>
                     <button
                       title="Editar"
@@ -551,6 +534,16 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           corretorCreci={corretorCreci}
           cidades={cidades}
           onClose={() => setModalAberto(false)}
+        />
+      )}
+
+      {/* Painel de compatibilidades */}
+      {imovelCompat && (
+        <PainelCompatibilidades
+          imovel={imovelCompat}
+          corretorId={corretorId}
+          onClose={() => setImovelCompat(null)}
+          onMatchCriado={() => router.refresh()}
         />
       )}
     </>
