@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
 
-type Aba = 'dashboard' | 'corretores' | 'planos' | 'financeiro'
+type Aba = 'dashboard' | 'corretores' | 'planos' | 'financeiro' | 'relatorios'
 
 interface Corretor {
   id: string
@@ -393,6 +393,21 @@ export default function AdminPainelPage() {
               {id === 'financeiro' && 'Financeiro'}
             </button>
           ))}
+          <button
+            style={{
+              ...btnAba('relatorios'),
+              marginLeft: 'auto',
+              border: '1px solid #C9A84C40',
+              borderRadius: '2px',
+              padding: '8px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+            onClick={() => router.push('/admin/relatorios')}
+          >
+            📊 Relatórios
+          </button>
         </div>
 
         {/* Dashboard */}
