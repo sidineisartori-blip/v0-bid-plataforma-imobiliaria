@@ -229,7 +229,7 @@ export default function AdminRelatoriosPage() {
                   <BarChart data={dados.corretoresPorPlano} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke={CORES.borda} horizontal={false} />
                     <XAxis type="number" tick={{ fill: CORES.cinza, fontSize: 12 }} />
-                    <YAxis dataKey="plano" type="category" tick={{ fill: CORES.cinza, fontSize: 12, textTransform: 'capitalize' }} width={80} />
+                    <YAxis dataKey="plano" type="category" tick={{ fill: CORES.cinza, fontSize: 12 }} width={80} />
                     <Tooltip {...tooltipStyle} />
                     <Bar dataKey="total" name="Corretores" radius={[0, 3, 3, 0]}>
                       {dados.corretoresPorPlano.map((entry) => (
