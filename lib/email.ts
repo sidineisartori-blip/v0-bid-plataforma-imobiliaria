@@ -13,7 +13,13 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
   const key = process.env.RESEND_API_KEY
   if (!key) return // silencioso em dev sem chave
 
-  const from = payload.from ?? `BID Imobiliário <notificacoes@${process.env.RESEND_DOMAIN ?? 'bid.imobiliario.com.br'}>`
+  // Usa o domínio verificado se houver; senão cai no remetente de teste do Resend.
+  const dominio = process.env.RESEND_DOMAIN?.trim()
+  const from =
+    payload.from ??
+    (dominio
+      ? `BID Imobiliário <notificacoes@${dominio}>`
+      : 'BID Imobiliário <onboarding@resend.dev>')
 
   try {
     const res = await fetch(RESEND_API, {
