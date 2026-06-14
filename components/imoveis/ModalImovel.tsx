@@ -12,7 +12,7 @@ interface ModalImovelProps {
   corretorNome?: string
   corretorCreci?: string
   cidades: Cidade[]
-  onClose: () => void
+  onClose: (salvo?: boolean) => void
 }
 
 interface ViaCepResponse {
@@ -423,12 +423,12 @@ Plataforma BID | bid.app.br`
       setLoading(false)
       setTimeout(() => {
         setToast('')
-        onClose()
+        onClose(true)
       }, 3500)
       return
     }
 
-    onClose()
+    onClose(true)
   }
 
   const totalFotos = fotos.length + fotosExistentes.length

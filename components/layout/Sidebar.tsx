@@ -44,7 +44,8 @@ const navigationGroups = [
   {
     title: 'FINANCEIRO',
     items: [
-      { id: 'erp',          label: 'ERP Imobiliário',     icon: '⊞', badge: 'erpAlertas' },
+      { id: 'erp',        label: 'ERP Imobiliário',  icon: '⊞', badge: 'erpAlertas' },
+      { id: 'relatorios', label: 'Relatórios',        icon: '◉', badge: 'plano' },
     ],
   },
   {

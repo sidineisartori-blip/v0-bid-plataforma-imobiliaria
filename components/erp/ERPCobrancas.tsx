@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { calcVencimento, formatarMes, mesAnterior, mesSeguinte, mesAtual, fmtBRLFull } from '@/lib/vencimento'
+import ModalConfirm from '@/components/ui/ModalConfirm'
 
 export interface Cobranca {
   id: string
@@ -42,6 +43,7 @@ export default function ERPCobrancas({ cobrancas, corretorId, mesInicial }: Prop
   const supabase = createClient()
   const [mes, setMes] = useState(mesInicial)
   const [liquidandoId, setLiquidandoId] = useState<string | null>(null)
+  const [confirmarLiquidar, setConfirmarLiquidar] = useState<string | null>(null)
 
   const filtradas = useMemo(
     () => cobrancas.filter((c) => c.competencia.startsWith(mes)),
@@ -62,8 +64,7 @@ export default function ERPCobrancas({ cobrancas, corretorId, mesInicial }: Prop
     }
   }, [filtradas])
 
-  async function handleLiquidar(id: string) {
-    if (!confirm('Confirmar recebimento desta cobrança?')) return
+  async function executarLiquidar(id: string) {
     setLiquidandoId(id)
     await supabase
       .from('contrato_parcelas')
@@ -71,6 +72,7 @@ export default function ERPCobrancas({ cobrancas, corretorId, mesInicial }: Prop
       .eq('id', id)
       .eq('corretor_id', corretorId)
     setLiquidandoId(null)
+    setConfirmarLiquidar(null)
     router.refresh()
   }
 
@@ -78,6 +80,17 @@ export default function ERPCobrancas({ cobrancas, corretorId, mesInicial }: Prop
 
   return (
     <div style={{ ...S }}>
+      {confirmarLiquidar && (
+        <ModalConfirm
+          titulo="Confirmar recebimento?"
+          descricao="Esta ação marcará a cobrança como paga e registrará a data de pagamento de hoje."
+          tipo="aviso"
+          labelConfirmar="Confirmar recebimento"
+          onConfirmar={() => executarLiquidar(confirmarLiquidar)}
+          onCancelar={() => setConfirmarLiquidar(null)}
+          carregando={liquidandoId === confirmarLiquidar}
+        />
+      )}
       {/* Navegação temporal */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <button onClick={() => setMes(mesAnterior(mes))} style={{ background: '#232324', border: '1px solid #2E2E30', borderRadius: 2, padding: '6px 14px', fontSize: 13, color: '#9B9690', cursor: 'pointer' }}>← Anterior</button>
@@ -161,7 +174,7 @@ export default function ERPCobrancas({ cobrancas, corretorId, mesInicial }: Prop
                 </div>
                 {c.status !== 'pago' && c.status !== 'isento' && (
                   <button
-                    onClick={() => handleLiquidar(c.id)}
+                    onClick={() => setConfirmarLiquidar(c.id)}
                     disabled={liquidandoId === c.id}
                     style={{ background: 'rgba(92,184,138,0.1)', border: '1px solid rgba(92,184,138,0.25)', borderRadius: 2, padding: '6px 14px', fontSize: 12, color: '#5CB88A', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >

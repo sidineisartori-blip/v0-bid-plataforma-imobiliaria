@@ -10,7 +10,7 @@ interface ModalSolicitacaoProps {
   solicitacao?: Solicitacao | null
   corretorId: string
   cidades: Cidade[]
-  onClose: () => void
+  onClose: (salvo?: boolean) => void
 }
 
 const inputStyle: React.CSSProperties = {
@@ -62,8 +62,10 @@ export default function ModalSolicitacao({
   const [activeTab, setActiveTab] = useState<'dados' | 'compativeis'>('dados')
   const [compativeis, setCompativeis] = useState<Record<string, unknown>[]>([])
   const [compativeisLoading, setCompativeisLoading] = useState(false)
+  const [compativeisErro, setCompativeisErro] = useState('')
   const [matchLoading, setMatchLoading] = useState<string | null>(null)
   const [matchFeito, setMatchFeito] = useState<Set<string>>(new Set())
+  const [matchErro, setMatchErro] = useState('')
 
   const [form, setForm] = useState<FormData>({
     cliente_nome: solicitacao?.cliente_nome || '',
@@ -89,8 +91,10 @@ export default function ModalSolicitacao({
   async function fetchCompativeis() {
     if (!solicitacao?.id) return
     setCompativeisLoading(true)
+    setCompativeisErro('')
     try {
       const res = await fetch(`/api/matching/preview?solicitacaoId=${solicitacao.id}`)
+      if (!res.ok) throw new Error('Erro ao buscar compatíveis')
       const json = await res.json()
       setCompativeis(json.compativeis || [])
       const jaFeitos = new Set<string>(
@@ -98,13 +102,14 @@ export default function ModalSolicitacao({
       )
       setMatchFeito(jaFeitos)
     } catch {
-      // silencioso
+      setCompativeisErro('Não foi possível carregar os imóveis compatíveis. Tente novamente.')
     }
     setCompativeisLoading(false)
   }
 
   async function proporParceria(imovelId: string) {
     setMatchLoading(imovelId)
+    setMatchErro('')
     try {
       const res = await fetch('/api/matching', {
         method: 'POST',
@@ -113,9 +118,12 @@ export default function ModalSolicitacao({
       })
       if (res.ok) {
         setMatchFeito((prev) => new Set(prev).add(imovelId))
+      } else {
+        const data = await res.json()
+        setMatchErro(data.error || 'Erro ao registrar interesse.')
       }
     } catch {
-      // silencioso
+      setMatchErro('Falha na conexão. Verifique sua internet.')
     }
     setMatchLoading(null)
   }
@@ -155,7 +163,7 @@ export default function ModalSolicitacao({
     }
 
     router.refresh()
-    onClose()
+    onClose(true)
   }
 
   useEffect(() => {
@@ -250,7 +258,16 @@ export default function ModalSolicitacao({
             {compativeisLoading && (
               <p style={{ fontSize: '13px', color: '#9B9690', textAlign: 'center' }}>Calculando compatibilidades...</p>
             )}
-            {!compativeisLoading && compativeis.length === 0 && (
+            {compativeisErro && (
+              <div style={{ backgroundColor: 'rgba(224,92,92,0.1)', border: '1px solid rgba(224,92,92,0.25)', borderRadius: 2, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ fontSize: '13px', color: '#E05C5C', margin: 0 }}>{compativeisErro}</p>
+                <button type="button" onClick={fetchCompativeis} style={{ fontSize: 12, color: '#E05C5C', background: 'none', border: '1px solid rgba(224,92,92,0.3)', borderRadius: 2, padding: '4px 10px', cursor: 'pointer' }}>Tentar novamente</button>
+              </div>
+            )}
+            {matchErro && (
+              <p style={{ fontSize: '12px', color: '#E05C5C', margin: 0 }}>{matchErro}</p>
+            )}
+            {!compativeisLoading && !compativeisErro && compativeis.length === 0 && (
               <p style={{ fontSize: '13px', color: '#9B9690', textAlign: 'center' }}>Nenhum imóvel compatível encontrado (score ≥ 70).</p>
             )}
             {compativeis.map((im) => {

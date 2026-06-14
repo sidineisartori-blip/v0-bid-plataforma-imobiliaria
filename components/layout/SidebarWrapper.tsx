@@ -33,6 +33,7 @@ const pathToNav: Record<string, string> = {
   '/notificacoes':   'notificacoes',
   '/admin':          'admin',
   '/erp':            'erp',
+  '/relatorios':     'relatorios',
 }
 
 export default function SidebarWrapper({

@@ -48,6 +48,11 @@ export async function middleware(request: NextRequest) {
     '/credenciamento',
     '/matching',
     '/erp',
+    '/negociacoes',
+    '/contratos',
+    '/leads',
+    '/perfil',
+    '/relatorios',
   ]
 
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route))
