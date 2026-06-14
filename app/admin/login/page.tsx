@@ -250,16 +250,17 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <p
-            style={{
-              fontSize: '13px',
-              color: '#2E2E30',
-              textAlign: 'center',
-              marginTop: '32px',
-            }}
-          >
-            Acesso restrito a administradores
-          </p>
+          <div style={{ textAlign: 'center', marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <a
+              href="/admin/recuperar-senha"
+              style={{ fontSize: '13px', color: '#9B9690', textDecoration: 'none' }}
+            >
+              Esqueci minha senha
+            </a>
+            <p style={{ fontSize: '12px', color: '#2E2E30', margin: 0 }}>
+              Acesso restrito a administradores
+            </p>
+          </div>
         </div>
       </div>
     </div>
