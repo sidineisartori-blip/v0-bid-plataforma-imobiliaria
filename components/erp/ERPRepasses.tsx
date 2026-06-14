@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatarMes, mesAnterior, mesSeguinte, mesAtual, fmtBRLFull } from '@/lib/vencimento'
+import ModalConfirm from '@/components/ui/ModalConfirm'
 
 export interface Repasse {
   id: string
@@ -47,6 +48,7 @@ export default function ERPRepasses({ repasses, corretorId, mesInicial }: Props)
   const supabase = createClient()
   const [mes, setMes] = useState(mesInicial)
   const [realizandoId, setRealizandoId] = useState<string | null>(null)
+  const [confirmarRealizar, setConfirmarRealizar] = useState<string | null>(null)
   const [detalheId, setDetalheId] = useState<string | null>(null)
 
   const filtrados = useMemo(
@@ -66,8 +68,7 @@ export default function ERPRepasses({ repasses, corretorId, mesInicial }: Props)
     }
   }, [filtrados])
 
-  async function handleRealizar(id: string) {
-    if (!confirm('Confirmar realização deste repasse?')) return
+  async function executarRealizar(id: string) {
     setRealizandoId(id)
     await supabase
       .from('repasses')
@@ -75,11 +76,23 @@ export default function ERPRepasses({ repasses, corretorId, mesInicial }: Props)
       .eq('id', id)
       .eq('corretor_id', corretorId)
     setRealizandoId(null)
+    setConfirmarRealizar(null)
     router.refresh()
   }
 
   return (
     <div>
+      {confirmarRealizar && (
+        <ModalConfirm
+          titulo="Confirmar realização do repasse?"
+          descricao="Esta ação registrará o repasse como realizado com a data de hoje."
+          tipo="aviso"
+          labelConfirmar="Confirmar repasse"
+          onConfirmar={() => executarRealizar(confirmarRealizar)}
+          onCancelar={() => setConfirmarRealizar(null)}
+          carregando={realizandoId === confirmarRealizar}
+        />
+      )}
       {/* Navegação temporal */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <button onClick={() => setMes(mesAnterior(mes))} style={{ background: '#232324', border: '1px solid #2E2E30', borderRadius: 2, padding: '6px 14px', fontSize: 13, color: '#9B9690', cursor: 'pointer' }}>← Anterior</button>
@@ -158,7 +171,7 @@ export default function ERPRepasses({ repasses, corretorId, mesInicial }: Props)
                     </button>
                     {r.status === 'pendente' && (
                       <button
-                        onClick={() => handleRealizar(r.id)}
+                        onClick={() => setConfirmarRealizar(r.id)}
                         disabled={realizandoId === r.id}
                         style={{ background: 'rgba(92,184,138,0.1)', border: '1px solid rgba(92,184,138,0.25)', borderRadius: 2, padding: '6px 14px', fontSize: 12, color: '#5CB88A', cursor: 'pointer', whiteSpace: 'nowrap' }}
                       >

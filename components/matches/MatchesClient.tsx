@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ModalParceria from './ModalParceria'
 import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
+import ModalConfirm from '@/components/ui/ModalConfirm'
 
 interface Corretor {
   id: string
@@ -67,6 +68,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
   const [toasts, addToast, removerToast] = useToastSimples()
 
   const [modalMatch, setModalMatch] = useState<MatchItem | null>(null)
+  const [confirmarRecusar, setConfirmarRecusar] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState('todos')
   const [filtroTipo, setFiltroTipo] = useState('todos')
@@ -96,6 +98,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
     setLoading(matchId)
     const { error } = await supabase.from('matches').update({ status: 'recusado' }).eq('id', matchId)
     setLoading(null)
+    setConfirmarRecusar(null)
     if (error) { addToast('erro', 'Erro ao recusar match') }
     else { addToast('info', 'Match recusado') }
     router.refresh()
@@ -147,9 +150,10 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
       ])
       if (negErr) throw negErr
 
+      addToast('sucesso', 'Parceria criada!', 'A negociação foi iniciada no CRM Kanban.')
     } catch (err) {
       console.error('Erro ao iniciar atendimento:', err)
-      addToast('erro', 'Erro ao iniciar atendimento')
+      addToast('erro', 'Erro ao iniciar atendimento', String(err))
     } finally {
       setLoading(null)
       router.refresh()
@@ -159,6 +163,16 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
   return (
     <div className="p-8" style={{ color: 'var(--color-text)' }}>
       <ToastContainer toasts={toasts} onRemover={removerToast} />
+      {confirmarRecusar && (
+        <ModalConfirm
+          titulo="Recusar este match?"
+          descricao="O match será marcado como recusado. Esta ação pode ser revertida entrando em contato com o parceiro."
+          labelConfirmar="Recusar"
+          onConfirmar={() => handleRecusar(confirmarRecusar)}
+          onCancelar={() => setConfirmarRecusar(null)}
+          carregando={loading === confirmarRecusar}
+        />
+      )}
       {/* Alertas */}
       <div className="flex flex-col gap-3 mb-8">
         {externos.length > 0 && (
@@ -354,7 +368,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
                         </button>
                       )}
                       <button
-                        onClick={() => handleRecusar(match.id)}
+                        onClick={() => setConfirmarRecusar(match.id)}
                         disabled={loading === match.id}
                         className="text-[12px] px-3 py-1.5 rounded-sm border transition-colors"
                         style={{
@@ -362,7 +376,7 @@ export default function MatchesClient({ matches, corretores, corretorId }: Match
                           color: 'var(--color-red)',
                         }}
                       >
-                        {loading === match.id ? '...' : 'Recusar'}
+                        Recusar
                       </button>
                     </div>
                   )}

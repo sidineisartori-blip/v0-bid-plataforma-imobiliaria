@@ -7,6 +7,7 @@ import type { Imovel, Cidade, ImovelStatus } from '@/types/bid'
 import { formatCurrency, STATUS_LABELS, STATUS_COLORS, getImovelEmoji } from '@/lib/format'
 import { exportarCSV, exportarXLS, imoveisParaExport } from '@/lib/exportCsv'
 import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
+import ModalConfirm from '@/components/ui/ModalConfirm'
 import ModalImovel from './ModalImovel'
 
 interface ImoveisClientProps {
@@ -36,6 +37,8 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   const [modalAberto, setModalAberto] = useState(false)
   const [imovelEditando, setImovelEditando] = useState<Imovel | null>(null)
   const [deletandoId, setDeletandoId] = useState<string | null>(null)
+  const [confirmarExcluir, setConfirmarExcluir] = useState<string | null>(null)
+  const [confirmarAutorizar, setConfirmarAutorizar] = useState<Imovel | null>(null)
   const [matchingId, setMatchingId] = useState<string | null>(null)
   const [autorizandoId, setAutorizandoId] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState<ImovelStatus | ''>('')
@@ -76,8 +79,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   const paginaAtual  = Math.min(pagina, totalPaginas)
   const imoveisVisiveis = imoveisFiltrados.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE)
 
-  async function handleDeletar(id: string) {
-    if (!confirm('Deseja realmente excluir este imóvel?')) return
+  async function confirmarEExcluir(id: string) {
     setDeletandoId(id)
     const { error } = await supabase
       .from('imoveis')
@@ -85,16 +87,14 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
       .eq('id', id)
       .eq('corretor_id', corretorId)
     setDeletandoId(null)
+    setConfirmarExcluir(null)
     if (error) { addToast('erro', 'Erro ao excluir', error.message) }
-    else { addToast('sucesso', 'Imóvel excluído') }
+    else { addToast('sucesso', 'Imóvel excluído com sucesso') }
     router.refresh()
   }
 
-  const [matchMsg, setMatchMsg] = useState<string | null>(null)
-
   async function handleRodarMatching(id: string) {
     setMatchingId(id)
-    setMatchMsg(null)
     try {
       const res = await fetch('/api/matching', {
         method: 'POST',
@@ -102,27 +102,30 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
         body: JSON.stringify({ imovelId: id, corretorId }),
       })
       const data = await res.json()
-      if (data.matchesGerados > 0) {
-        setMatchMsg(`${data.matchesGerados} match(es) gerado(s)!`)
+      if (!res.ok) {
+        addToast('erro', 'Erro no matching', data.error || 'Tente novamente.')
+      } else if ((data.matchesGerados || 0) > 0) {
+        addToast('sucesso', `${data.matchesGerados} match(es) gerado(s)!`)
       } else {
-        setMatchMsg('Nenhuma compatibilidade >= 70% encontrada.')
+        addToast('info', 'Nenhuma compatibilidade ≥ 70% encontrada')
       }
-      setTimeout(() => setMatchMsg(null), 4000)
       router.refresh()
     } catch {
-      setMatchMsg('Erro ao rodar matching.')
+      addToast('erro', 'Erro ao rodar matching', 'Verifique sua conexão.')
     }
     setMatchingId(null)
   }
 
-  async function handleAutorizar(imovel: Imovel) {
-    if (!confirm(`Confirmar que ${imovel.prop_nome || 'o proprietário'} autorizou a divulgação do imóvel "${imovel.titulo}"?`)) return
+  async function executarAutorizar(imovel: Imovel) {
     setAutorizandoId(imovel.id)
-    await supabase
+    const { error } = await supabase
       .from('imoveis')
       .update({ status: 'ativo', matching_ativo: true })
       .eq('id', imovel.id)
     setAutorizandoId(null)
+    setConfirmarAutorizar(null)
+    if (error) { addToast('erro', 'Erro ao autorizar', error.message) }
+    else { addToast('sucesso', 'Imóvel ativado e matching habilitado') }
     router.refresh()
   }
 
@@ -150,6 +153,27 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
   return (
     <>
       <ToastContainer toasts={toasts} onRemover={removerToast} />
+      {confirmarExcluir && (
+        <ModalConfirm
+          titulo="Excluir imóvel?"
+          descricao="Esta ação é irreversível. Todos os matches associados a este imóvel também serão removidos."
+          labelConfirmar="Excluir"
+          onConfirmar={() => confirmarEExcluir(confirmarExcluir)}
+          onCancelar={() => setConfirmarExcluir(null)}
+          carregando={deletandoId === confirmarExcluir}
+        />
+      )}
+      {confirmarAutorizar && (
+        <ModalConfirm
+          titulo="Confirmar autorização do proprietário?"
+          descricao={`O proprietário ${confirmarAutorizar.prop_nome || ''} autorizou a divulgação do imóvel "${confirmarAutorizar.titulo}". Isso ativará o matching automático.`}
+          tipo="aviso"
+          labelConfirmar="Confirmar e ativar"
+          onConfirmar={() => executarAutorizar(confirmarAutorizar)}
+          onCancelar={() => setConfirmarAutorizar(null)}
+          carregando={autorizandoId === confirmarAutorizar.id}
+        />
+      )}
       <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Header com filtros e botao */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
@@ -235,25 +259,11 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           </button>
         </div>
 
-        {/* Toast matching */}
-        {matchMsg && (
-          <div style={{
-            backgroundColor: '#181819',
-            border: '1px solid rgba(201,168,76,0.3)',
-            borderRadius: '2px',
-            padding: '14px 20px',
-            fontSize: '15px',
-            color: '#C9A84C',
-          }}>
-            {matchMsg}
-          </div>
-        )}
-
         {/* Contagem + Export */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <p style={{ fontSize: '13px', color: '#9B9690' }}>
             {imoveisFiltrados.length} {imoveisFiltrados.length === 1 ? 'imóvel' : 'imóveis'}
-            {imoveisFiltrados.length > 0 && ` · Total: ${formatCurrency(imoveisFiltrados.reduce((s: number, i: Imovel) => s + i.valor, 0))}`}
+            {imoveisFiltrados.length > 0 && ` · Total: ${formatCurrency(imoveisFiltrados.reduce((s: number, i: Imovel) => s + (i.valor || 0), 0))}`}
           </p>
           <div style={{ display: 'flex', gap: 6 }}>
             <button onClick={() => exportarCSV(imoveisParaExport(imoveisFiltrados), 'imoveis')}
@@ -365,7 +375,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                         title="Excluir"
                         style={{ ...btnIconStyle, color: deletandoId === imovel.id ? '#E05C5C' : '#9B9690' }}
                         disabled={deletandoId === imovel.id}
-                        onClick={() => handleDeletar(imovel.id)}
+                        onClick={() => setConfirmarExcluir(imovel.id)}
                       >
                         {deletandoId === imovel.id ? '...' : '✕'}
                       </button>
@@ -456,7 +466,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                       <button
                         title="Proprietário Autorizou"
                         disabled={autorizandoId === imovel.id}
-                        onClick={() => handleAutorizar(imovel)}
+                        onClick={() => setConfirmarAutorizar(imovel)}
                         style={{
                           backgroundColor: 'rgba(92,184,138,0.1)',
                           border: '1px solid rgba(92,184,138,0.35)',
@@ -550,7 +560,10 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
           corretorNome={corretorNome}
           corretorCreci={corretorCreci}
           cidades={cidades}
-          onClose={() => setModalAberto(false)}
+          onClose={(salvo?: boolean) => {
+            setModalAberto(false)
+            if (salvo) addToast('sucesso', imovelEditando ? 'Imóvel atualizado com sucesso' : 'Imóvel cadastrado com sucesso')
+          }}
         />
       )}
     </>

@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
+import ModalConfirm from '@/components/ui/ModalConfirm'
 
 type Aba = 'dashboard' | 'corretores' | 'planos' | 'financeiro' | 'relatorios'
 
@@ -306,6 +307,8 @@ export default function AdminPainelPage() {
   const [modalEditar, setModalEditar] = useState<Corretor | null>(null)
   const [modalExcluir, setModalExcluir] = useState<Corretor | null>(null)
   const [excluindo, setExcluindo] = useState(false)
+  const [confirmarCancelamento, setConfirmarCancelamento] = useState<{ id: string; corretorId: string } | null>(null)
+  const [cancelando, setCancelando] = useState(false)
 
   const [metricas, setMetricas] = useState({ totalCorretores: 0, corretoresAtivos: 0, assinaturasPagas: 0, mrrTotal: 0 })
 
@@ -364,14 +367,16 @@ export default function AdminPainelPage() {
     setAtualizando(null)
   }
 
-  async function cancelarAssinatura(assinaturaId: string, corretorId: string) {
-    if (!confirm('Confirma o cancelamento desta assinatura?')) return
-    setAtualizando(assinaturaId)
+  async function executarCancelamento() {
+    if (!confirmarCancelamento) return
+    const { id: assinaturaId, corretorId } = confirmarCancelamento
+    setCancelando(true)
     await supabase.from('assinaturas').update({ status: 'cancelada', cancelado_em: new Date().toISOString() }).eq('id', assinaturaId)
     await supabase.from('corretores').update({ plano: 'free' }).eq('id', corretorId)
     await supabase.from('audit_log').insert({ action: 'assinatura_cancelada', entity_type: 'assinatura', entity_id: assinaturaId, performed_by: session?.id, details: { corretor_id: corretorId } })
+    setCancelando(false)
+    setConfirmarCancelamento(null)
     await carregarDados()
-    setAtualizando(null)
   }
 
   async function excluirCorretor() {
@@ -425,6 +430,16 @@ export default function AdminPainelPage() {
       {modalCriar && <ModalCriar onClose={() => setModalCriar(false)} onSalvo={carregarDados} />}
       {modalEditar && <ModalEditar corretor={modalEditar} onClose={() => setModalEditar(null)} onSalvo={carregarDados} />}
       {modalExcluir && <ModalExcluir corretor={modalExcluir} onClose={() => setModalExcluir(null)} onConfirm={excluirCorretor} excluindo={excluindo} />}
+      {confirmarCancelamento && (
+        <ModalConfirm
+          titulo="Cancelar assinatura?"
+          descricao="O corretor voltará ao plano Free imediatamente. Esta ação não pode ser desfeita."
+          labelConfirmar="Cancelar Assinatura"
+          onConfirmar={executarCancelamento}
+          onCancelar={() => setConfirmarCancelamento(null)}
+          carregando={cancelando}
+        />
+      )}
 
       {/* Header */}
       <header style={{ backgroundColor: '#181819', borderBottom: '1px solid #232324', padding: '16px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -498,7 +513,7 @@ export default function AdminPainelPage() {
             </div>
 
             {/* Tabela */}
-            <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px', overflowX: 'auto' }}>
               {/* Cabeçalho */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 110px 90px 80px 160px 100px', gap: 0, padding: '12px 20px', borderBottom: '1px solid #232324', backgroundColor: '#232324' }}>
                 {['Nome', 'E-mail', 'CRECI', 'Status', 'Plano', 'Alterar Plano', 'Ações'].map(h => (
@@ -632,7 +647,7 @@ export default function AdminPainelPage() {
                       <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '2px', backgroundColor: `${planoInfo.cor}20`, color: planoInfo.cor, display: 'inline-block' }}>{planoInfo.nome}</span>
                       <span style={{ fontSize: '13px', color: '#C9A84C' }}>{formatCurrency(ass.valor_mensal)}</span>
                       <span style={{ fontSize: '12px', color: '#9B9690' }}>{formatDate(ass.periodo_inicio)}</span>
-                      <button onClick={() => cancelarAssinatura(ass.id, ass.corretor_id)} disabled={atualizando === ass.id} style={{ backgroundColor: 'transparent', border: '1px solid #E05C5C40', color: '#E05C5C', borderRadius: '2px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
+                      <button onClick={() => setConfirmarCancelamento({ id: ass.id, corretorId: ass.corretor_id })} disabled={atualizando === ass.id} style={{ backgroundColor: 'transparent', border: '1px solid #E05C5C40', color: '#E05C5C', borderRadius: '2px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
                         Cancelar
                       </button>
                     </div>

@@ -7,6 +7,7 @@ import type { Solicitacao, Cidade } from '@/types/bid'
 import { formatCurrency } from '@/lib/format'
 import { exportarCSV, exportarXLS, solicitacoesParaExport } from '@/lib/exportCsv'
 import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
+import ModalConfirm from '@/components/ui/ModalConfirm'
 import ModalSolicitacao from './ModalSolicitacao'
 
 interface SolicitacoesClientProps {
@@ -33,6 +34,7 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
   const [modalAberto, setModalAberto] = useState(false)
   const [editando, setEditando] = useState<Solicitacao | null>(null)
   const [deletandoId, setDeletandoId] = useState<string | null>(null)
+  const [confirmarExcluir, setConfirmarExcluir] = useState<string | null>(null)
   const [matchingId, setMatchingId] = useState<string | null>(null)
   const [filtroStatus, setFiltroStatus] = useState('')
   const [filtroCidade, setFiltroCidade] = useState('')
@@ -58,8 +60,7 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
   const paginaAtual  = Math.min(pagina, totalPaginas)
   const visiveis     = filtradas.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE)
 
-  async function handleDeletar(id: string) {
-    if (!confirm('Deseja realmente excluir esta solicitacao?')) return
+  async function confirmarEExcluir(id: string) {
     setDeletandoId(id)
     const { error } = await supabase
       .from('solicitacoes')
@@ -67,16 +68,29 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
       .eq('id', id)
       .eq('corretor_id', corretorId)
     setDeletandoId(null)
+    setConfirmarExcluir(null)
     if (error) {
-      alert('Erro ao excluir solicitação: ' + error.message)
+      addToast('erro', 'Erro ao excluir', error.message)
       return
     }
+    addToast('sucesso', 'Solicitação excluída')
     router.refresh()
   }
 
   async function handleRodarMatching(id: string) {
     setMatchingId(id)
-    await fetch(`/api/matching/solicitacao/${id}`, { method: 'POST' })
+    try {
+      const res = await fetch(`/api/matching/solicitacao/${id}`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        addToast('erro', 'Erro no matching', data.error || 'Tente novamente.')
+      } else {
+        const qtd = data.matchesGerados || 0
+        addToast(qtd > 0 ? 'sucesso' : 'info', qtd > 0 ? `${qtd} match(es) gerado(s)` : 'Nenhuma compatibilidade ≥ 70%')
+      }
+    } catch {
+      addToast('erro', 'Erro ao rodar matching', 'Verifique sua conexão.')
+    }
     setMatchingId(null)
     router.refresh()
   }
@@ -106,6 +120,16 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
   return (
     <>
       <ToastContainer toasts={toasts} onRemover={removerToast} />
+      {confirmarExcluir && (
+        <ModalConfirm
+          titulo="Excluir solicitação?"
+          descricao="Esta ação é irreversível. O matching e os leads associados a ela também serão removidos."
+          labelConfirmar="Excluir"
+          onConfirmar={() => confirmarEExcluir(confirmarExcluir)}
+          onCancelar={() => setConfirmarExcluir(null)}
+          carregando={deletandoId === confirmarExcluir}
+        />
+      )}
       <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
@@ -263,7 +287,7 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
                       title="Excluir"
                       style={{ ...btnIconStyle, color: deletandoId === sol.id ? '#E05C5C' : '#9B9690' }}
                       disabled={deletandoId === sol.id}
-                      onClick={() => handleDeletar(sol.id)}
+                      onClick={() => setConfirmarExcluir(sol.id)}
                     >
                       {deletandoId === sol.id ? '...' : '✕'}
                     </button>
@@ -303,7 +327,10 @@ export default function SolicitacoesClient({ solicitacoes, cidades, corretorId }
           solicitacao={editando}
           corretorId={corretorId}
           cidades={cidades}
-          onClose={() => setModalAberto(false)}
+          onClose={(salvo?: boolean) => {
+            setModalAberto(false)
+            if (salvo) addToast('sucesso', editando ? 'Solicitação atualizada' : 'Solicitação criada com sucesso')
+          }}
         />
       )}
     </>
