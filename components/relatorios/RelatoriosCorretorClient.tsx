@@ -320,7 +320,7 @@ export default function RelatoriosCorretorClient({
             <ChartCard title="Solicitações por Objetivo">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={dados.solPorNegocio.filter(s => s.total > 0)} dataKey="total" nameKey="tipo" cx="50%" cy="50%" outerRadius={90} label={({ tipo, percent }) => `${tipo} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                  <Pie data={dados.solPorNegocio.filter(s => s.total > 0)} dataKey="total" nameKey="tipo" cx="50%" cy="50%" outerRadius={90} label={({ tipo, percent }: { tipo?: string; percent?: number }) => `${tipo ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
                     <Cell fill={CORES.azul} />
                     <Cell fill={CORES.roxo} />
                   </Pie>
@@ -377,7 +377,7 @@ export default function RelatoriosCorretorClient({
                       { nome: 'Externos', valor: dados.matches.externos },
                     ].filter(d => d.valor > 0)}
                     dataKey="valor" nameKey="nome" cx="50%" cy="50%" outerRadius={90}
-                    label={({ nome, percent }) => `${nome} ${(percent * 100).toFixed(0)}%`} labelLine={false}
+                    label={({ nome, percent }: { nome?: string; percent?: number }) => `${nome ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}
                   >
                     <Cell fill={CORES.azul} />
                     <Cell fill={CORES.verde} />

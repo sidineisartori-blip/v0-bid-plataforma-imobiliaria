@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  FunnelChart, Funnel, LabelList,
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
 
@@ -243,7 +242,7 @@ export default function AdminRelatoriosPage() {
               <ChartCard title="Distribuição por Plano (%)">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={dados.corretoresPorPlano.filter(p => p.total > 0)} dataKey="total" nameKey="plano" cx="50%" cy="50%" outerRadius={90} label={({ plano, percent }) => `${plano} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                    <Pie data={dados.corretoresPorPlano.filter(p => p.total > 0)} dataKey="total" nameKey="plano" cx="50%" cy="50%" outerRadius={90} label={({ plano, percent }: { plano?: string; percent?: number }) => `${plano ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
                       {dados.corretoresPorPlano.map((entry) => (
                         <Cell key={entry.plano} fill={CORES_PLANO[entry.plano] || CORES.cinza} />
                       ))}
