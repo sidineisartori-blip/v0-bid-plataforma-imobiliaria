@@ -525,7 +525,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                       title="Excluir"
                       style={{ ...btnIconStyle, color: deletandoId === imovel.id ? '#E05C5C' : '#9B9690' }}
                       disabled={deletandoId === imovel.id}
-                      onClick={() => handleDeletar(imovel.id)}
+                      onClick={() => setConfirmarExcluir(imovel.id)}
                     >
                       {deletandoId === imovel.id ? '...' : '✕'}
                     </button>
