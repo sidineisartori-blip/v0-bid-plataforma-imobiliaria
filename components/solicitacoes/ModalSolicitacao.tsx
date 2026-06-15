@@ -217,7 +217,7 @@ export default function ModalSolicitacao({
             {solicitacao ? 'Editar Solicitacao' : 'Nova Solicitacao'}
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => onClose()}
             style={{ background: 'none', border: 'none', color: '#9B9690', cursor: 'pointer', fontSize: '20px', lineHeight: 1 }}
           >
             &times;
@@ -491,7 +491,7 @@ export default function ModalSolicitacao({
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => onClose()}
               style={{
                 padding: '9px 20px',
                 borderRadius: '2px',

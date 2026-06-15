@@ -520,7 +520,7 @@ Plataforma BID | bid.app.br`
             {imovel ? 'Editar Imóvel' : 'Cadastrar Imóvel'}
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => onClose()}
             style={{ background: 'none', border: 'none', color: '#9B9690', cursor: 'pointer', fontSize: '20px', lineHeight: 1 }}
           >
             &times;
@@ -1249,7 +1249,7 @@ Plataforma BID | bid.app.br`
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => onClose()}
               style={{
                 padding: '9px 20px',
                 borderRadius: '2px',
