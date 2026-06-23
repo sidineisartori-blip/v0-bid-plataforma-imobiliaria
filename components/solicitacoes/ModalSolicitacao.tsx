@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Solicitacao, Cidade } from '@/types/bid'
 import { TIPO_IMOVEL_OPTIONS } from '@/lib/format'
+import BairroCombobox from '@/components/localidades/BairroCombobox'
+import NovaCidadeForm from '@/components/localidades/NovaCidadeForm'
 
 interface ModalSolicitacaoProps {
   solicitacao?: Solicitacao | null
@@ -66,6 +68,8 @@ export default function ModalSolicitacao({
   const [matchLoading, setMatchLoading] = useState<string | null>(null)
   const [matchFeito, setMatchFeito] = useState<Set<string>>(new Set())
   const [matchErro, setMatchErro] = useState('')
+  const [cidadesList, setCidadesList] = useState<Cidade[]>(cidades)
+  const [showNovaCidade, setShowNovaCidade] = useState(false)
 
   const [form, setForm] = useState<FormData>({
     cliente_nome: solicitacao?.cliente_nome || '',
@@ -87,6 +91,24 @@ export default function ModalSolicitacao({
 
   const set = (field: keyof FormData, value: unknown) =>
     setForm((prev) => ({ ...prev, [field]: value }))
+
+  // city_id da cidade selecionada (igualdade exata pelo nome canônico)
+  const cityId = cidadesList.find((c) => c.name === form.cidade)?.id ?? null
+
+  // Após criar/reaproveitar cidade: re-busca a lista, seleciona a nova e fecha o mini-form
+  async function handleCidadeCriada(cidade: Cidade) {
+    try {
+      const res = await fetch('/api/localidades/cidades')
+      if (res.ok) {
+        const json = await res.json()
+        setCidadesList(json.cidades ?? cidadesList)
+      }
+    } catch {
+      // mantém a lista atual; ainda assim seleciona a cidade retornada
+    }
+    setForm((prev) => ({ ...prev, cidade: cidade.name, bairro_desejado: '' }))
+    setShowNovaCidade(false)
+  }
 
   async function fetchCompativeis() {
     if (!solicitacao?.id) return
@@ -364,25 +386,49 @@ export default function ModalSolicitacao({
           {/* Cidade + Bairro */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Cidade *</label>
-              <select required style={inputStyle} value={form.cidade} onChange={(e) => set('cidade', e.target.value)}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>Cidade *</label>
+                <button
+                  type="button"
+                  onClick={() => setShowNovaCidade((v) => !v)}
+                  style={{ background: 'none', border: 'none', color: '#C9A84C', fontSize: '11px', cursor: 'pointer', padding: 0 }}
+                >
+                  + Nova cidade
+                </button>
+              </div>
+              <select
+                required
+                style={inputStyle}
+                value={form.cidade}
+                onChange={(e) => setForm((prev) => ({ ...prev, cidade: e.target.value, bairro_desejado: '' }))}
+              >
                 <option value="">Selecione...</option>
-                {cidades.map((c) => (
+                {cidadesList.map((c) => (
                   <option key={c.id} value={c.name}>{c.name} — {c.state}</option>
                 ))}
               </select>
+              {showNovaCidade && (
+                <NovaCidadeForm
+                  inputStyle={inputStyle}
+                  onCreated={handleCidadeCriada}
+                  onError={setError}
+                  onCancel={() => setShowNovaCidade(false)}
+                />
+              )}
             </div>
             <div>
               <label style={labelStyle}>
                 Bairro desejado{' '}
                 <span style={{ color: '#5CB88A', fontSize: '10px' }}>+10pts no matching</span>
               </label>
-              <input
-                type="text"
-                style={inputStyle}
+              <BairroCombobox
+                cityId={cityId}
                 value={form.bairro_desejado}
-                onChange={(e) => set('bairro_desejado', e.target.value)}
+                onChange={(name) => set('bairro_desejado', name)}
+                onError={setError}
+                disabledWhenNoCity
                 placeholder="Opcional"
+                inputStyle={inputStyle}
               />
             </div>
           </div>
