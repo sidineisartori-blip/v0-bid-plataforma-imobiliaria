@@ -94,6 +94,27 @@ export interface Solicitacao {
   observacoes: string | null
   status: string
   created_at: string
+  // Campos derivados (atualizados pelo backend, opcionais para compatibilidade)
+  ultimo_contato_em?: string | null
+  qtd_imoveis_enviados?: number
+  ultimo_followup_status?: string | null
+  ultimo_followup_em?: string | null
+}
+
+export type SolicitacaoEventoTipo = 'contato' | 'imovel_enviado' | 'mensagem_auto' | 'status' | 'nota'
+export type SolicitacaoEventoCanal = 'whatsapp' | 'email' | 'app'
+
+export interface SolicitacaoEvento {
+  id: string
+  solicitacao_id: string
+  corretor_id: string | null
+  tipo: SolicitacaoEventoTipo
+  canal: SolicitacaoEventoCanal | null
+  sucesso: boolean | null
+  imovel_id: string | null
+  detalhe: string | null
+  metadata: Record<string, unknown>
+  created_at: string
 }
 
 export interface Match {
