@@ -120,6 +120,14 @@ export interface Cidade {
   id: string
   name: string
   state: string
+  active?: boolean
+}
+
+export interface Bairro {
+  id: string
+  city_id: string
+  name: string
+  active?: boolean
 }
 
 // Tipos para joins/relações usados nas páginas

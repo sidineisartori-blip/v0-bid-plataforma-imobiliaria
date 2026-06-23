@@ -133,7 +133,7 @@ export default function ERPCobrancas({ cobrancas, corretorId, mesInicial }: Prop
             </span>
           </div>
           {filtradas.map((c: Cobranca, i: number) => {
-            const sm = STATUS_MAP[c.status as keyof typeof STATUS_MAP]
+            const sm = STATUS_MAP[c.status as keyof typeof STATUS_MAP] ?? { label: c.status || '—', cor: '#9B9690', bg: 'rgba(155,150,144,0.12)' }
             const venc = calcVencimento(c.data_vencimento)
             return (
               <div
