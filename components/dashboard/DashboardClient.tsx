@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react'
 import Link from 'next/link'
 import type { Corretor, Imovel, Solicitacao, Match, Negociacao } from '@/types/bid'
-import { formatCurrency, STATUS_LABELS, STATUS_COLORS, KANBAN_COLUNAS, getImovelEmoji } from '@/lib/format'
+import { formatCurrency, STATUS_LABELS, STATUS_COLORS, STATUS_COLOR_FALLBACK, KANBAN_COLUNAS, getImovelEmoji } from '@/lib/format'
 import { calcReajuste, calcVencimento } from '@/lib/vencimento'
 
 interface ContratoResumido {
@@ -288,7 +288,7 @@ export default function DashboardClient({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {imoveis.slice(0, 4).map((imovel) => {
-                const sc = STATUS_COLORS[imovel.status]
+                const sc = STATUS_COLORS[imovel.status] || STATUS_COLOR_FALLBACK
                 return (
                   <div key={imovel.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', backgroundColor: '#232324', borderRadius: '2px' }}>
                     <span style={{ fontSize: '22px', flexShrink: 0 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>

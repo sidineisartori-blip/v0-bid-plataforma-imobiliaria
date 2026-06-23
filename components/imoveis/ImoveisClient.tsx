@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Imovel, Cidade, ImovelStatus } from '@/types/bid'
-import { formatCurrency, STATUS_LABELS, STATUS_COLORS, getImovelEmoji } from '@/lib/format'
+import { formatCurrency, STATUS_LABELS, STATUS_COLORS, STATUS_COLOR_FALLBACK, getImovelEmoji } from '@/lib/format'
 import { exportarCSV, exportarXLS, imoveisParaExport } from '@/lib/exportCsv'
 import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
 import ModalConfirm from '@/components/ui/ModalConfirm'
@@ -308,7 +308,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
             }}
           >
             {imoveisVisiveis.map((imovel: Imovel) => {
-              const sc = STATUS_COLORS[imovel.status as ImovelStatus]
+              const sc = STATUS_COLORS[imovel.status as ImovelStatus] || STATUS_COLOR_FALLBACK
               const temImagem = Array.isArray(imovel.image_urls) && imovel.image_urls.length > 0
               return (
                 <div
@@ -408,7 +408,7 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
         >
           {
             imoveisVisiveis.map((imovel: Imovel, i: number) => {
-              const sc = STATUS_COLORS[imovel.status as ImovelStatus]
+              const sc = STATUS_COLORS[imovel.status as ImovelStatus] || STATUS_COLOR_FALLBACK
               return (
                 <div
                   key={imovel.id}
