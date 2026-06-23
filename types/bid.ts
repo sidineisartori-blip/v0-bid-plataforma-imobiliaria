@@ -1,4 +1,4 @@
-export type ImovelStatus = 'aguardando_assinatura' | 'ativo' | 'pausado' | 'negociacao' | 'concluido'
+export type ImovelStatus = 'aguardando_assinatura' | 'disponivel' | 'ativo' | 'pausado' | 'negociacao' | 'concluido'
 export type MatchStatus = 'pendente' | 'aceito' | 'recusado'
 export type MatchTipo = 'externo' | 'interno'
 export type KanbanColuna = 'Parceria Ativa' | 'Visita Agendada' | 'Proposta Enviada' | 'Negociação' | 'Doc & Jurídico' | 'Concluído'

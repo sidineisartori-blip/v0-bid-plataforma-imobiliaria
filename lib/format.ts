@@ -14,6 +14,7 @@ export function formatDate(dateStr: string): string {
 
 export const STATUS_LABELS: Record<ImovelStatus, string> = {
   aguardando_assinatura: 'Aguardando Assinatura',
+  disponivel: 'Disponível',
   ativo: 'Ativo',
   pausado: 'Pausado',
   negociacao: 'Negociação',
@@ -22,11 +23,15 @@ export const STATUS_LABELS: Record<ImovelStatus, string> = {
 
 export const STATUS_COLORS: Record<ImovelStatus, { bg: string; text: string }> = {
   ativo: { bg: 'rgba(92,184,138,0.15)', text: '#5CB88A' },
+  disponivel: { bg: 'rgba(92,184,138,0.15)', text: '#5CB88A' },
   negociacao: { bg: 'rgba(92,155,224,0.15)', text: '#5C9BE0' },
   aguardando_assinatura: { bg: 'rgba(201,168,76,0.15)', text: '#C9A84C' },
   pausado: { bg: 'rgba(155,150,144,0.15)', text: '#9B9690' },
   concluido: { bg: 'rgba(92,184,138,0.1)', text: '#5CB88A' },
 }
+
+// Fallback seguro para status desconhecidos vindos do banco
+export const STATUS_COLOR_FALLBACK = { bg: 'rgba(155,150,144,0.15)', text: '#9B9690' }
 
 export const TIPO_IMOVEL_OPTIONS = [
   'Apartamento',
