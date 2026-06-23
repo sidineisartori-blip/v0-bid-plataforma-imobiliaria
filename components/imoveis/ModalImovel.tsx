@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Imovel, Cidade } from '@/types/bid'
 import { TIPO_IMOVEL_OPTIONS } from '@/lib/format'
+import BairroCombobox from '@/components/localidades/BairroCombobox'
 
 interface ModalImovelProps {
   imovel?: Imovel | null
@@ -211,6 +212,10 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
 
   const set = (field: keyof FormData, value: unknown) =>
     setForm((prev) => ({ ...prev, [field]: value }))
+
+  // city_id da cidade vinda do CEP (igualdade exata pelo nome canônico).
+  // Pode ser null se a cidade do CEP ainda não estiver na base — combobox cai em texto livre.
+  const cityId = cidades.find((c) => c.name === form.cidade)?.id ?? null
 
   function handleFotosChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
@@ -924,12 +929,13 @@ Plataforma BID | bid.app.br`
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
               <label style={labelStyle}>Bairro</label>
-              <input
-                type="text"
-                style={inputStyle}
+              <BairroCombobox
+                cityId={cityId}
                 value={form.bairro}
-                onChange={(e) => set('bairro', e.target.value)}
+                onChange={(name) => set('bairro', name)}
+                onError={setError}
                 placeholder="Bairro (auto ou manual)"
+                inputStyle={inputStyle}
               />
             </div>
             <div>
