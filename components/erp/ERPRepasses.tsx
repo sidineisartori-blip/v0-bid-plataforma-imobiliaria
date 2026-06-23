@@ -132,7 +132,7 @@ export default function ERPRepasses({ repasses, corretorId, mesInicial }: Props)
             </span>
           </div>
           {filtrados.map((r: Repasse, i: number) => {
-            const sm = STATUS_MAP[r.status as keyof typeof STATUS_MAP]
+            const sm = STATUS_MAP[r.status as keyof typeof STATUS_MAP] ?? { label: r.status || '—', cor: '#9B9690', bg: 'rgba(155,150,144,0.12)' }
             const isDetalhe = detalheId === r.id
             return (
               <div key={r.id} style={{ borderBottom: i < filtrados.length - 1 ? '1px solid #232324' : 'none' }}>
