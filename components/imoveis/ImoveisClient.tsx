@@ -423,8 +423,31 @@ export default function ImoveisClient({ imoveis, cidades, corretorId, corretorNo
                   onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(201,168,76,0.02)')}
                   onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent')}
                 >
-                  {/* Emoji */}
-                  <span style={{ fontSize: '28px', flexShrink: 0 }}>{getImovelEmoji(imovel.tipo_imovel)}</span>
+                  {/* Miniatura: primeira foto do imóvel, com fallback para emoji */}
+                  <div
+                    style={{
+                      width: '56px',
+                      height: '56px',
+                      flexShrink: 0,
+                      borderRadius: '2px',
+                      overflow: 'hidden',
+                      backgroundColor: '#232324',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {imovel.image_urls && imovel.image_urls.length > 0 ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imovel.image_urls[0] || "/placeholder.svg"}
+                        alt={imovel.titulo}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '28px' }} aria-hidden="true">{getImovelEmoji(imovel.tipo_imovel)}</span>
+                    )}
+                  </div>
 
                   {/* Info principal — clicável para abrir compatibilidades */}
                   <button
