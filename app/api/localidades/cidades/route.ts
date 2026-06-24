@@ -20,7 +20,7 @@ type Ator = { id: string; tipo: 'admin' | 'corretor' }
 // Admin (JWT próprio em cookie) OU corretor (sessão Supabase). Leads não passam.
 async function autenticarAtor(): Promise<Ator | null> {
   const cookieStore = await cookies()
-  const adminToken = cookieStore.get('admin_session')?.value
+  const adminToken = cookieStore.get('admin_token')?.value
   if (adminToken) {
     try {
       const payload = await verifyAdminToken(adminToken)
