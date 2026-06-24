@@ -21,14 +21,18 @@ export default async function SiteCorretorPage({
 
   if (!corretor || !corretor.site_ativo) notFound()
 
-  const { data: imoveis } = await supabase
-    .from('imoveis')
-    .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, area_total, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
-    .eq('corretor_id', corretor.id)
-    .in('status', ['ativo', 'disponivel'])
-    .eq('publico_no_site', true)
-    .order('lancamento', { ascending: false })
-    .order('created_at', { ascending: false })
+  const [{ data: imoveis }, { data: cidades }, { data: bairros }] = await Promise.all([
+    supabase
+      .from('imoveis')
+      .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, area_total, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
+      .eq('corretor_id', corretor.id)
+      .in('status', ['ativo', 'disponivel'])
+      .eq('publico_no_site', true)
+      .order('lancamento', { ascending: false })
+      .order('created_at', { ascending: false }),
+    supabase.from('cities').select('id, name').eq('active', true).order('name'),
+    supabase.from('neighborhoods').select('id, city_id, name').eq('active', true).order('name'),
+  ])
 
   // JSON-LD: schema Person para SEO avançado (rich results)
   const baseUrl =
@@ -73,6 +77,8 @@ export default async function SiteCorretorPage({
       <SiteCorretorPublico
         corretor={corretor}
         imoveis={imoveis || []}
+        cidades={cidades || []}
+        bairros={bairros || []}
       />
     </>
   )

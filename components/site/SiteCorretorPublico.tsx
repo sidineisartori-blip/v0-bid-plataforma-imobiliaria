@@ -37,9 +37,14 @@ interface ImovelPublico {
   area_total?: number | null
 }
 
+interface CidadeOpt { id: string; name: string }
+interface BairroOpt { id: string; city_id: string; name: string }
+
 interface Props {
   corretor: CorretorPublico
   imoveis: ImovelPublico[]
+  cidades: CidadeOpt[]
+  bairros: BairroOpt[]
 }
 
 function getSelo(nota: number, negocios: number): { label: string; cor: string } {
@@ -63,7 +68,7 @@ function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 }
 
-export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
+export default function SiteCorretorPublico({ corretor, imoveis, cidades, bairros }: Props) {
   const formRef = useRef<HTMLDivElement>(null)
   const catalogoRef = useRef<HTMLDivElement>(null)
 
@@ -652,22 +657,33 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Cidade *</label>
-                  <input 
-                    required 
-                    placeholder="Cidade do imóvel" 
-                    value={formProprietario.cidade} 
-                    onChange={(e) => setFormProprietario(p => ({ ...p, cidade: e.target.value }))} 
-                    style={inputStyle} 
-                  />
+                  <select
+                    required
+                    value={formProprietario.cidade}
+                    onChange={(e) => setFormProprietario(p => ({ ...p, cidade: e.target.value, bairro: '' }))}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  >
+                    <option value="">Selecione a cidade</option>
+                    {cidades.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label style={labelStyle}>Bairro</label>
-                  <input 
-                    placeholder="Bairro" 
-                    value={formProprietario.bairro} 
-                    onChange={(e) => setFormProprietario(p => ({ ...p, bairro: e.target.value }))} 
-                    style={inputStyle} 
-                  />
+                  <select
+                    value={formProprietario.bairro}
+                    onChange={(e) => setFormProprietario(p => ({ ...p, bairro: e.target.value }))}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                    disabled={!formProprietario.cidade}
+                  >
+                    <option value="">Indiferente / Todos</option>
+                    {bairros
+                      .filter((b) => {
+                        const cidade = cidades.find((c) => c.name === formProprietario.cidade)
+                        return cidade && b.city_id === cidade.id
+                      })
+                      .map((b) => <option key={b.id} value={b.name}>{b.name}</option>)
+                    }
+                  </select>
                 </div>
               </div>
 
@@ -783,22 +799,33 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Cidade *</label>
-                  <input 
-                    required 
-                    placeholder="Cidade desejada" 
-                    value={formComprador.cidade} 
-                    onChange={(e) => setFormComprador(p => ({ ...p, cidade: e.target.value }))} 
-                    style={inputStyle} 
-                  />
+                  <select
+                    required
+                    value={formComprador.cidade}
+                    onChange={(e) => setFormComprador(p => ({ ...p, cidade: e.target.value, bairro_desejado: '' }))}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  >
+                    <option value="">Selecione a cidade</option>
+                    {cidades.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label style={labelStyle}>Bairro de preferência</label>
-                  <input 
-                    placeholder="Bairro" 
-                    value={formComprador.bairro_desejado} 
-                    onChange={(e) => setFormComprador(p => ({ ...p, bairro_desejado: e.target.value }))} 
-                    style={inputStyle} 
-                  />
+                  <select
+                    value={formComprador.bairro_desejado}
+                    onChange={(e) => setFormComprador(p => ({ ...p, bairro_desejado: e.target.value }))}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                    disabled={!formComprador.cidade}
+                  >
+                    <option value="">Indiferente / Todos</option>
+                    {bairros
+                      .filter((b) => {
+                        const cidade = cidades.find((c) => c.name === formComprador.cidade)
+                        return cidade && b.city_id === cidade.id
+                      })
+                      .map((b) => <option key={b.id} value={b.name}>{b.name}</option>)
+                    }
+                  </select>
                 </div>
               </div>
 
