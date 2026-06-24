@@ -223,6 +223,16 @@ export async function POST(request: NextRequest) {
         })
         if (fuErr) console.error('[v0] Erro ao agendar follow-up:', fuErr)
 
+        // Notificação in-app (com solicitacao_id para painel de detalhes)
+        await supabase.from('notificacoes').insert({
+          corretor_id: corretorId,
+          tipo: 'landing',
+          titulo: 'Novo lead recebido!',
+          mensagem: `${d.nome} entrou em contato pela sua página pública.`,
+          solicitacao_id: solCriada.id,
+          lida: false,
+        })
+
         // Notifica o corretor por email + WhatsApp
         const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://v0-bid-plataforma-imobiliaria.vercel.app'
         if (corretor.email) {
