@@ -25,7 +25,7 @@ export default async function SiteCorretorPage({
     .from('imoveis')
     .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, area_total, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
     .eq('corretor_id', corretor.id)
-    .eq('status', 'ativo')
+    .in('status', ['ativo', 'disponivel'])
     .eq('publico_no_site', true)
     .order('lancamento', { ascending: false })
     .order('created_at', { ascending: false })
