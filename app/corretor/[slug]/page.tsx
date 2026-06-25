@@ -21,7 +21,7 @@ export default async function SiteCorretorPage({
 
   if (!corretor || !corretor.site_ativo) notFound()
 
-  const [{ data: imoveis }, { data: cidades }, { data: bairros }] = await Promise.all([
+  const [{ data: imoveis }, { data: cidades }, { data: bairros }, { data: solicitacoes }] = await Promise.all([
     supabase
       .from('imoveis')
       .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, area_total, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
@@ -32,6 +32,13 @@ export default async function SiteCorretorPage({
       .order('created_at', { ascending: false }),
     supabase.from('cities').select('id, name').eq('active', true).order('name'),
     supabase.from('neighborhoods').select('id, city_id, name').eq('active', true).order('name'),
+    supabase
+      .from('solicitacoes')
+      .select('id, tipo_negocio, tipo_imovel, cidade, bairro_desejado, valor_min, valor_max, quartos, tem_animal')
+      .eq('corretor_id', corretor.id)
+      .eq('status', 'ativa')
+      .order('created_at', { ascending: false })
+      .limit(6),
   ])
 
   // JSON-LD: schema Person para SEO avançado (rich results)
@@ -79,6 +86,7 @@ export default async function SiteCorretorPage({
         imoveis={imoveis || []}
         cidades={cidades || []}
         bairros={bairros || []}
+        solicitacoes={solicitacoes || []}
       />
     </>
   )
