@@ -20,7 +20,7 @@ export default async function DashboardPage() {
     { data: cobrancasAtrasadas },
     { data: repassesPendentes },
   ] = await Promise.all([
-    supabase.from('corretores').select('*').eq('id', user.id).single(),
+    supabase.from('corretores').select('*, status_financeiro').eq('id', user.id).single(),
     supabase.from('imoveis').select('*').eq('corretor_id', user.id).order('created_at', { ascending: false }),
     supabase.from('solicitacoes').select('*').eq('corretor_id', user.id).eq('status', 'ativa'),
     supabase.from('negociacoes').select('*').eq('corretor_id', user.id).order('updated_at', { ascending: false }),

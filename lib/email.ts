@@ -122,6 +122,87 @@ export function emailConfirmacaoLead(opts: {
   `)
 }
 
+// Template 3b: Proprietário recebe confirmação de captação
+export function emailConfirmacaoProprietario(opts: {
+  propNome: string
+  corretorNome: string
+  corretorPhone: string | null
+  tipoNegocio: string
+  tipoImovel: string
+  cidade: string
+  bairro: string | null
+}) {
+  return base(`
+    <h2>Captação registrada com sucesso! ✅</h2>
+    <p>Olá, <strong style="color:#f0ede6">${opts.propNome}</strong>!</p>
+    <p>Recebemos as informações do seu imóvel para <strong style="color:#c9a84c">${opts.tipoNegocio}</strong> em <strong style="color:#c9a84c">${opts.cidade}${opts.bairro ? ` · ${opts.bairro}` : ''}</strong>.</p>
+    <p>O corretor <strong style="color:#f0ede6">${opts.corretorNome}</strong> analisará os dados e entrará em contato em breve.</p>
+    <div class="card">
+      <p style="margin:0 0 10px;color:#6b6860;font-size:12px">📋 Resumo da captação</p>
+      <div class="row"><span class="label">Tipo</span><span class="value">${opts.tipoImovel} para ${opts.tipoNegocio}</span></div>
+      <div class="row"><span class="label">Cidade</span><span class="value">${opts.cidade}${opts.bairro ? ` · ${opts.bairro}` : ''}</span></div>
+      <div class="row"><span class="label">Corretor</span><span class="value">${opts.corretorNome}</span></div>
+      ${opts.corretorPhone ? `<div class="row"><span class="label">WhatsApp</span><span class="value">${opts.corretorPhone}</span></div>` : ''}
+    </div>
+    <p style="font-size:12px;color:#6b6860">Dúvidas? Responda este email ou entre em contato com o corretor diretamente.</p>
+  `)
+}
+
+// Template 3c: Corretor recebe novo imóvel captado (email)
+export function emailNovaCapitacao(opts: {
+  corretorNome: string
+  propNome: string
+  propPhone: string
+  tipoNegocio: string
+  tipoImovel: string
+  cidade: string
+  bairro: string | null
+  valor: number
+  appUrl: string
+}) {
+  return base(`
+    <h2>🏠 Novo imóvel captado via BID!</h2>
+    <p>Olá${opts.corretorNome ? `, <strong style="color:#f0ede6">${opts.corretorNome}</strong>` : ''}! Um proprietário preencheu o formulário na sua página.</p>
+    <div class="card">
+      <div class="row"><span class="label">Proprietário</span><span class="value">${opts.propNome}</span></div>
+      <div class="row"><span class="label">WhatsApp</span><span class="value">${opts.propPhone}</span></div>
+      <div class="row"><span class="label">Tipo</span><span class="value">${opts.tipoImovel} para ${opts.tipoNegocio}</span></div>
+      <div class="row"><span class="label">Cidade</span><span class="value">${opts.cidade}${opts.bairro ? ` · ${opts.bairro}` : ''}</span></div>
+      <div class="row"><span class="label">Valor</span><span class="value">R$ ${opts.valor.toLocaleString('pt-BR')}</span></div>
+    </div>
+    <p>Entre em contato para agendar a visita e assinar a autorização de venda.</p>
+    <a href="${opts.appUrl}/imoveis" class="btn">Ver no BID</a>
+  `)
+}
+
+// Template 4: Corretor inadimplente — aviso de mensalidade
+export function emailAvisoPagamento(opts: {
+  corretorNome: string
+  plano: string
+  valor: number
+  mesReferencia: string
+  dataVencimento: string
+  diasAtraso: number
+}) {
+  const atrasado = opts.diasAtraso > 0
+  return base(`
+    <h2>${atrasado ? '⚠️ Pagamento em atraso' : '📅 Lembrete de mensalidade'}</h2>
+    <p>Olá${opts.corretorNome ? `, <strong style="color:#f0ede6">${opts.corretorNome}</strong>` : ''}!</p>
+    ${atrasado
+      ? `<p>Sua mensalidade de <strong style="color:#e05c5c">${opts.mesReferencia}</strong> está <strong style="color:#e05c5c">${opts.diasAtraso} dia(s) em atraso</strong>. Para manter o acesso completo à plataforma, regularize seu pagamento.</p>`
+      : `<p>Sua mensalidade de <strong style="color:#c9a84c">${opts.mesReferencia}</strong> vence em <strong style="color:#c9a84c">${opts.dataVencimento}</strong>.</p>`
+    }
+    <div class="card">
+      <div class="row"><span class="label">Plano</span><span class="value">${opts.plano}</span></div>
+      <div class="row"><span class="label">Valor</span><span class="value">R$ ${opts.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+      <div class="row"><span class="label">Referência</span><span class="value">${opts.mesReferencia}</span></div>
+      <div class="row"><span class="label">Vencimento</span><span class="value">${opts.dataVencimento}</span></div>
+    </div>
+    <p>Após o pagamento, seu corretor BID confirmará o recebimento e seu acesso continuará normalmente.</p>
+    <p style="font-size:12px;color:#6b6860">Dúvidas? Responda este email.</p>
+  `)
+}
+
 // Template 3: Corretor recebe alerta de follow-up
 export function emailFollowUpAlerta(opts: {
   corretorNome: string
