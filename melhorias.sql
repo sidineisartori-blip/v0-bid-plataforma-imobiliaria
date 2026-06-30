@@ -45,6 +45,13 @@ CREATE INDEX IF NOT EXISTS idx_pagamentos_status
 CREATE INDEX IF NOT EXISTS idx_pagamentos_vencimento
   ON public.pagamentos(data_vencimento);
 
+-- 5. Campos de redes sociais no perfil do corretor
+ALTER TABLE public.corretores
+  ADD COLUMN IF NOT EXISTS instagram  text,
+  ADD COLUMN IF NOT EXISTS linkedin   text,
+  ADD COLUMN IF NOT EXISTS facebook   text,
+  ADD COLUMN IF NOT EXISTS bio        text;  -- se ainda não existir
+
 -- 4. Verificar
 SELECT column_name, data_type, column_default
   FROM information_schema.columns

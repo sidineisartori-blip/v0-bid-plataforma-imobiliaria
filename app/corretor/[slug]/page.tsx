@@ -14,7 +14,7 @@ export default async function SiteCorretorPage({
 
   const { data: corretor } = await supabase
     .from('corretores')
-    .select('id, full_name, creci, city, bio, avatar_url, nota_media, total_avaliacoes, deals_closed, plano, site_ativo, site_boas_vindas, site_modelo, phone')
+    .select('id, full_name, creci, city, bio, avatar_url, nota_media, total_avaliacoes, deals_closed, plano, site_ativo, site_boas_vindas, site_modelo, phone, instagram, linkedin, facebook')
     .eq('slug', slug)
     .eq('is_active', true)
     .single()

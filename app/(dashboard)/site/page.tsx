@@ -10,7 +10,7 @@ export default async function SitePage() {
 
   const { data: corretor } = await supabase
     .from('corretores')
-    .select('id, full_name, creci, city, bio, avatar_url, nota_media, total_avaliacoes, deals_closed, plano, phone, site_ativo, site_boas_vindas, site_modelo, slug')
+    .select('id, full_name, creci, city, bio, avatar_url, nota_media, total_avaliacoes, deals_closed, plano, phone, site_ativo, site_boas_vindas, site_modelo, slug, instagram, linkedin, facebook')
     .eq('id', user.id)
     .single()
 

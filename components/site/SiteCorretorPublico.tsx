@@ -18,6 +18,9 @@ interface CorretorPublico {
   site_boas_vindas: string | null
   site_modelo: string | null
   phone?: string | null
+  instagram?: string | null
+  linkedin?: string | null
+  facebook?: string | null
 }
 
 interface ImovelPublico {
@@ -390,6 +393,21 @@ export default function SiteCorretorPublico({ corretor, imoveis, cidades, bairro
               </span>
             )}
           </div>
+
+          {/* Redes sociais */}
+          {(corretor.instagram || corretor.linkedin || corretor.facebook) && (
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 24 }}>
+              {corretor.instagram && (
+                <a href={corretor.instagram.startsWith('http') ? corretor.instagram : `https://instagram.com/${corretor.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#C9A84C', textDecoration: 'none', padding: '5px 12px', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 2 }}>Instagram</a>
+              )}
+              {corretor.linkedin && (
+                <a href={corretor.linkedin.startsWith('http') ? corretor.linkedin : `https://${corretor.linkedin}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#C9A84C', textDecoration: 'none', padding: '5px 12px', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 2 }}>LinkedIn</a>
+              )}
+              {corretor.facebook && (
+                <a href={corretor.facebook.startsWith('http') ? corretor.facebook : `https://${corretor.facebook}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#C9A84C', textDecoration: 'none', padding: '5px 12px', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 2 }}>Facebook</a>
+              )}
+            </div>
+          )}
 
           {/* Bio / Boas-vindas */}
           {(corretor.site_boas_vindas || corretor.bio) && (
