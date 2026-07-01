@@ -174,7 +174,7 @@ export default function ModalChamado({ chamado, contratos, onClose, onSucesso }:
             </select>
           </Field>
           <Field label="Urgência">
-            <select value={urgencia} onChange={(e) => setUrgencia(e.target.value)} style={INPUT}>
+            <select value={urgencia} onChange={(e) => setUrgencia(e.target.value as 'urgente' | 'alta' | 'media' | 'baixa')} style={INPUT}>
               <option value="baixa">Baixa</option>
               <option value="media">Média</option>
               <option value="alta">Alta</option>
