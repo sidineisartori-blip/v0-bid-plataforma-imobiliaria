@@ -11,6 +11,8 @@ import ModalConfirm from '@/components/ui/ModalConfirm'
 import ERPCobrancas, { type Cobranca } from './ERPCobrancas'
 import ERPRepasses,  { type Repasse }  from './ERPRepasses'
 import ERPExtrato,   { type MovimentacaoExtrato } from './ERPExtrato'
+import ERPChamados from './ERPChamados'
+import ERPVistorias from './ERPVistorias'
 
 export interface Contrato {
   id: string
@@ -35,6 +37,10 @@ export interface Contrato {
   garantia: string | null
   observacoes: string | null
   arquivo_url: string | null
+  portal_token: string | null
+  proprietario_nome: string | null
+  proprietario_email: string | null
+  proprietario_phone: string | null
   created_at: string
   imovel?: { titulo: string; cidade: string; bairro: string | null } | null
 }
@@ -68,7 +74,7 @@ function formatData(iso: string | null) {
 }
 
 const PAGE_SIZE = 10
-type Aba = 'contratos' | 'cobrancas' | 'repasses' | 'extrato'
+type Aba = 'contratos' | 'cobrancas' | 'repasses' | 'extrato' | 'chamados' | 'vistorias'
 
 export default function ERPClient({
   contratos, cobrancas, repasses, movimentacoes, saldoAnterior, imoveis, corretorId
@@ -127,6 +133,8 @@ export default function ERPClient({
     cobrancas: cobrancas.filter(c => c.status === 'atrasado').length,
     repasses:  repasses.filter(r => r.status === 'pendente').length,
     extrato:   0,
+    chamados:  0,
+    vistorias: 0,
   }
 
   async function confirmarEExcluir(id: string) {
@@ -154,6 +162,8 @@ export default function ERPClient({
     { key: 'cobrancas', label: 'Cobranças' },
     { key: 'repasses',  label: 'Repasses'  },
     { key: 'extrato',   label: 'Extrato'   },
+    { key: 'chamados',  label: 'Chamados'  },
+    { key: 'vistorias', label: 'Vistorias' },
   ]
 
   return (
@@ -400,6 +410,16 @@ export default function ERPClient({
       {/* Aba: Extrato */}
       {aba === 'extrato' && (
         <ERPExtrato movimentacoes={movimentacoes} saldoAnterior={saldoAnterior} mesInicial={mesAtual()} />
+      )}
+
+      {/* Aba: Chamados */}
+      {aba === 'chamados' && (
+        <ERPChamados corretorId={corretorId} contratos={contratos} />
+      )}
+
+      {/* Aba: Vistorias */}
+      {aba === 'vistorias' && (
+        <ERPVistorias contratos={contratos} />
       )}
 
       {/* Modal */}

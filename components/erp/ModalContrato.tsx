@@ -66,6 +66,9 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
   const [indiceReajuste, setIndiceReajuste]   = useState(contrato?.indice_reajuste || 'IGPM')
   const [garantia, setGarantia]               = useState(contrato?.garantia || '')
   const [observacoes, setObservacoes]         = useState(contrato?.observacoes || '')
+  const [propNome, setPropNome]               = useState(contrato?.proprietario_nome || '')
+  const [propEmail, setPropEmail]             = useState(contrato?.proprietario_email || '')
+  const [propPhone, setPropPhone]             = useState(contrato?.proprietario_phone || '')
   const [loading, setLoading]                 = useState(false)
   const [error, setError]                     = useState<string | null>(null)
 
@@ -97,6 +100,9 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
       indice_reajuste: tipo === 'locacao' ? indiceReajuste : null,
       garantia: tipo === 'locacao' ? (garantia || null) : null,
       observacoes: observacoes || null,
+      proprietario_nome: propNome || null,
+      proprietario_email: propEmail || null,
+      proprietario_phone: propPhone || null,
     }
 
     try {
@@ -276,6 +282,26 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
                   <option>Seguro Fiança</option>
                   <option>Título de Capitalização</option>
                 </select>
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {/* Dados do Proprietário (para notificações de chamados de locação) */}
+        {tipo === 'locacao' && (
+          <div style={{ borderTop: '1px solid rgba(201,168,76,0.1)', paddingTop: 4 }}>
+            <p style={{ fontSize: 11, color: 'var(--color-gold)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+              Proprietário <span style={{ fontSize: 10, color: 'var(--color-muted)', textTransform: 'none', letterSpacing: 0 }}>(para notificações de chamados)</span>
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <Field label="Nome">
+                <input value={propNome} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setPropNome(e.target.value)} style={INPUT} placeholder="Nome do proprietário" />
+              </Field>
+              <Field label="WhatsApp">
+                <input value={propPhone} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setPropPhone(e.target.value)} style={INPUT} placeholder="(11) 99999-9999" />
+              </Field>
+              <Field label="E-mail">
+                <input type="email" value={propEmail} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setPropEmail(e.target.value)} style={INPUT} placeholder="email@proprietario.com" />
               </Field>
             </div>
           </div>

@@ -203,6 +203,48 @@ export function emailAvisoPagamento(opts: {
   `)
 }
 
+// Template 5: Proprietário recebe chamado para autorizar
+export function emailChamadoProprietario(opts: {
+  propNome: string
+  imovelNome: string
+  cidade: string
+  titulo: string
+  descricao: string
+  urgencia: string
+  linkAutorizar: string
+}) {
+  const urgCor = opts.urgencia === 'urgente' ? '#e05c5c' : opts.urgencia === 'alta' ? '#e07a2f' : '#c9a84c'
+  return base(`
+    <h2>🔧 Chamado de Serviço — Aguarda sua Autorização</h2>
+    <p>Olá, <strong style="color:#f0ede6">${opts.propNome}</strong>!</p>
+    <p>Um chamado de serviço foi registrado para o seu imóvel e está aguardando sua autorização.</p>
+    <div class="card">
+      <div class="row"><span class="label">Imóvel</span><span class="value">${opts.imovelNome}${opts.cidade ? ` — ${opts.cidade}` : ''}</span></div>
+      <div class="row"><span class="label">Serviço</span><span class="value">${opts.titulo}</span></div>
+      <div class="row"><span class="label">Urgência</span><span class="value" style="color:${urgCor}">${opts.urgencia.toUpperCase()}</span></div>
+    </div>
+    <p style="color:#9b9690">${opts.descricao}</p>
+    <p>Clique no botão abaixo para visualizar os detalhes e autorizar ou recusar o chamado:</p>
+    <a href="${opts.linkAutorizar}" class="btn">Revisar Chamado</a>
+    <p style="font-size:12px;color:#6b6860;margin-top:16px">Dúvidas? Responda este email ou entre em contato com seu corretor.</p>
+  `)
+}
+
+// Template 6: Inquilino/Corretor — chamado resolvido
+export function emailChamadoResolvido(opts: {
+  inquilinoNome: string
+  titulo: string
+  comentario: string
+}) {
+  return base(`
+    <h2>✅ Chamado Resolvido</h2>
+    <p>Olá, <strong style="color:#f0ede6">${opts.inquilinoNome}</strong>!</p>
+    <p>O chamado de serviço <strong style="color:#c9a84c">${opts.titulo}</strong> foi concluído.</p>
+    ${opts.comentario ? `<div class="card"><p style="margin:0;color:#9b9690">${opts.comentario}</p></div>` : ''}
+    <p style="font-size:12px;color:#6b6860">Se tiver dúvidas ou o problema persistir, entre em contato com seu corretor.</p>
+  `)
+}
+
 // Template 3: Corretor recebe alerta de follow-up
 export function emailFollowUpAlerta(opts: {
   corretorNome: string
