@@ -302,6 +302,14 @@ export default function ModalVistoria({ vistoria, onClose, onSucesso }: Props) {
           <button onClick={onClose} style={{ background: 'none', border: '1px solid #2E2E30', borderRadius: 2, padding: '9px 18px', fontSize: 13, color: '#9B9690', cursor: 'pointer' }}>
             Fechar
           </button>
+          {vistoria.status === 'finalizada' && (
+            <button
+              onClick={() => window.open(`/imprimir/vistoria/${vistoria.id}`, '_blank')}
+              style={{ background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.3)', borderRadius: 2, padding: '9px 16px', fontSize: 13, color: '#60a5fa', cursor: 'pointer' }}
+            >
+              🖨 Imprimir / PDF
+            </button>
+          )}
           <button onClick={salvar} disabled={salvando} style={{ background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 2, padding: '9px 18px', fontSize: 13, color: '#C9A84C', cursor: salvando ? 'default' : 'pointer' }}>
             {salvando ? 'Salvando...' : 'Salvar Rascunho'}
           </button>

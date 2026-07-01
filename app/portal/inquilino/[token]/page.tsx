@@ -27,6 +27,16 @@ interface ChamadoPortal {
   created_at: string
 }
 
+interface VistoriaPortal {
+  id: string
+  tipo: 'entrada' | 'saida'
+  status: string
+  data_vistoria: string | null
+  assinado_por_corretor_em: string | null
+  assinado_por_inquilino_em: string | null
+  created_at: string
+}
+
 const STATUS_MAP: Record<string, { label: string; cor: string }> = {
   aberto:                { label: 'Aguardando análise',     cor: '#C9A84C' },
   aprovado_corretor:     { label: 'Ag. proprietário',       cor: '#60a5fa' },
@@ -54,6 +64,8 @@ export default function PortalInquilino() {
   const { token } = useParams() as { token: string }
   const [contrato, setContrato]   = useState<ContratoPortal | null>(null)
   const [chamados, setChamados]   = useState<ChamadoPortal[]>([])
+  const [vistorias, setVistorias] = useState<VistoriaPortal[]>([])
+  const [assinando, setAssinando] = useState<string | null>(null)
   const [notFound, setNotFound]   = useState(false)
   const [loading, setLoading]     = useState(true)
   const [abrindo, setAbrindo]     = useState(false)
@@ -67,17 +79,32 @@ export default function PortalInquilino() {
 
   useEffect(() => {
     async function init() {
-      const [r1, r2] = await Promise.all([
+      const [r1, r2, r3] = await Promise.all([
         fetch(`/api/portal/inquilino/${token}`),
         fetch(`/api/portal/inquilino/${token}/chamados`),
+        fetch(`/api/portal/inquilino/${token}/vistorias`),
       ])
       if (!r1.ok) { setNotFound(true); setLoading(false); return }
       setContrato(await r1.json())
       if (r2.ok) setChamados(await r2.json())
+      if (r3.ok) setVistorias(await r3.json())
       setLoading(false)
     }
     init()
   }, [token])
+
+  async function assinarVistoria(vid: string) {
+    setAssinando(vid)
+    const res = await fetch(`/api/portal/inquilino/${token}/vistorias/${vid}/assinar`, { method: 'POST' })
+    if (res.ok) {
+      setVistorias((prev) => prev.map((v) => v.id === vid ? { ...v, assinado_por_inquilino_em: new Date().toISOString() } : v))
+      setMsg({ tipo: 'ok', texto: 'Vistoria assinada com sucesso!' })
+    } else {
+      const e = await res.json()
+      setMsg({ tipo: 'erro', texto: e.error || 'Erro ao assinar.' })
+    }
+    setAssinando(null)
+  }
 
   async function uploadFotos(files: FileList) {
     setUploading(true)
@@ -262,6 +289,57 @@ export default function PortalInquilino() {
               <button onClick={enviarChamado} disabled={enviando} style={{ ...BTN, opacity: enviando ? 0.6 : 1, cursor: enviando ? 'default' : 'pointer' }}>
                 {enviando ? 'Enviando...' : 'Enviar Chamado'}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Vistorias para assinar */}
+        {vistorias.length > 0 && (
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 10 }}>
+              Vistorias do Imóvel
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {vistorias.map((v) => {
+                const tipoMap = { entrada: { label: 'Vistoria de Entrada', cor: '#5CB88A' }, saida: { label: 'Vistoria de Saída', cor: '#E05C5C' } }
+                const tm = tipoMap[v.tipo] || { label: v.tipo, cor: C.muted }
+                const jaAssinada = !!v.assinado_por_inquilino_em
+                const pendente = v.assinado_por_corretor_em && !jaAssinada
+                return (
+                  <div key={v.id} style={{ background: C.card, border: `1px solid ${pendente ? 'rgba(201,168,76,0.35)' : C.border}`, borderRadius: 8, padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+                      <div>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: tm.cor }}>{tm.label}</span>
+                          {v.data_vistoria && (
+                            <span style={{ fontSize: 11, color: C.muted }}>
+                              {new Date(v.data_vistoria + 'T00:00:00').toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                          {jaAssinada ? (
+                            <span style={{ fontSize: 12, color: '#5CB88A' }}>✓ Assinado por você em {new Date(v.assinado_por_inquilino_em!).toLocaleDateString('pt-BR')}</span>
+                          ) : pendente ? (
+                            <span style={{ fontSize: 12, color: '#C9A84C' }}>⏳ Aguarda sua assinatura</span>
+                          ) : (
+                            <span style={{ fontSize: 12, color: C.muted }}>Aguarda finalização pelo corretor</span>
+                          )}
+                        </div>
+                      </div>
+                      {pendente && (
+                        <button
+                          onClick={() => assinarVistoria(v.id)}
+                          disabled={assinando === v.id}
+                          style={{ background: '#5CB88A', color: '#0E0E0F', border: 'none', borderRadius: 6, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: assinando === v.id ? 'default' : 'pointer', whiteSpace: 'nowrap' }}
+                        >
+                          {assinando === v.id ? 'Assinando...' : '✓ Assinar Vistoria'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

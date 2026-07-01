@@ -205,7 +205,17 @@ export default function ERPVistorias({ contratos }: Props) {
                     )}
                   </div>
                 </div>
-                <span style={{ color: '#C9A84C', fontSize: 13 }}>Abrir →</span>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                  {v.status === 'finalizada' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); window.open(`/imprimir/vistoria/${v.id}`, '_blank') }}
+                      style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: 2, padding: '5px 10px', fontSize: 11, color: '#60a5fa', cursor: 'pointer' }}
+                    >
+                      🖨
+                    </button>
+                  )}
+                  <span style={{ color: '#C9A84C', fontSize: 13 }}>Abrir →</span>
+                </div>
               </div>
             )
           })}
