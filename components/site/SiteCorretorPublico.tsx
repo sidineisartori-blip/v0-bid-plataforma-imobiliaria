@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react'
 import Image from 'next/image'
-import { TIPO_IMOVEL_OPTIONS } from '@/lib/format'
+import { useOpcoes } from '@/lib/opcoes-client'
 
 interface CorretorPublico {
   id: string
@@ -110,6 +110,13 @@ export default function SiteCorretorPublico({ corretor, imoveis, cidades, bairro
     cidade: '', bairro_desejado: '', valor_min: '', valor_max: '',
     quartos: '', tem_animal: 'nao',
   })
+
+  const { opcoes: tiposNegocioImovel } = useOpcoes('tipo_negocio_imovel', ['Venda', 'Locação'])
+  const { opcoes: tiposNegocioBusca } = useOpcoes('tipo_negocio_busca', ['Comprar', 'Alugar'])
+  const { opcoes: tiposImovel } = useOpcoes('tipo_imovel', [
+    'Apartamento', 'Casa', 'Casa em Condomínio', 'Terreno', 'Sala Comercial',
+    'Loja', 'Galpão', 'Chácara / Sítio', 'Flat', 'Studio',
+  ])
 
   const selo = getSelo(corretor.nota_media, corretor.deals_closed)
 
@@ -886,18 +893,19 @@ export default function SiteCorretorPublico({ corretor, imoveis, cidades, bairro
                     onChange={(e) => setFormProprietario(p => ({ ...p, tipo_negocio: e.target.value }))} 
                     style={{ ...inputStyle, cursor: 'pointer' }}
                   >
-                    <option value="Venda">Venda</option>
-                    <option value="Locação">Locação</option>
+                    {tiposNegocioImovel.map((t) => (
+                      <option key={t.valor} value={t.valor}>{t.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label style={labelStyle}>Tipo de imóvel</label>
-                  <select 
-                    value={formProprietario.tipo_imovel} 
-                    onChange={(e) => setFormProprietario(p => ({ ...p, tipo_imovel: e.target.value }))} 
+                  <select
+                    value={formProprietario.tipo_imovel}
+                    onChange={(e) => setFormProprietario(p => ({ ...p, tipo_imovel: e.target.value }))}
                     style={{ ...inputStyle, cursor: 'pointer' }}
                   >
-                    {TIPO_IMOVEL_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {tiposImovel.map((t) => <option key={t.valor} value={t.valor}>{t.label}</option>)}
                   </select>
                 </div>
               </div>
@@ -1028,18 +1036,19 @@ export default function SiteCorretorPublico({ corretor, imoveis, cidades, bairro
                     onChange={(e) => setFormComprador(p => ({ ...p, tipo_negocio: e.target.value }))} 
                     style={{ ...inputStyle, cursor: 'pointer' }}
                   >
-                    <option value="Comprar">Comprar</option>
-                    <option value="Alugar">Alugar</option>
+                    {tiposNegocioBusca.map((t) => (
+                      <option key={t.valor} value={t.valor}>{t.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label style={labelStyle}>Tipo de imóvel</label>
-                  <select 
-                    value={formComprador.tipo_imovel} 
-                    onChange={(e) => setFormComprador(p => ({ ...p, tipo_imovel: e.target.value }))} 
+                  <select
+                    value={formComprador.tipo_imovel}
+                    onChange={(e) => setFormComprador(p => ({ ...p, tipo_imovel: e.target.value }))}
                     style={{ ...inputStyle, cursor: 'pointer' }}
                   >
-                    {TIPO_IMOVEL_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {tiposImovel.map((t) => <option key={t.valor} value={t.valor}>{t.label}</option>)}
                   </select>
                 </div>
               </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useOpcoes } from '@/lib/opcoes-client'
 import { createClient } from '@/lib/supabase/client'
 import type { Contrato } from './ERPClient'
 
@@ -71,6 +72,14 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
   const [propPhone, setPropPhone]             = useState(contrato?.proprietario_phone || '')
   const [loading, setLoading]                 = useState(false)
   const [error, setError]                     = useState<string | null>(null)
+
+  const { opcoes: formasPagOpcoes } = useOpcoes('forma_pagamento', [
+    'À vista', 'Financiamento bancário', 'FGTS', 'Permuta', 'Parcelado direto com proprietário',
+  ])
+  const { opcoes: indicesOpcoes } = useOpcoes('indice_reajuste', ['IGPM', 'IPCA', 'INPC', 'IGP-DI'])
+  const { opcoes: garantiaOpcoes } = useOpcoes('garantia', [
+    'Caução', 'Fiador', 'Seguro Fiança', 'Título de Capitalização',
+  ])
 
   async function handleSalvar() {
     if (!clienteNome.trim()) { setError('Nome do cliente é obrigatório.'); return }
@@ -228,11 +237,9 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
             <Field label="Forma de Pagamento">
               <select value={formaPagamento} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setFormaPagamento(e.target.value)} style={INPUT}>
                 <option value="">— Selecionar —</option>
-                <option>À vista</option>
-                <option>Financiamento bancário</option>
-                <option>FGTS</option>
-                <option>Permuta</option>
-                <option>Parcelado</option>
+                {formasPagOpcoes.map((o) => (
+                  <option key={o.valor} value={o.valor}>{o.label}</option>
+                ))}
               </select>
             </Field>
           </div>
@@ -268,19 +275,17 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
               </Field>
               <Field label="Índice Reajuste">
                 <select value={indiceReajuste} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setIndiceReajuste(e.target.value)} style={INPUT}>
-                  <option>IGPM</option>
-                  <option>IPCA</option>
-                  <option>INPC</option>
-                  <option>IGP-DI</option>
+                  {indicesOpcoes.map((o) => (
+                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                  ))}
                 </select>
               </Field>
               <Field label="Garantia">
                 <select value={garantia} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setGarantia(e.target.value)} style={INPUT}>
                   <option value="">—</option>
-                  <option>Caução</option>
-                  <option>Fiador</option>
-                  <option>Seguro Fiança</option>
-                  <option>Título de Capitalização</option>
+                  {garantiaOpcoes.map((o) => (
+                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                  ))}
                 </select>
               </Field>
             </div>

@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Imovel, Cidade } from '@/types/bid'
-import { TIPO_IMOVEL_OPTIONS } from '@/lib/format'
 import BairroCombobox from '@/components/localidades/BairroCombobox'
+import { useOpcoes } from '@/lib/opcoes-client'
 
 interface ModalImovelProps {
   imovel?: Imovel | null
@@ -53,7 +53,7 @@ const sectionTitleStyle: React.CSSProperties = {
 }
 
 type FormData = {
-  tipo_negocio: 'Venda' | 'Locação'
+  tipo_negocio: string
   tipo_imovel: string
   titulo: string
   descricao: string
@@ -114,6 +114,31 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
   const [compativeisLoading, setCompativeisLoading] = useState(false)
   const [matchLoading, setMatchLoading] = useState<string | null>(null)
   const [matchFeito, setMatchFeito] = useState<Set<string>>(new Set())
+
+  // Opções dinâmicas
+  const { opcoes: tiposNegocio, adicionarOpcao: addTipoNegocio } = useOpcoes('tipo_negocio_imovel', ['Venda', 'Locação'])
+  const { opcoes: tiposImovel, adicionarOpcao: addTipoImovel } = useOpcoes('tipo_imovel', [
+    'Apartamento', 'Casa', 'Casa em Condomínio', 'Terreno', 'Sala Comercial',
+    'Loja', 'Galpão', 'Chácara / Sítio', 'Flat', 'Studio',
+  ])
+  const { opcoes: formasPagOpcoes } = useOpcoes('forma_pagamento', [
+    'À vista', 'Financiamento bancário', 'FGTS', 'Permuta', 'Parcelado direto com proprietário',
+  ])
+  const [adicionandoNegocio, setAdicionandoNegocio] = useState(false)
+  const [novoNegocio, setNovoNegocio] = useState('')
+  const [adicionandoImovel, setAdicionandoImovel] = useState(false)
+  const [novoImovel, setNovoImovel] = useState('')
+
+  async function salvarNovoNegocio() {
+    if (!novoNegocio.trim()) return
+    const nova = await addTipoNegocio(novoNegocio.trim())
+    if (nova) { set('tipo_negocio', nova.valor); setNovoNegocio(''); setAdicionandoNegocio(false) }
+  }
+  async function salvarNovoImovel() {
+    if (!novoImovel.trim()) return
+    const nova = await addTipoImovel(novoImovel.trim())
+    if (nova) { set('tipo_imovel', nova.valor); setNovoImovel(''); setAdicionandoImovel(false) }
+  }
 
   // Fotos
   const [fotos, setFotos] = useState<File[]>([])
@@ -189,9 +214,13 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
         setCepLoading(false)
         return
       }
+      // Usa o nome canônico do DB quando há match (ignora case/acento leve)
+      const cidadeDB = cidades.find(
+        (c) => c.name.toLowerCase() === data.localidade.toLowerCase()
+      )
       setForm((prev) => ({
         ...prev,
-        cidade: data.localidade,
+        cidade: cidadeDB?.name ?? data.localidade,
         estado: data.uf,
         bairro: data.bairro || prev.bairro,
         logradouro: data.logradouro || '',
@@ -213,9 +242,10 @@ export default function ModalImovel({ imovel, corretorId, corretorNome = 'Corret
   const set = (field: keyof FormData, value: unknown) =>
     setForm((prev) => ({ ...prev, [field]: value }))
 
-  // city_id da cidade vinda do CEP (igualdade exata pelo nome canônico).
-  // Pode ser null se a cidade do CEP ainda não estiver na base — combobox cai em texto livre.
-  const cityId = cidades.find((c) => c.name === form.cidade)?.id ?? null
+  // city_id — comparação case-insensitive para suportar variações do ViaCEP
+  const cityId = cidades.find(
+    (c) => c.name.toLowerCase() === form.cidade.toLowerCase()
+  )?.id ?? null
 
   function handleFotosChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
@@ -653,17 +683,62 @@ Plataforma BID | bid.app.br`
             <div>
               <label style={labelStyle}>Tipo de Negócio</label>
               <select style={inputStyle} value={form.tipo_negocio} onChange={(e) => set('tipo_negocio', e.target.value)}>
-                <option value="Venda">Venda</option>
-                <option value="Locação">Locação</option>
+                {tiposNegocio.map((t) => (
+                  <option key={t.valor} value={t.valor}>{t.label}</option>
+                ))}
               </select>
+              {!adicionandoNegocio ? (
+                <button type="button" onClick={() => setAdicionandoNegocio(true)}
+                  style={{ background: 'none', border: 'none', color: '#C9A84C', fontSize: '11px', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline' }}>
+                  + Adicionar tipo personalizado
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                  <input value={novoNegocio} onChange={(e) => setNovoNegocio(e.target.value)}
+                    placeholder="Ex: Temporada"
+                    style={{ ...inputStyle, flex: 1, padding: '6px 10px', fontSize: '12px' }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); salvarNovoNegocio() } }}
+                    autoFocus />
+                  <button type="button" onClick={salvarNovoNegocio}
+                    style={{ background: '#C9A84C', border: 'none', color: '#1A1A1B', borderRadius: '2px', padding: '0 10px', fontSize: '12px', cursor: 'pointer' }}>
+                    Salvar
+                  </button>
+                  <button type="button" onClick={() => { setAdicionandoNegocio(false); setNovoNegocio('') }}
+                    style={{ background: '#2E2E30', border: 'none', color: '#9B9690', borderRadius: '2px', padding: '0 8px', cursor: 'pointer' }}>
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label style={labelStyle}>Tipo de Imóvel</label>
               <select style={inputStyle} value={form.tipo_imovel} onChange={(e) => set('tipo_imovel', e.target.value)}>
-                {TIPO_IMOVEL_OPTIONS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                {tiposImovel.map((t) => (
+                  <option key={t.valor} value={t.valor}>{t.label}</option>
                 ))}
               </select>
+              {!adicionandoImovel ? (
+                <button type="button" onClick={() => setAdicionandoImovel(true)}
+                  style={{ background: 'none', border: 'none', color: '#C9A84C', fontSize: '11px', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline' }}>
+                  + Adicionar tipo personalizado
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                  <input value={novoImovel} onChange={(e) => setNovoImovel(e.target.value)}
+                    placeholder="Ex: Chalé"
+                    style={{ ...inputStyle, flex: 1, padding: '6px 10px', fontSize: '12px' }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); salvarNovoImovel() } }}
+                    autoFocus />
+                  <button type="button" onClick={salvarNovoImovel}
+                    style={{ background: '#C9A84C', border: 'none', color: '#1A1A1B', borderRadius: '2px', padding: '0 10px', fontSize: '12px', cursor: 'pointer' }}>
+                    Salvar
+                  </button>
+                  <button type="button" onClick={() => { setAdicionandoImovel(false); setNovoImovel('') }}
+                    style={{ background: '#2E2E30', border: 'none', color: '#9B9690', borderRadius: '2px', padding: '0 8px', cursor: 'pointer' }}>
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1173,15 +1248,9 @@ Plataforma BID | bid.app.br`
               <div>
                 <label style={labelStyle}>Formas de Pagamento Aceitas *</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-                  {[
-                    'À vista',
-                    'Financiamento bancário',
-                    'FGTS',
-                    'Permuta',
-                    'Parcelado direto com proprietário',
-                  ].map((forma) => (
+                  {formasPagOpcoes.map((opcao) => (
                     <label
-                      key={forma}
+                      key={opcao.valor}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1193,8 +1262,8 @@ Plataforma BID | bid.app.br`
                     >
                       <input
                         type="checkbox"
-                        checked={form.formas_pagamento.includes(forma)}
-                        onChange={() => toggleFormaPagamento(forma)}
+                        checked={form.formas_pagamento.includes(opcao.valor)}
+                        onChange={() => toggleFormaPagamento(opcao.valor)}
                         style={{
                           width: '14px',
                           height: '14px',
@@ -1202,7 +1271,7 @@ Plataforma BID | bid.app.br`
                           cursor: 'pointer',
                         }}
                       />
-                      {forma}
+                      {opcao.label}
                     </label>
                   ))}
                 </div>
