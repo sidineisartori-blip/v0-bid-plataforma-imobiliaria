@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useOpcoes } from '@/lib/opcoes-client'
 import { createClient } from '@/lib/supabase/client'
 import type { Contrato } from './ERPClient'
 
@@ -66,8 +67,19 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
   const [indiceReajuste, setIndiceReajuste]   = useState(contrato?.indice_reajuste || 'IGPM')
   const [garantia, setGarantia]               = useState(contrato?.garantia || '')
   const [observacoes, setObservacoes]         = useState(contrato?.observacoes || '')
+  const [propNome, setPropNome]               = useState(contrato?.proprietario_nome || '')
+  const [propEmail, setPropEmail]             = useState(contrato?.proprietario_email || '')
+  const [propPhone, setPropPhone]             = useState(contrato?.proprietario_phone || '')
   const [loading, setLoading]                 = useState(false)
   const [error, setError]                     = useState<string | null>(null)
+
+  const { opcoes: formasPagOpcoes } = useOpcoes('forma_pagamento', [
+    'À vista', 'Financiamento bancário', 'FGTS', 'Permuta', 'Parcelado direto com proprietário',
+  ])
+  const { opcoes: indicesOpcoes } = useOpcoes('indice_reajuste', ['IGPM', 'IPCA', 'INPC', 'IGP-DI'])
+  const { opcoes: garantiaOpcoes } = useOpcoes('garantia', [
+    'Caução', 'Fiador', 'Seguro Fiança', 'Título de Capitalização',
+  ])
 
   async function handleSalvar() {
     if (!clienteNome.trim()) { setError('Nome do cliente é obrigatório.'); return }
@@ -97,6 +109,9 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
       indice_reajuste: tipo === 'locacao' ? indiceReajuste : null,
       garantia: tipo === 'locacao' ? (garantia || null) : null,
       observacoes: observacoes || null,
+      proprietario_nome: propNome || null,
+      proprietario_email: propEmail || null,
+      proprietario_phone: propPhone || null,
     }
 
     try {
@@ -222,11 +237,9 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
             <Field label="Forma de Pagamento">
               <select value={formaPagamento} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setFormaPagamento(e.target.value)} style={INPUT}>
                 <option value="">— Selecionar —</option>
-                <option>À vista</option>
-                <option>Financiamento bancário</option>
-                <option>FGTS</option>
-                <option>Permuta</option>
-                <option>Parcelado</option>
+                {formasPagOpcoes.map((o) => (
+                  <option key={o.valor} value={o.valor}>{o.label}</option>
+                ))}
               </select>
             </Field>
           </div>
@@ -262,20 +275,38 @@ export default function ModalContrato({ contrato, imoveis, corretorId, onClose, 
               </Field>
               <Field label="Índice Reajuste">
                 <select value={indiceReajuste} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setIndiceReajuste(e.target.value)} style={INPUT}>
-                  <option>IGPM</option>
-                  <option>IPCA</option>
-                  <option>INPC</option>
-                  <option>IGP-DI</option>
+                  {indicesOpcoes.map((o) => (
+                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                  ))}
                 </select>
               </Field>
               <Field label="Garantia">
                 <select value={garantia} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setGarantia(e.target.value)} style={INPUT}>
                   <option value="">—</option>
-                  <option>Caução</option>
-                  <option>Fiador</option>
-                  <option>Seguro Fiança</option>
-                  <option>Título de Capitalização</option>
+                  {garantiaOpcoes.map((o) => (
+                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                  ))}
                 </select>
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {/* Dados do Proprietário (para notificações de chamados de locação) */}
+        {tipo === 'locacao' && (
+          <div style={{ borderTop: '1px solid rgba(201,168,76,0.1)', paddingTop: 4 }}>
+            <p style={{ fontSize: 11, color: 'var(--color-gold)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+              Proprietário <span style={{ fontSize: 10, color: 'var(--color-muted)', textTransform: 'none', letterSpacing: 0 }}>(para notificações de chamados)</span>
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <Field label="Nome">
+                <input value={propNome} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setPropNome(e.target.value)} style={INPUT} placeholder="Nome do proprietário" />
+              </Field>
+              <Field label="WhatsApp">
+                <input value={propPhone} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setPropPhone(e.target.value)} style={INPUT} placeholder="(11) 99999-9999" />
+              </Field>
+              <Field label="E-mail">
+                <input type="email" value={propEmail} onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setPropEmail(e.target.value)} style={INPUT} placeholder="email@proprietario.com" />
               </Field>
             </div>
           </div>

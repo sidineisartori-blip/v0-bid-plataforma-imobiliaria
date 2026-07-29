@@ -9,15 +9,18 @@ const nextConfig = {
     ppr: false,
   },
   images: {
-    remotePatterns: process.env.NEXT_PUBLIC_SUPABASE_HOSTNAME
-      ? [
-          {
-            protocol: 'https',
-            hostname: process.env.NEXT_PUBLIC_SUPABASE_HOSTNAME,
-            pathname: '/storage/v1/object/public/**',
-          },
-        ]
-      : [],
+    remotePatterns: [
+      // Supabase Storage — wildcard cobre qualquer projeto
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      // Hostname explícito via env (retrocompatibilidade)
+      ...(process.env.NEXT_PUBLIC_SUPABASE_HOSTNAME
+        ? [{ protocol: 'https', hostname: process.env.NEXT_PUBLIC_SUPABASE_HOSTNAME, pathname: '/storage/v1/object/public/**' }]
+        : []),
+    ],
   },
 }
 

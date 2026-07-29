@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 interface Imovel {
   id: string
@@ -19,13 +19,14 @@ interface Imovel {
   descricao: string | null
 }
 
-interface Canal {
-  id: number
+export interface Canal {
+  key: string
   nome: string
   cat: string
+  plano: string
   ativo: boolean
   leads: number
-  plano: string
+  rastreavel: boolean
 }
 
 function gerarPromptIA(imovel: Imovel): string {
@@ -72,32 +73,27 @@ REGRAS ABSOLUTAS:
 ✅ Seja específico — detalhes concretos vencem generalidades`
 }
 
-function Toggle({ ativo, onChange }: { ativo: boolean; onChange: () => void }) {
+function Toggle({ ativo, onChange, loading }: { ativo: boolean; onChange: () => void; loading: boolean }) {
   return (
     <button
       onClick={onChange}
+      disabled={loading}
       role="switch"
       aria-checked={ativo}
       style={{
-        width: 34,
-        height: 18,
-        borderRadius: 9,
+        width: 34, height: 18, borderRadius: 9,
         backgroundColor: ativo ? 'rgba(201,168,76,0.28)' : 'var(--color-dark-4)',
-        position: 'relative',
-        flexShrink: 0,
+        position: 'relative', flexShrink: 0,
         border: ativo ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(255,255,255,0.08)',
         transition: 'background-color 0.2s',
-        cursor: 'pointer',
+        cursor: loading ? 'default' : 'pointer',
+        opacity: loading ? 0.5 : 1,
       }}
     >
       <span
         style={{
-          position: 'absolute',
-          top: 2,
-          left: ativo ? 17 : 2,
-          width: 13,
-          height: 13,
-          borderRadius: '50%',
+          position: 'absolute', top: 2, left: ativo ? 17 : 2,
+          width: 13, height: 13, borderRadius: '50%',
           backgroundColor: ativo ? 'var(--color-gold)' : 'var(--color-muted)',
           transition: 'left 0.2s',
         }}
@@ -108,26 +104,39 @@ function Toggle({ ativo, onChange }: { ativo: boolean; onChange: () => void }) {
 
 const CAT_ORDEM = ['Portal', 'Rede Social', 'Mensageria', 'Site Próprio', 'API']
 
-export default function HubClient({ imoveis }: { imoveis: Imovel[] }) {
-  const [canais, setCanais] = useState<Canal[]>([
-    { id: 1, nome: 'ZAP Imóveis',      cat: 'Portal',      ativo: true,  leads: 12, plano: 'Pro' },
-    { id: 2, nome: 'OLX',              cat: 'Portal',      ativo: true,  leads: 8,  plano: 'Pro' },
-    { id: 3, nome: 'Viva Real',         cat: 'Portal',      ativo: false, leads: 0,  plano: 'Pro' },
-    { id: 4, nome: 'Instagram',         cat: 'Rede Social', ativo: true,  leads: 21, plano: 'Pro' },
-    { id: 5, nome: 'Facebook',          cat: 'Rede Social', ativo: true,  leads: 9,  plano: 'Pro' },
-    { id: 6, nome: 'WhatsApp Business', cat: 'Mensageria',  ativo: true,  leads: 34, plano: 'Free' },
-    { id: 7, nome: 'Site do Corretor',  cat: 'Site Próprio',ativo: true,  leads: 7,  plano: 'Pro' },
-    { id: 8, nome: 'API Imobiliária',   cat: 'API',         ativo: false, leads: 0,  plano: 'Imobiliária' },
-  ])
+interface Props {
+  imoveis: Imovel[]
+  canaisIniciais: Canal[]
+}
 
+export default function HubClient({ imoveis, canaisIniciais }: Props) {
+  const [canais, setCanais] = useState<Canal[]>(canaisIniciais)
+  const [toggling, setToggling] = useState<string | null>(null)
   const [imovelSelecionado, setImovelSelecionado] = useState<string>('')
   const [copied, setCopied] = useState(false)
 
-  const toggleCanal = (id: number) => {
-    setCanais((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ativo: !c.ativo } : c))
-    )
-  }
+  const toggleCanal = useCallback(async (key: string) => {
+    const canal = canais.find((c) => c.key === key)
+    if (!canal || toggling) return
+
+    const novoAtivo = !canal.ativo
+    // Optimistic update
+    setCanais((prev) => prev.map((c) => c.key === key ? { ...c, ativo: novoAtivo } : c))
+    setToggling(key)
+
+    try {
+      await fetch(`/api/hub/canais/${key}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ativo: novoAtivo }),
+      })
+    } catch {
+      // Revert on error
+      setCanais((prev) => prev.map((c) => c.key === key ? { ...c, ativo: !novoAtivo } : c))
+    } finally {
+      setToggling(null)
+    }
+  }, [canais, toggling])
 
   const imovel = imoveis.find((i) => i.id === imovelSelecionado) || null
   const promptGerado = imovel ? gerarPromptIA(imovel) : ''
@@ -140,9 +149,9 @@ export default function HubClient({ imoveis }: { imoveis: Imovel[] }) {
   }
 
   // Métricas
-  const leadsTotal = canais.filter((c) => c.ativo).reduce((acc, c) => acc + c.leads, 0)
-  const canaisAtivos = canais.filter((c) => c.ativo).length
-  const canalTop = [...canais].sort((a, b) => b.leads - a.leads)[0]
+  const canaisAtivos = canais.filter((c) => c.ativo)
+  const leadsTotal = canaisAtivos.reduce((acc, c) => acc + c.leads, 0)
+  const canalTop = [...canais].filter((c) => c.leads > 0).sort((a, b) => b.leads - a.leads)[0]
 
   const canaisPorCat = CAT_ORDEM.map((cat) => ({
     cat,
@@ -164,17 +173,14 @@ export default function HubClient({ imoveis }: { imoveis: Imovel[] }) {
       {/* Métricas */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { label: 'Leads Totais (30d)', valor: leadsTotal, cor: 'var(--color-gold)' },
+          { label: 'Leads via Site (30d)', valor: leadsTotal, cor: 'var(--color-gold)' },
           { label: 'Canal Mais Eficiente', valor: canalTop?.nome || '—', cor: 'var(--color-green)' },
-          { label: 'Canais Ativos', valor: canaisAtivos, cor: 'var(--color-blue)' },
+          { label: 'Canais Ativos', valor: canaisAtivos.length, cor: 'var(--color-blue)' },
         ].map((m) => (
           <div
             key={m.label}
             className="rounded-sm border p-4"
-            style={{
-              backgroundColor: 'var(--color-dark-2)',
-              borderColor: 'rgba(201,168,76,0.12)',
-            }}
+            style={{ backgroundColor: 'var(--color-dark-2)', borderColor: 'rgba(201,168,76,0.12)' }}
           >
             <p className="text-[11px] uppercase tracking-wider mb-1" style={{ color: 'var(--color-muted)' }}>
               {m.label}
@@ -190,73 +196,84 @@ export default function HubClient({ imoveis }: { imoveis: Imovel[] }) {
         {/* Canais de Distribuição */}
         <div
           className="rounded-sm border p-5"
-          style={{
-            backgroundColor: 'var(--color-dark-2)',
-            borderColor: 'rgba(201,168,76,0.12)',
-          }}
+          style={{ backgroundColor: 'var(--color-dark-2)', borderColor: 'rgba(201,168,76,0.12)' }}
         >
-          <h2 className="font-serif text-base font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-            Canais de Distribuição
-          </h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            <h2 className="font-serif text-base font-semibold" style={{ color: 'var(--color-text)' }}>
+              Canais de Distribuição
+            </h2>
+            <span style={{ fontSize: 10, color: '#9B9690' }}>Preferências salvas automaticamente</span>
+          </div>
 
           <div className="flex flex-col gap-5">
             {canaisPorCat.map(({ cat, items }) => (
               <div key={cat}>
-                <p
-                  className="text-[10px] uppercase tracking-widest mb-2"
-                  style={{ color: 'var(--color-muted)' }}
-                >
+                <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--color-muted)' }}>
                   {cat}
                 </p>
                 <div className="flex flex-col gap-2">
                   {items.map((canal) => (
                     <div
-                      key={canal.id}
+                      key={canal.key}
                       className="flex items-center justify-between rounded-sm px-3 py-2.5"
-                      style={{
-                        backgroundColor: 'var(--color-dark-3)',
-                        border: '1px solid rgba(201,168,76,0.07)',
-                      }}
+                      style={{ backgroundColor: 'var(--color-dark-3)', border: '1px solid rgba(201,168,76,0.07)' }}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-[13px] font-medium" style={{ color: 'var(--color-text)' }}>
-                            {canal.nome}
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[13px] font-medium" style={{ color: 'var(--color-text)' }}>
+                          {canal.nome}
+                        </span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-sm"
+                            style={{ backgroundColor: 'rgba(201,168,76,0.08)', color: 'var(--color-muted)' }}
+                          >
+                            {canal.plano}
                           </span>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span
-                              className="text-[10px] px-1.5 py-0.5 rounded-sm"
-                              style={{
-                                backgroundColor: 'rgba(201,168,76,0.08)',
-                                color: 'var(--color-muted)',
-                              }}
-                            >
-                              {canal.plano}
+                          {canal.rastreavel && canal.leads > 0 && (
+                            <span className="text-[10px]" style={{ color: 'var(--color-green)' }}>
+                              {canal.leads} leads (30d)
                             </span>
-                            {canal.ativo && canal.leads > 0 && (
-                              <span className="text-[10px]" style={{ color: 'var(--color-green)' }}>
-                                {canal.leads} leads
-                              </span>
-                            )}
-                          </div>
+                          )}
+                          {canal.rastreavel && canal.leads === 0 && (
+                            <span className="text-[10px]" style={{ color: 'var(--color-muted)' }}>
+                              0 leads (30d)
+                            </span>
+                          )}
+                          {!canal.rastreavel && canal.ativo && (
+                            <span className="text-[10px]" style={{ color: '#2E2E30' }}>
+                              rastreio manual
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <Toggle ativo={canal.ativo} onChange={() => toggleCanal(canal.id)} />
+                      <Toggle
+                        ativo={canal.ativo}
+                        onChange={() => toggleCanal(canal.key)}
+                        loading={toggling === canal.key}
+                      />
                     </div>
                   ))}
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Nota informativa */}
+          <div style={{
+            marginTop: 16, padding: '10px 12px', borderRadius: 2,
+            background: 'rgba(96,165,250,0.05)', border: '1px solid rgba(96,165,250,0.12)',
+          }}>
+            <p style={{ fontSize: 10, color: '#60a5fa', lineHeight: 1.6 }}>
+              Leads do <strong>Site do Corretor</strong> são contados automaticamente.
+              Portais externos (ZAP, OLX, etc.) requerem cadastro manual nos respectivos sites.
+            </p>
+          </div>
         </div>
 
         {/* Gerador de Copy com IA */}
         <div
           className="rounded-sm border p-5 flex flex-col"
-          style={{
-            backgroundColor: 'var(--color-dark-2)',
-            borderColor: 'rgba(201,168,76,0.12)',
-          }}
+          style={{ backgroundColor: 'var(--color-dark-2)', borderColor: 'rgba(201,168,76,0.12)' }}
         >
           <h2 className="font-serif text-base font-semibold" style={{ color: 'var(--color-text)' }}>
             Gerador de Copy com IA
@@ -265,7 +282,6 @@ export default function HubClient({ imoveis }: { imoveis: Imovel[] }) {
             Gere o prompt perfeito para criar uma copy única no Claude — sem as legendas manjadas do mercado.
           </p>
 
-          {/* Select imóvel */}
           <div className="mb-4">
             <label className="text-[11px] uppercase tracking-wider block mb-1.5" style={{ color: 'var(--color-muted)' }}>
               Selecionar Imóvel
@@ -289,37 +305,27 @@ export default function HubClient({ imoveis }: { imoveis: Imovel[] }) {
             </select>
           </div>
 
-          {/* Prompt gerado */}
-          {imovel && (
+          {imovel ? (
             <div className="flex flex-col gap-3 flex-1">
-              <div
-                className="rounded-sm border overflow-hidden"
-                style={{ borderColor: 'rgba(201,168,76,0.2)' }}
-              >
-                {/* Card header */}
+              <div className="rounded-sm border overflow-hidden" style={{ borderColor: 'rgba(201,168,76,0.2)' }}>
                 <div
                   className="flex items-center gap-2 px-4 py-2.5 border-b"
-                  style={{
-                    backgroundColor: 'rgba(201,168,76,0.07)',
-                    borderColor: 'rgba(201,168,76,0.14)',
-                  }}
+                  style={{ backgroundColor: 'rgba(201,168,76,0.07)', borderColor: 'rgba(201,168,76,0.14)' }}
                 >
                   <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-gold)' }}>
                     Prompt Gerado para o Claude
                   </span>
                   <span className="text-[10px]" style={{ color: 'var(--color-muted)' }}>
-                    — {imovel.titulo}
-                    {imovel.bairro ? ', ' + imovel.bairro : ''}
+                    — {imovel.titulo}{imovel.bairro ? ', ' + imovel.bairro : ''}
                   </span>
                 </div>
 
-                {/* Textarea readonly */}
                 <textarea
                   readOnly
                   value={promptGerado}
                   className="w-full resize-none text-[12px] leading-relaxed px-4 py-3 outline-none"
                   style={{
-                    height: 280,
+                    height: 260,
                     backgroundColor: 'var(--color-dark-4)',
                     color: 'var(--color-text)',
                     fontFamily: 'inherit',
@@ -327,42 +333,27 @@ export default function HubClient({ imoveis }: { imoveis: Imovel[] }) {
                   }}
                 />
 
-                {/* Botões */}
-                <div
-                  className="flex items-center gap-3 px-4 py-3"
-                  style={{ backgroundColor: 'var(--color-dark-3)' }}
-                >
+                <div className="flex items-center gap-3 px-4 py-3" style={{ backgroundColor: 'var(--color-dark-3)' }}>
                   <button
                     onClick={handleCopiar}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-sm text-[12px] font-semibold transition-colors"
-                    style={{
-                      backgroundColor: copied ? 'var(--color-green)' : 'var(--color-gold)',
-                      color: 'var(--color-dark)',
-                    }}
+                    style={{ backgroundColor: copied ? 'var(--color-green)' : 'var(--color-gold)', color: 'var(--color-dark)' }}
                   >
                     {copied ? 'Copiado!' : 'Copiar Prompt'}
                   </button>
                   <button
                     onClick={() => window.open('https://claude.ai', '_blank')}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-sm text-[12px] font-medium border transition-colors"
-                    style={{
-                      borderColor: 'rgba(201,168,76,0.3)',
-                      color: 'var(--color-gold)',
-                      backgroundColor: 'transparent',
-                    }}
+                    style={{ borderColor: 'rgba(201,168,76,0.3)', color: 'var(--color-gold)', backgroundColor: 'transparent' }}
                   >
                     Abrir Claude.ai
                   </button>
                 </div>
               </div>
 
-              {/* Instrucoes */}
               <div
                 className="rounded-sm border p-3"
-                style={{
-                  backgroundColor: 'rgba(92,155,224,0.07)',
-                  borderColor: 'rgba(92,155,224,0.2)',
-                }}
+                style={{ backgroundColor: 'rgba(92,155,224,0.07)', borderColor: 'rgba(92,155,224,0.2)' }}
               >
                 <p className="text-[11px] font-semibold mb-2" style={{ color: 'var(--color-blue)' }}>
                   Como usar:
@@ -382,28 +373,17 @@ export default function HubClient({ imoveis }: { imoveis: Imovel[] }) {
                 </ol>
               </div>
 
-              {/* Dica */}
               <p
                 className="text-[11px] leading-relaxed px-3 py-2 rounded-sm border"
-                style={{
-                  backgroundColor: 'rgba(201,168,76,0.04)',
-                  borderColor: 'rgba(201,168,76,0.12)',
-                  color: 'var(--color-muted)',
-                }}
+                style={{ backgroundColor: 'rgba(201,168,76,0.04)', borderColor: 'rgba(201,168,76,0.12)', color: 'var(--color-muted)' }}
               >
                 <span style={{ color: 'var(--color-gold)' }}>Dica:</span> Quanto mais detalhes você adicionar na descrição do imóvel ao cadastrá-lo, melhor será a copy gerada.
               </p>
             </div>
-          )}
-
-          {!imovel && (
+          ) : (
             <div
               className="flex-1 flex items-center justify-center rounded-sm border"
-              style={{
-                minHeight: 200,
-                borderColor: 'rgba(201,168,76,0.1)',
-                backgroundColor: 'var(--color-dark-3)',
-              }}
+              style={{ minHeight: 200, borderColor: 'rgba(201,168,76,0.1)', backgroundColor: 'var(--color-dark-3)' }}
             >
               <p className="text-[13px]" style={{ color: 'var(--color-muted)' }}>
                 Selecione um imóvel para gerar o prompt.

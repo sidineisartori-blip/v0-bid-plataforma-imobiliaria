@@ -14,21 +14,32 @@ export default async function SiteCorretorPage({
 
   const { data: corretor } = await supabase
     .from('corretores')
-    .select('id, full_name, creci, city, bio, avatar_url, nota_media, total_avaliacoes, deals_closed, plano, site_ativo, site_boas_vindas, site_modelo, phone')
+    .select('id, full_name, creci, city, bio, avatar_url, nota_media, total_avaliacoes, deals_closed, plano, site_ativo, site_boas_vindas, site_modelo, phone, instagram, linkedin, facebook')
     .eq('slug', slug)
     .eq('is_active', true)
     .single()
 
   if (!corretor || !corretor.site_ativo) notFound()
 
-  const { data: imoveis } = await supabase
-    .from('imoveis')
-    .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, area_total, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
-    .eq('corretor_id', corretor.id)
-    .eq('status', 'ativo')
-    .eq('publico_no_site', true)
-    .order('lancamento', { ascending: false })
-    .order('created_at', { ascending: false })
+  const [{ data: imoveis }, { data: cidades }, { data: bairros }, { data: solicitacoes }] = await Promise.all([
+    supabase
+      .from('imoveis')
+      .select('id, titulo, bairro, cidade, valor, quartos, banheiros, vagas, area_total, tipo_imovel, tipo_negocio, image_urls, lancamento, aceita_animal')
+      .eq('corretor_id', corretor.id)
+      .in('status', ['ativo', 'disponivel'])
+      .eq('publico_no_site', true)
+      .order('lancamento', { ascending: false })
+      .order('created_at', { ascending: false }),
+    supabase.from('cities').select('id, name').eq('active', true).order('name'),
+    supabase.from('neighborhoods').select('id, city_id, name').eq('active', true).order('name'),
+    supabase
+      .from('solicitacoes')
+      .select('id, tipo_negocio, tipo_imovel, cidade, bairro_desejado, valor_min, valor_max, quartos, tem_animal')
+      .eq('corretor_id', corretor.id)
+      .eq('status', 'ativa')
+      .order('created_at', { ascending: false })
+      .limit(6),
+  ])
 
   // JSON-LD: schema Person para SEO avançado (rich results)
   const baseUrl =
@@ -73,6 +84,9 @@ export default async function SiteCorretorPage({
       <SiteCorretorPublico
         corretor={corretor}
         imoveis={imoveis || []}
+        cidades={cidades || []}
+        bairros={bairros || []}
+        solicitacoes={solicitacoes || []}
       />
     </>
   )

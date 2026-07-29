@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   // Auth: apenas admin master
   const cookieStore = await cookies()
-  const token = cookieStore.get('admin_session')?.value
+  const token = cookieStore.get('admin_token')?.value
   let session = null
   if (token) {
     try { session = await verifyAdminToken(token) } catch { /* token inválido */ }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
-import { sendEmail, emailNovoLead, emailConfirmacaoLead } from '@/lib/email'
+import { sendEmail, emailNovoLead, emailConfirmacaoLead, emailNovaCapitacao, emailConfirmacaoProprietario } from '@/lib/email'
 
 // Rate limit em memoria (5 envios por IP por hora)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -154,7 +154,28 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Erro ao salvar dados' }, { status: 500 })
       }
 
-      // Notifica o corretor via WhatsApp
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://v0-bid-plataforma-imobiliaria.vercel.app'
+
+      // Email para o corretor
+      if (corretor.email) {
+        sendEmail({
+          to: corretor.email,
+          subject: `🏠 Novo imóvel captado: ${d.tipo_imovel} em ${d.cidade}`,
+          html: emailNovaCapitacao({ corretorNome: corretor.nome, propNome: d.nome, propPhone: d.whatsapp, tipoNegocio: d.tipo_negocio, tipoImovel: d.tipo_imovel, cidade: d.cidade, bairro: d.bairro || null, valor: d.valor, appUrl }),
+        })
+      }
+
+      // Email de confirmação para o proprietário
+      if (d.email) {
+        sendEmail({
+          to: d.email,
+          subject: 'Captação registrada — BID Imobiliário',
+          html: emailConfirmacaoProprietario({ propNome: d.nome, corretorNome: corretor.nome ?? 'nosso corretor', corretorPhone: corretor.whatsapp || null, tipoNegocio: d.tipo_negocio, tipoImovel: d.tipo_imovel, cidade: d.cidade, bairro: d.bairro || null }),
+          replyTo: corretor.email,
+        })
+      }
+
+      // WhatsApp para o corretor
       if (corretor.whatsapp) {
         notificarCorretor(corretor.whatsapp,
           `🏠 *Novo imóvel captado via BID!*\n\n` +
@@ -222,6 +243,16 @@ export async function POST(request: NextRequest) {
           contador: 1,
         })
         if (fuErr) console.error('[v0] Erro ao agendar follow-up:', fuErr)
+
+        // Notificação in-app (com solicitacao_id para painel de detalhes)
+        await supabase.from('notificacoes').insert({
+          corretor_id: corretorId,
+          tipo: 'landing',
+          titulo: 'Novo lead recebido!',
+          mensagem: `${d.nome} entrou em contato pela sua página pública.`,
+          solicitacao_id: solCriada.id,
+          lida: false,
+        })
 
         // Notifica o corretor por email + WhatsApp
         const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://v0-bid-plataforma-imobiliaria.vercel.app'

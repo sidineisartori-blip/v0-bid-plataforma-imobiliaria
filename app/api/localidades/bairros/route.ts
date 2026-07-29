@@ -19,7 +19,7 @@ type Ator = { id: string; tipo: 'admin' | 'corretor' }
 
 async function autenticarAtor(): Promise<Ator | null> {
   const cookieStore = await cookies()
-  const adminToken = cookieStore.get('admin_session')?.value
+  const adminToken = cookieStore.get('admin_token')?.value
   if (adminToken) {
     try {
       const payload = await verifyAdminToken(adminToken)

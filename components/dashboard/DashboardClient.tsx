@@ -122,6 +122,20 @@ export default function DashboardClient({
       {/* ── Alertas ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
+        {/* Inadimplência de mensalidade BID */}
+        {(corretor as (typeof corretor & { status_financeiro?: string }) | null)?.status_financeiro === 'inadimplente' && (
+          <div style={{ backgroundColor: 'rgba(224,92,92,0.1)', border: '1px solid rgba(224,92,92,0.3)', borderRadius: 2, padding: '16px 20px' }}>
+            <p style={{ fontSize: 14, color: '#E05C5C', margin: '0 0 4px', fontWeight: 700 }}>⚠ Mensalidade BID em aberto</p>
+            <p style={{ fontSize: 13, color: '#9B9690', margin: 0 }}>Regularize seu pagamento para manter acesso completo à plataforma. Entre em contato com o administrador.</p>
+          </div>
+        )}
+        {(corretor as (typeof corretor & { status_financeiro?: string }) | null)?.status_financeiro === 'suspenso' && (
+          <div style={{ backgroundColor: 'rgba(224,92,92,0.15)', border: '2px solid rgba(224,92,92,0.5)', borderRadius: 2, padding: '16px 20px' }}>
+            <p style={{ fontSize: 14, color: '#E05C5C', margin: '0 0 4px', fontWeight: 700 }}>🔒 Conta suspensa por inadimplência</p>
+            <p style={{ fontSize: 13, color: '#9B9690', margin: 0 }}>Seu acesso foi suspenso. Regularize o pagamento da mensalidade BID para reativar a conta.</p>
+          </div>
+        )}
+
         {/* Cobranças atrasadas */}
         {cobrancasAtrasadas.length > 0 && (
           <AlertaBanner

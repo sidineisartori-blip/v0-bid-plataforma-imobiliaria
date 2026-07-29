@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 interface Corretor {
   plano: string | null
@@ -16,7 +16,9 @@ interface Assinatura {
   plano: string
   status: string
   created_at: string
-  valor_mensal: number
+  valor?: number | null
+  mp_subscription_id?: string | null
+  mp_status?: string | null
 }
 
 interface Props {
@@ -31,6 +33,7 @@ const planos = [
     id: 'free',
     nome: 'Free',
     preco: 'R$0',
+    valor: 0,
     periodo: 'para sempre',
     limite_imoveis: 2,
     limite_solicitacoes: 1,
@@ -47,7 +50,8 @@ const planos = [
     id: 'pro',
     nome: 'Pro',
     preco: 'R$97',
-    periodo: '/mes',
+    valor: 97,
+    periodo: '/mês',
     limite_imoveis: 20,
     limite_solicitacoes: 5,
     features: [
@@ -64,7 +68,8 @@ const planos = [
     id: 'premium',
     nome: 'Premium',
     preco: 'R$197',
-    periodo: '/mes',
+    valor: 197,
+    periodo: '/mês',
     limite_imoveis: 999,
     limite_solicitacoes: 999,
     features: [
@@ -82,7 +87,8 @@ const planos = [
     id: 'imobiliaria',
     nome: 'Imobiliaria',
     preco: 'R$497',
-    periodo: '/mes',
+    valor: 497,
+    periodo: '/mês',
     limite_imoveis: 999,
     limite_solicitacoes: 999,
     features: [
@@ -97,46 +103,63 @@ const planos = [
   },
 ]
 
-const historicoExemplo = [
-  { data: '01/05/2025', plano: 'Pro', valor: 'R$97,00', status: 'Pago' },
-  { data: '01/04/2025', plano: 'Pro', valor: 'R$97,00', status: 'Pago' },
-  { data: '01/03/2025', plano: 'Pro', valor: 'R$97,00', status: 'Pago' },
-]
-
 export default function PlanoClient({ corretor, assinatura, imoveisUsados, solicitacoesUsadas }: Props) {
-  const [modalPlano, setModalPlano] = useState<typeof planos[0] | null>(null)
-  const [solicitando, setSolicitando] = useState(false)
-  const [solicitado, setSolicitado] = useState(false)
+  void solicitacoesUsadas
+  const searchParams = useSearchParams()
+  const [assinando, setAssinando] = useState<string | null>(null)
+  const [cancelando, setCancelando] = useState(false)
+  const [msgSucesso, setMsgSucesso] = useState<string | null>(null)
+  const [msgErro, setMsgErro] = useState<string | null>(null)
+  const [confirmarCancel, setConfirmarCancel] = useState(false)
 
-  async function handleAssinar(p: typeof planos[0]) {
-    setModalPlano(p)
-    setSolicitado(false)
+  // Detect MP redirect back
+  useEffect(() => {
+    const status = searchParams.get('preapproval_id') ? 'pending'
+      : searchParams.get('status') || null
+    if (status === 'approved' || status === 'authorized') {
+      setMsgSucesso('Assinatura aprovada! Seu plano será ativado em instantes.')
+    } else if (status === 'pending') {
+      setMsgSucesso('Pagamento pendente. Você receberá a confirmação por email.')
+    }
+  }, [searchParams])
+
+  async function handleAssinar(planoId: string) {
+    if (planoId === 'free') return
+    setAssinando(planoId)
+    setMsgErro(null)
+    try {
+      const res = await fetch('/api/plano/assinar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plano: planoId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erro ao criar assinatura')
+      window.location.href = data.checkout_url
+    } catch (err: unknown) {
+      setMsgErro(err instanceof Error ? err.message : 'Erro inesperado')
+    } finally {
+      setAssinando(null)
+    }
   }
 
-  async function confirmarSolicitacao() {
-    if (!modalPlano) return
-    setSolicitando(true)
+  async function handleCancelar() {
+    setCancelando(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await supabase.from('assinaturas').insert({
-          corretor_id: user.id,
-          plano: modalPlano.id,
-          status: 'pendente',
-          valor: parseInt(modalPlano.preco.replace(/\D/g, '')) || 0,
-        })
-      }
-      setSolicitado(true)
-    } catch {
-      // best-effort
+      const res = await fetch('/api/plano/cancelar', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erro ao cancelar')
+      setMsgSucesso('Assinatura cancelada. Você continuará no plano até o fim do período.')
+      setConfirmarCancel(false)
+    } catch (err: unknown) {
+      setMsgErro(err instanceof Error ? err.message : 'Erro ao cancelar')
     } finally {
-      setSolicitando(false)
+      setCancelando(false)
     }
   }
 
   const planoAtual = corretor?.plano || 'free'
-  const planoAtualInfo = planos.find(p => p.id === planoAtual) || planos[0]
+  const planoAtualInfo = planos.find((p) => p.id === planoAtual) || planos[0]
   const limiteImoveis = planoAtualInfo.limite_imoveis
   const pctImoveis = limiteImoveis < 999 ? Math.min((imoveisUsados / limiteImoveis) * 100, 100) : 0
 
@@ -153,6 +176,8 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
     }
     return 'Plano ativo'
   })()
+
+  const assinaturaAtiva = assinatura?.mp_status === 'authorized' || assinatura?.status === 'ativo'
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1060, minHeight: '100vh' }}>
@@ -173,78 +198,31 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
         .bid-fatura-scroll table { min-width: 480px; }
       `}</style>
 
-      {/* Modal de upgrade */}
-      {modalPlano && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
-          background: 'rgba(0,0,0,0.7)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }} onClick={() => setModalPlano(null)}>
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: '#181819', border: '1px solid rgba(201,168,76,0.3)',
-              borderRadius: 4, padding: '32px 36px', maxWidth: 400, width: '90%',
-            }}
-          >
-            {!solicitado ? (
-              <>
-                <h2 style={{ fontFamily: 'var(--font-serif)', color: '#C9A84C', fontSize: 22, marginBottom: 8 }}>
-                  Plano {modalPlano.nome}
-                </h2>
-                <p style={{ fontSize: 13, color: '#9B9690', marginBottom: 20, lineHeight: 1.6 }}>
-                  {modalPlano.preco}<span style={{ fontSize: 11 }}>{modalPlano.periodo}</span>
-                  <br />Nossa equipe entrará em contato para finalizar o pagamento via PIX ou boleto.
-                </p>
-                <button
-                  onClick={confirmarSolicitacao}
-                  disabled={solicitando}
-                  style={{
-                    width: '100%', padding: '10px', marginBottom: 10,
-                    background: '#C9A84C', border: 'none', borderRadius: 2,
-                    color: '#0E0E0F', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                  }}
-                >
-                  {solicitando ? 'Aguarde...' : 'Solicitar assinatura'}
-                </button>
-                <a
-                  href={`https://wa.me/5511999999999?text=${encodeURIComponent(`Olá! Quero assinar o plano ${modalPlano.nome} do BID (${modalPlano.preco}${modalPlano.periodo}).`)}`}
-                  target="_blank" rel="noreferrer"
-                  style={{
-                    display: 'block', width: '100%', padding: '10px',
-                    border: '1px solid #2E2E30', borderRadius: 2, textAlign: 'center',
-                    color: '#9B9690', fontSize: 13, textDecoration: 'none',
-                  }}
-                >
-                  Falar pelo WhatsApp
-                </a>
-              </>
-            ) : (
-              <>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-                <h2 style={{ color: '#5CB88A', fontSize: 18, marginBottom: 8 }}>Solicitação enviada!</h2>
-                <p style={{ fontSize: 13, color: '#9B9690', lineHeight: 1.6 }}>
-                  Recebemos seu pedido para o plano <strong style={{ color: '#F0EDE6' }}>{modalPlano.nome}</strong>.
-                  Nossa equipe entrará em contato em breve.
-                </p>
-                <button
-                  onClick={() => setModalPlano(null)}
-                  style={{
-                    marginTop: 20, padding: '8px 20px',
-                    background: 'none', border: '1px solid #2E2E30',
-                    borderRadius: 2, color: '#9B9690', cursor: 'pointer',
-                  }}
-                >
-                  Fechar
-                </button>
-              </>
-            )}
+      {/* Modal cancelar */}
+      {confirmarCancel && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setConfirmarCancel(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: '#181819', border: '1px solid rgba(224,92,92,0.3)', borderRadius: 4, padding: '28px 32px', maxWidth: 380, width: '90%' }}>
+            <h2 style={{ color: '#E05C5C', fontSize: 18, marginBottom: 10 }}>Cancelar assinatura?</h2>
+            <p style={{ fontSize: 13, color: '#9B9690', lineHeight: 1.6, marginBottom: 20 }}>
+              Você perderá acesso aos recursos do plano {planoAtualInfo.nome} ao final do período pago. Seu plano voltará para Free.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={handleCancelar} disabled={cancelando}
+                style={{ flex: 1, padding: '9px', background: '#E05C5C', border: 'none', borderRadius: 2, color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                {cancelando ? 'Cancelando...' : 'Sim, cancelar'}
+              </button>
+              <button onClick={() => setConfirmarCancel(false)}
+                style={{ flex: 1, padding: '9px', background: 'none', border: '1px solid #2E2E30', borderRadius: 2, color: '#9B9690', fontSize: 13, cursor: 'pointer' }}>
+                Manter plano
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, color: '#F0EDE6', fontWeight: 700, marginBottom: 6 }}>
           Meu Plano
         </h1>
@@ -252,6 +230,18 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
           Gerencie sua assinatura e compare os planos disponíveis.
         </p>
       </div>
+
+      {/* Mensagens */}
+      {msgSucesso && (
+        <div style={{ background: 'rgba(92,184,138,0.1)', border: '1px solid rgba(92,184,138,0.3)', borderRadius: 2, padding: '12px 16px', marginBottom: 20, color: '#5CB88A', fontSize: 13 }}>
+          ✓ {msgSucesso}
+        </div>
+      )}
+      {msgErro && (
+        <div style={{ background: 'rgba(224,92,92,0.1)', border: '1px solid rgba(224,92,92,0.3)', borderRadius: 2, padding: '12px 16px', marginBottom: 20, color: '#E05C5C', fontSize: 13 }}>
+          ✗ {msgErro}
+        </div>
+      )}
 
       {/* Card plano atual */}
       <div style={{
@@ -261,7 +251,7 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
         <p style={{ fontSize: 10, letterSpacing: '0.1em', color: '#9B9690', textTransform: 'uppercase', marginBottom: 10 }}>
           Seu Plano Atual
         </p>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: '#C9A84C', fontWeight: 700, marginBottom: 6 }}>
               {planoAtualInfo.nome}
@@ -274,14 +264,24 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
               {limiteImoveis >= 999 && <> · Imóveis ilimitados</>}
             </div>
           </div>
-          {assinatura && (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 11, color: '#5CB88A', fontWeight: 600 }}>Ativa</div>
-              <div style={{ fontSize: 11, color: '#9B9690', marginTop: 2 }}>
-                Renovação mensal
-              </div>
-            </div>
-          )}
+          <div style={{ textAlign: 'right' }}>
+            {assinaturaAtiva ? (
+              <>
+                <div style={{ fontSize: 11, color: '#5CB88A', fontWeight: 600 }}>● Ativa</div>
+                <div style={{ fontSize: 11, color: '#9B9690', marginTop: 2 }}>Cobrança mensal automática</div>
+                {planoAtual !== 'free' && (
+                  <button
+                    onClick={() => setConfirmarCancel(true)}
+                    style={{ marginTop: 8, fontSize: 11, color: '#E05C5C', background: 'none', border: '1px solid rgba(224,92,92,0.2)', borderRadius: 2, padding: '4px 10px', cursor: 'pointer' }}
+                  >
+                    Cancelar assinatura
+                  </button>
+                )}
+              </>
+            ) : assinatura?.status === 'pendente' ? (
+              <div style={{ fontSize: 11, color: '#C9A84C' }}>⏳ Aguardando pagamento</div>
+            ) : null}
+          </div>
         </div>
 
         {/* Barra de uso */}
@@ -304,8 +304,9 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
 
       {/* Grid de planos */}
       <div className="bid-planos-grid">
-        {planos.map(p => {
+        {planos.map((p) => {
           const isAtual = p.id === planoAtual
+          const carregando = assinando === p.id
           return (
             <div
               key={p.id}
@@ -321,7 +322,6 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
                 position: 'relative',
               }}
             >
-              {/* Badge Recomendado */}
               {p.destaque && (
                 <div style={{
                   position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
@@ -333,7 +333,6 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
                 </div>
               )}
 
-              {/* Nome e preco */}
               <div style={{ marginBottom: 12, marginTop: p.destaque ? 8 : 0 }}>
                 <div style={{ fontSize: 11, letterSpacing: '0.08em', color: '#9B9690', textTransform: 'uppercase', marginBottom: 6 }}>
                   {p.nome}
@@ -344,7 +343,6 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
                 <div style={{ fontSize: 11, color: '#9B9690' }}>{p.periodo}</div>
               </div>
 
-              {/* Features */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
                 {p.features.map((f, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 12, color: '#9B9690' }}>
@@ -354,7 +352,6 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
                 ))}
               </div>
 
-              {/* Botao */}
               {isAtual ? (
                 <div style={{
                   textAlign: 'center', fontSize: 12, color: '#C9A84C',
@@ -363,28 +360,51 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
                 }}>
                   Plano Atual
                 </div>
+              ) : p.id === 'free' ? (
+                <div style={{
+                  textAlign: 'center', fontSize: 12, color: '#9B9690',
+                  border: '1px solid #2E2E30', borderRadius: 2, padding: '8px',
+                }}>
+                  Gratuito
+                </div>
               ) : (
                 <button
-                  onClick={() => handleAssinar(p)}
+                  onClick={() => handleAssinar(p.id)}
+                  disabled={!!assinando}
                   style={{
-                    background: 'none',
+                    background: carregando ? 'rgba(201,168,76,0.5)' : 'none',
                     border: p.destaque ? '1px solid #C9A84C' : '1px solid #2E2E30',
                     borderRadius: 2, color: p.destaque ? '#C9A84C' : '#9B9690',
-                    fontSize: 12, padding: '8px', cursor: 'pointer',
-                    fontWeight: p.destaque ? 600 : 400, transition: 'all 0.15s',
-                    width: '100%',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#C9A84C'; (e.currentTarget as HTMLButtonElement).style.color = '#C9A84C' }}
-                  onMouseLeave={e => {
-                    if (!p.destaque) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2E2E30'; (e.currentTarget as HTMLButtonElement).style.color = '#9B9690' }
+                    fontSize: 12, padding: '8px', cursor: carregando ? 'default' : 'pointer',
+                    fontWeight: p.destaque ? 600 : 400, width: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   }}
                 >
-                  Assinar
+                  {carregando ? 'Redirecionando…' : (
+                    <>
+                      <span>Assinar com</span>
+                      <span style={{ color: '#009ee3', fontWeight: 700 }}>MercadoPago</span>
+                    </>
+                  )}
                 </button>
               )}
             </div>
           )
         })}
+      </div>
+
+      {/* Info MercadoPago */}
+      <div style={{
+        background: 'rgba(0,158,227,0.04)', border: '1px solid rgba(0,158,227,0.15)',
+        borderRadius: 2, padding: '14px 20px', marginBottom: 32,
+        display: 'flex', gap: 12, alignItems: 'flex-start',
+      }}>
+        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>🔒</span>
+        <div style={{ fontSize: 12, color: '#9B9690', lineHeight: 1.7 }}>
+          <strong style={{ color: '#009ee3' }}>Pagamento seguro via MercadoPago.</strong>{' '}
+          Cobrança recorrente mensal automática. Cancele a qualquer momento sem multa.
+          Aceitamos cartão de crédito, Pix e boleto.
+        </div>
       </div>
 
       {/* Nota efeito de rede */}
@@ -401,37 +421,29 @@ export default function PlanoClient({ corretor, assinatura, imoveisUsados, solic
         </div>
       </div>
 
-      {/* Historico de faturamento */}
-      <div>
-        <p style={{ fontSize: 10, letterSpacing: '0.1em', color: '#9B9690', textTransform: 'uppercase', marginBottom: 16 }}>
-          Histórico de Faturamento
-        </p>
-        <div className="bid-fatura-scroll" style={{ background: '#181819', border: '1px solid #232324', borderRadius: 2 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #232324' }}>
-                {['Data', 'Plano', 'Valor', 'Status'].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, color: '#9B9690', fontWeight: 500, letterSpacing: '0.05em' }}>
-                    {h.toUpperCase()}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {historicoExemplo.map((row, i) => (
-                <tr key={i} style={{ borderBottom: i < historicoExemplo.length - 1 ? '1px solid #232324' : 'none' }}>
-                  <td style={{ padding: '12px 16px', color: '#9B9690' }}>{row.data}</td>
-                  <td style={{ padding: '12px 16px', color: '#F0EDE6' }}>{row.plano}</td>
-                  <td style={{ padding: '12px 16px', color: '#F0EDE6' }}>{row.valor}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ color: '#5CB88A', fontSize: 12 }}>{row.status}</span>
-                  </td>
-                </tr>
+      {/* Histórico de faturamento */}
+      {assinatura && (
+        <div>
+          <p style={{ fontSize: 10, letterSpacing: '0.1em', color: '#9B9690', textTransform: 'uppercase', marginBottom: 16 }}>
+            Assinatura Atual
+          </p>
+          <div style={{ background: '#181819', border: '1px solid #232324', borderRadius: 2, padding: '16px 20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16 }}>
+              {[
+                ['Plano', assinatura.plano?.toUpperCase()],
+                ['Valor', assinatura.valor ? `R$${assinatura.valor}/mês` : '—'],
+                ['Status MP', assinatura.mp_status || assinatura.status],
+                ['ID Assinatura', assinatura.mp_subscription_id ? `${assinatura.mp_subscription_id.slice(0, 12)}…` : 'Manual'],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <p style={{ fontSize: 10, color: '#9B9690', marginBottom: 4 }}>{label}</p>
+                  <p style={{ fontSize: 13, color: '#F0EDE6' }}>{value || '—'}</p>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

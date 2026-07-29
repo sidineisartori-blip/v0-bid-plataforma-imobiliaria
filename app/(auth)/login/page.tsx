@@ -268,6 +268,12 @@ function LoginForm() {
             </p>
           </div>
         </div>
+
+        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+          <Link href="/admin/login" style={{ fontSize: '12px', color: '#5a5a5c', textDecoration: 'none', letterSpacing: '0.05em' }}>
+            Acesso administrativo
+          </Link>
+        </div>
       </div>
     </div>
   )

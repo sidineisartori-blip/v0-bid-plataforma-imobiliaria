@@ -20,6 +20,9 @@ interface CorretorConfig {
   site_boas_vindas: string | null
   site_modelo: string | null
   slug: string
+  instagram: string | null
+  linkedin: string | null
+  facebook: string | null
 }
 
 interface ImovelPrevia {
@@ -58,9 +61,21 @@ export default function SiteConfigClient({
   const [boasVindas, setBoasVindas] = useState(corretorInicial.site_boas_vindas || '')
   const [status, setStatus] = useState(corretorInicial.site_ativo ? 'Ativa' : 'Pausada')
   const [salvando, setSalvando] = useState(false)
+
+  // Perfil
+  const [bio, setBio] = useState(corretorInicial.bio || '')
+  const [city, setCity] = useState(corretorInicial.city || '')
+  const [phone, setPhone] = useState(corretorInicial.phone || '')
+  const [avatarUrl, setAvatarUrl] = useState(corretorInicial.avatar_url || '')
+  const [instagram, setInstagram] = useState(corretorInicial.instagram || '')
+  const [linkedin, setLinkedin] = useState(corretorInicial.linkedin || '')
+  const [facebook, setFacebook] = useState(corretorInicial.facebook || '')
+  const [salvandoPerfil, setSalvandoPerfil] = useState(false)
+  const [erroPerfil, setErroPerfil] = useState('')
+  const [perfilSalvo, setPerfilSalvo] = useState(false)
   const [copiado, setCopiado] = useState<string | null>(null)
   const [erro, setErro] = useState('')
-  const [abaAtiva, setAbaAtiva] = useState<'config' | 'share' | 'embed'>('config')
+  const [abaAtiva, setAbaAtiva] = useState<'config' | 'share' | 'embed' | 'perfil'>('config')
 
   const [origin, setOrigin] = useState('')
   React.useEffect(() => {
@@ -100,6 +115,27 @@ export default function SiteConfigClient({
     } else {
       router.refresh()
     }
+  }
+
+  async function handleSalvarPerfil() {
+    setSalvandoPerfil(true)
+    setErroPerfil('')
+    setPerfilSalvo(false)
+    const { error } = await supabase
+      .from('corretores')
+      .update({
+        bio: bio || null,
+        city: city || null,
+        phone: phone || null,
+        avatar_url: avatarUrl || null,
+        instagram: instagram || null,
+        linkedin: linkedin || null,
+        facebook: facebook || null,
+      })
+      .eq('id', corretorInicial.id)
+    setSalvandoPerfil(false)
+    if (error) { setErroPerfil('Erro ao salvar: ' + error.message) }
+    else { setPerfilSalvo(true); setTimeout(() => setPerfilSalvo(false), 3000); router.refresh() }
   }
 
   function handleCopiar(texto: string, tipo: string) {
@@ -217,6 +253,9 @@ export default function SiteConfigClient({
         </button>
         <button style={tabStyle(abaAtiva === 'embed')} onClick={() => setAbaAtiva('embed')}>
           Incorporar
+        </button>
+        <button style={tabStyle(abaAtiva === 'perfil')} onClick={() => setAbaAtiva('perfil')}>
+          Perfil
         </button>
       </div>
 
@@ -532,6 +571,88 @@ export default function SiteConfigClient({
               <li>Publique e pronto!</li>
             </ol>
           </div>
+        </div>
+      )}
+
+      {/* Tab: Perfil */}
+      {abaAtiva === 'perfil' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Foto de perfil */}
+          <div>
+            <label style={labelStyle}>Foto de perfil (URL)</label>
+            <input
+              value={avatarUrl}
+              onChange={e => setAvatarUrl(e.target.value)}
+              style={inputStyle}
+              placeholder="https://exemplo.com/sua-foto.jpg"
+            />
+            {avatarUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt="Preview"
+                style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', marginTop: 10, border: '2px solid #2E2E30' }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            )}
+            <p style={{ fontSize: 11, color: '#9B9690', marginTop: 6 }}>Cole a URL de uma foto hospedada (Google Drive, Imgur, LinkedIn, etc.)</p>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label style={labelStyle}>Biografia</label>
+            <textarea
+              value={bio}
+              onChange={e => setBio(e.target.value)}
+              rows={4}
+              maxLength={500}
+              placeholder="Apresentacao profissional exibida no seu site publico..."
+              style={{ ...inputStyle, resize: 'vertical', minHeight: 90 }}
+            />
+            <p style={{ fontSize: 11, color: '#9B9690', marginTop: 4 }}>{bio.length}/500 caracteres</p>
+          </div>
+
+          {/* Cidade e WhatsApp */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Cidade de atuação</label>
+              <input value={city} onChange={e => setCity(e.target.value)} style={inputStyle} placeholder="Ex: Jacareí" />
+            </div>
+            <div>
+              <label style={labelStyle}>WhatsApp (com DDD)</label>
+              <input value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ''))} style={inputStyle} placeholder="12999999999" maxLength={11} />
+            </div>
+          </div>
+
+          {/* Redes sociais */}
+          <div>
+            <label style={labelStyle}>Redes sociais</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 90, fontSize: 13, color: '#9B9690', flexShrink: 0 }}>Instagram</span>
+                <input value={instagram} onChange={e => setInstagram(e.target.value)} style={inputStyle} placeholder="@seu.perfil ou URL completa" />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 90, fontSize: 13, color: '#9B9690', flexShrink: 0 }}>LinkedIn</span>
+                <input value={linkedin} onChange={e => setLinkedin(e.target.value)} style={inputStyle} placeholder="linkedin.com/in/seu-perfil" />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 90, fontSize: 13, color: '#9B9690', flexShrink: 0 }}>Facebook</span>
+                <input value={facebook} onChange={e => setFacebook(e.target.value)} style={inputStyle} placeholder="facebook.com/seu-perfil" />
+              </div>
+            </div>
+          </div>
+
+          {erroPerfil && <p style={{ fontSize: 13, color: '#E05C5C', backgroundColor: 'rgba(224,92,92,0.08)', padding: '12px 14px', borderRadius: 2, margin: 0 }}>{erroPerfil}</p>}
+          {perfilSalvo && <p style={{ fontSize: 13, color: '#5CB88A', backgroundColor: 'rgba(92,184,138,0.08)', padding: '12px 14px', borderRadius: 2, margin: 0 }}>Perfil atualizado com sucesso!</p>}
+
+          <button
+            onClick={handleSalvarPerfil}
+            disabled={salvandoPerfil}
+            style={{ padding: '14px', backgroundColor: salvandoPerfil ? '#B8942F' : '#C9A84C', border: 'none', borderRadius: 2, color: '#0E0E0F', fontSize: 14, fontWeight: 700, cursor: salvandoPerfil ? 'not-allowed' : 'pointer', opacity: salvandoPerfil ? 0.7 : 1 }}
+          >
+            {salvandoPerfil ? 'Salvando...' : 'Salvar Perfil'}
+          </button>
         </div>
       )}
 

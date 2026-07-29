@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react'
 import Image from 'next/image'
-import { TIPO_IMOVEL_OPTIONS } from '@/lib/format'
+import { useOpcoes } from '@/lib/opcoes-client'
 import SelectField from './SelectField'
 
 interface CorretorPublico {
@@ -19,6 +19,9 @@ interface CorretorPublico {
   site_boas_vindas: string | null
   site_modelo: string | null
   phone?: string | null
+  instagram?: string | null
+  linkedin?: string | null
+  facebook?: string | null
 }
 
 interface ImovelPublico {
@@ -38,9 +41,27 @@ interface ImovelPublico {
   area_total?: number | null
 }
 
+interface CidadeOpt { id: string; name: string }
+interface BairroOpt { id: string; city_id: string; name: string }
+
+interface SolicitacaoPublica {
+  id: string
+  tipo_negocio: string
+  tipo_imovel: string
+  cidade: string
+  bairro_desejado: string | null
+  valor_min: number | null
+  valor_max: number | null
+  quartos: number | null
+  tem_animal: boolean
+}
+
 interface Props {
   corretor: CorretorPublico
   imoveis: ImovelPublico[]
+  cidades: CidadeOpt[]
+  bairros: BairroOpt[]
+  solicitacoes: SolicitacaoPublica[]
 }
 
 function getSelo(nota: number, negocios: number): { label: string; cor: string } {
@@ -64,7 +85,7 @@ function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 }
 
-export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
+export default function SiteCorretorPublico({ corretor, imoveis, cidades, bairros, solicitacoes }: Props) {
   const formRef = useRef<HTMLDivElement>(null)
   const catalogoRef = useRef<HTMLDivElement>(null)
 
@@ -73,6 +94,12 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
   const [enviando, setEnviando] = useState(false)
   const [erroForm, setErroForm] = useState('')
   const [imovelSelecionado, setImovelSelecionado] = useState<ImovelPublico | null>(null)
+
+  // Filtros do catálogo
+  const [filtroNegocio, setFiltroNegocio] = useState<string>('Todos')
+  const [filtroTipo, setFiltroTipo] = useState<string>('Todos')
+  const [filtroQuartos, setFiltroQuartos] = useState<string>('Todos')
+  const [filtroOrdem, setFiltroOrdem] = useState<string>('recente')
 
   const [formProprietario, setFormProprietario] = useState({
     nome: '', whatsapp: '', email: '', tipo_negocio: 'Venda', tipo_imovel: 'Apartamento',
@@ -85,9 +112,29 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
     quartos: '', tem_animal: 'nao',
   })
 
+  const { opcoes: tiposNegocioImovel } = useOpcoes('tipo_negocio_imovel', ['Venda', 'Locação'])
+  const { opcoes: tiposNegocioBusca } = useOpcoes('tipo_negocio_busca', ['Comprar', 'Alugar'])
+  const { opcoes: tiposImovel } = useOpcoes('tipo_imovel', [
+    'Apartamento', 'Casa', 'Casa em Condomínio', 'Terreno', 'Sala Comercial',
+    'Loja', 'Galpão', 'Chácara / Sítio', 'Flat', 'Studio',
+  ])
+
   const selo = getSelo(corretor.nota_media, corretor.deals_closed)
-  const lancamentos = imoveis.filter((i) => i.lancamento)
-  const demais = imoveis.filter((i) => !i.lancamento)
+
+  // Aplicar filtros
+  const tiposDisponiveis = ['Todos', ...Array.from(new Set(imoveis.map(i => i.tipo_imovel).filter(Boolean)))]
+  const imoveisFiltrados = imoveis
+    .filter(i => filtroNegocio === 'Todos' || i.tipo_negocio === filtroNegocio)
+    .filter(i => filtroTipo === 'Todos' || i.tipo_imovel === filtroTipo)
+    .filter(i => filtroQuartos === 'Todos' || i.quartos >= Number(filtroQuartos))
+    .sort((a, b) => {
+      if (filtroOrdem === 'menor') return a.valor - b.valor
+      if (filtroOrdem === 'maior') return b.valor - a.valor
+      return 0
+    })
+
+  const lancamentos = imoveisFiltrados.filter((i) => i.lancamento)
+  const demais = imoveisFiltrados.filter((i) => !i.lancamento)
 
   function scrollToForm(tab: 'proprietario' | 'comprador') {
     setActiveTab(tab)
@@ -355,6 +402,21 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
             )}
           </div>
 
+          {/* Redes sociais */}
+          {(corretor.instagram || corretor.linkedin || corretor.facebook) && (
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 24 }}>
+              {corretor.instagram && (
+                <a href={corretor.instagram.startsWith('http') ? corretor.instagram : `https://instagram.com/${corretor.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#C9A84C', textDecoration: 'none', padding: '5px 12px', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 2 }}>Instagram</a>
+              )}
+              {corretor.linkedin && (
+                <a href={corretor.linkedin.startsWith('http') ? corretor.linkedin : `https://${corretor.linkedin}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#C9A84C', textDecoration: 'none', padding: '5px 12px', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 2 }}>LinkedIn</a>
+              )}
+              {corretor.facebook && (
+                <a href={corretor.facebook.startsWith('http') ? corretor.facebook : `https://${corretor.facebook}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#C9A84C', textDecoration: 'none', padding: '5px 12px', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 2 }}>Facebook</a>
+              )}
+            </div>
+          )}
+
           {/* Bio / Boas-vindas */}
           {(corretor.site_boas_vindas || corretor.bio) && (
             <p style={{ 
@@ -451,6 +513,101 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
             </p>
           </div>
 
+          {/* Barra de Filtros */}
+          {imoveis.length > 0 && (
+            <div style={{
+              display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '40px',
+              padding: '20px', backgroundColor: 'rgba(201,168,76,0.04)',
+              border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px',
+            }}>
+              <select
+                value={filtroNegocio}
+                onChange={e => setFiltroNegocio(e.target.value)}
+                style={{
+                  flex: '1 1 140px', padding: '10px 14px', fontSize: '13px',
+                  backgroundColor: '#141415', border: '1px solid rgba(201,168,76,0.15)',
+                  borderRadius: '2px', color: '#F0EDE6', cursor: 'pointer', outline: 'none',
+                }}
+              >
+                <option value="Todos">Venda e Locação</option>
+                <option value="Venda">Venda</option>
+                <option value="Locacao">Locação</option>
+              </select>
+
+              <select
+                value={filtroTipo}
+                onChange={e => setFiltroTipo(e.target.value)}
+                style={{
+                  flex: '1 1 140px', padding: '10px 14px', fontSize: '13px',
+                  backgroundColor: '#141415', border: '1px solid rgba(201,168,76,0.15)',
+                  borderRadius: '2px', color: '#F0EDE6', cursor: 'pointer', outline: 'none',
+                }}
+              >
+                {tiposDisponiveis.map(t => <option key={t} value={t}>{t === 'Todos' ? 'Todos os tipos' : t}</option>)}
+              </select>
+
+              <select
+                value={filtroQuartos}
+                onChange={e => setFiltroQuartos(e.target.value)}
+                style={{
+                  flex: '1 1 120px', padding: '10px 14px', fontSize: '13px',
+                  backgroundColor: '#141415', border: '1px solid rgba(201,168,76,0.15)',
+                  borderRadius: '2px', color: '#F0EDE6', cursor: 'pointer', outline: 'none',
+                }}
+              >
+                <option value="Todos">Quartos</option>
+                <option value="1">1+ quarto</option>
+                <option value="2">2+ quartos</option>
+                <option value="3">3+ quartos</option>
+                <option value="4">4+ quartos</option>
+              </select>
+
+              <select
+                value={filtroOrdem}
+                onChange={e => setFiltroOrdem(e.target.value)}
+                style={{
+                  flex: '1 1 140px', padding: '10px 14px', fontSize: '13px',
+                  backgroundColor: '#141415', border: '1px solid rgba(201,168,76,0.15)',
+                  borderRadius: '2px', color: '#F0EDE6', cursor: 'pointer', outline: 'none',
+                }}
+              >
+                <option value="recente">Mais recentes</option>
+                <option value="menor">Menor preço</option>
+                <option value="maior">Maior preço</option>
+              </select>
+
+              {(filtroNegocio !== 'Todos' || filtroTipo !== 'Todos' || filtroQuartos !== 'Todos') && (
+                <button
+                  onClick={() => { setFiltroNegocio('Todos'); setFiltroTipo('Todos'); setFiltroQuartos('Todos'); setFiltroOrdem('recente') }}
+                  style={{
+                    padding: '10px 16px', fontSize: '12px', cursor: 'pointer',
+                    backgroundColor: 'transparent', border: '1px solid rgba(224,92,92,0.3)',
+                    borderRadius: '2px', color: '#E05C5C',
+                  }}
+                >
+                  Limpar filtros
+                </button>
+              )}
+
+              <span style={{ alignSelf: 'center', fontSize: '12px', color: '#9B9690', marginLeft: 'auto' }}>
+                {imoveisFiltrados.length} {imoveisFiltrados.length === 1 ? 'imóvel' : 'imóveis'}
+              </span>
+            </div>
+          )}
+
+          {/* Sem resultados */}
+          {imoveis.length > 0 && imoveisFiltrados.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px 24px', color: '#9B9690' }}>
+              <p style={{ fontSize: '18px', marginBottom: '8px' }}>Nenhum imóvel encontrado com esses filtros.</p>
+              <button
+                onClick={() => { setFiltroNegocio('Todos'); setFiltroTipo('Todos'); setFiltroQuartos('Todos') }}
+                style={{ fontSize: '13px', color: '#C9A84C', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Limpar filtros
+              </button>
+            </div>
+          )}
+
           {/* Lançamentos */}
           {lancamentos.length > 0 && (
             <div style={{ marginBottom: '60px' }}>
@@ -499,6 +656,109 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
       )}
 
       {/* ══════════════════════════════════════════════════════════
+          SEÇÃO: CLIENTES BUSCANDO (para proprietários)
+      ══════════════════════════════════════════════════════════ */}
+      {solicitacoes.length > 0 && (
+        <section style={{
+          padding: '80px 24px',
+          borderTop: '1px solid rgba(201,168,76,0.08)',
+          backgroundColor: '#0a0a0a',
+        }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+              <p style={{ fontSize: '11px', color: '#C9A84C', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '16px', fontWeight: 600 }}>
+                Oportunidades
+              </p>
+              <h2 style={{
+                fontFamily: 'var(--font-serif, Georgia, serif)',
+                fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400,
+                color: '#F0EDE6', margin: 0, lineHeight: 1.2,
+              }}>
+                Clientes buscando imóveis
+              </h2>
+              <p style={{ fontSize: '15px', color: '#9B9690', marginTop: '12px' }}>
+                Tem um imóvel que pode interessar a esses compradores? Entre em contato!
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+              {solicitacoes.map((sol) => (
+                <div
+                  key={sol.id}
+                  style={{
+                    backgroundColor: '#141415',
+                    border: '1px solid rgba(201,168,76,0.1)',
+                    borderRadius: '2px',
+                    padding: '24px',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                    <span style={{
+                      fontSize: '10px', padding: '4px 10px', borderRadius: '2px',
+                      backgroundColor: sol.tipo_negocio === 'Comprar' ? 'rgba(92,155,224,0.15)' : 'rgba(92,184,138,0.15)',
+                      color: sol.tipo_negocio === 'Comprar' ? '#5C9BE0' : '#5CB88A',
+                      fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
+                    }}>
+                      Quer {sol.tipo_negocio}
+                    </span>
+                    <span style={{
+                      fontSize: '10px', padding: '4px 10px', borderRadius: '2px',
+                      backgroundColor: 'rgba(201,168,76,0.1)', color: '#C9A84C',
+                      fontWeight: 500,
+                    }}>
+                      {sol.tipo_imovel}
+                    </span>
+                  </div>
+
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#F0EDE6', margin: '0 0 8px' }}>
+                    {sol.tipo_imovel} em {sol.cidade}
+                    {sol.bairro_desejado && ` · ${sol.bairro_desejado}`}
+                  </p>
+
+                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                    {(sol.valor_min || sol.valor_max) && (
+                      <span style={{ fontSize: '12px', color: '#9B9690' }}>
+                        💰 {sol.valor_min ? formatCurrency(sol.valor_min) : 'Qualquer'} – {sol.valor_max ? formatCurrency(sol.valor_max) : 'sem limite'}
+                      </span>
+                    )}
+                    {sol.quartos && (
+                      <span style={{ fontSize: '12px', color: '#9B9690' }}>
+                        🛏 {sol.quartos}+ quartos
+                      </span>
+                    )}
+                    {sol.tem_animal && (
+                      <span style={{ fontSize: '12px', color: '#9B9690' }}>
+                        🐾 Aceita pet
+                      </span>
+                    )}
+                  </div>
+
+                  {corretor.phone && (
+                    <a
+                      href={`https://wa.me/55${corretor.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${corretor.full_name}! Tenho um imóvel que pode atender a busca: ${sol.tipo_imovel} em ${sol.cidade}${sol.bairro_desejado ? ` · ${sol.bairro_desejado}` : ''}.`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                        width: '100%', padding: '10px', borderRadius: '2px',
+                        backgroundColor: '#25D366', color: 'white',
+                        fontSize: '12px', fontWeight: 600, textDecoration: 'none',
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                      Tenho um imóvel para este cliente
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════
           FORMULÁRIOS
       ══════════════════════════════════════════════════════════ */}
       <section ref={formRef} style={{ 
@@ -542,7 +802,7 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
             ] as const).map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => { setActiveTab(tab.key); setEnviado(false); setErroForm('') }}
                 style={{
                   flex: 1,
                   padding: '16px',
@@ -633,10 +893,7 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
                     ariaLabel="Tipo de negócio"
                     value={formProprietario.tipo_negocio}
                     onChange={(v) => setFormProprietario(p => ({ ...p, tipo_negocio: v }))}
-                    options={[
-                      { value: 'Venda', label: 'Venda' },
-                      { value: 'Locação', label: 'Locação' },
-                    ]}
+                    options={tiposNegocioImovel.map((t) => ({ value: t.valor, label: t.label }))}
                   />
                 </div>
                 <div>
@@ -645,7 +902,7 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
                     ariaLabel="Tipo de imóvel"
                     value={formProprietario.tipo_imovel}
                     onChange={(v) => setFormProprietario(p => ({ ...p, tipo_imovel: v }))}
-                    options={TIPO_IMOVEL_OPTIONS.map((t) => ({ value: t, label: t }))}
+                    options={tiposImovel.map((t) => ({ value: t.valor, label: t.label }))}
                   />
                 </div>
               </div>
@@ -653,22 +910,33 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Cidade *</label>
-                  <input 
-                    required 
-                    placeholder="Cidade do imóvel" 
-                    value={formProprietario.cidade} 
-                    onChange={(e) => setFormProprietario(p => ({ ...p, cidade: e.target.value }))} 
-                    style={inputStyle} 
-                  />
+                  <select
+                    required
+                    value={formProprietario.cidade}
+                    onChange={(e) => setFormProprietario(p => ({ ...p, cidade: e.target.value, bairro: '' }))}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  >
+                    <option value="">Selecione a cidade</option>
+                    {cidades.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label style={labelStyle}>Bairro</label>
-                  <input 
-                    placeholder="Bairro" 
-                    value={formProprietario.bairro} 
-                    onChange={(e) => setFormProprietario(p => ({ ...p, bairro: e.target.value }))} 
-                    style={inputStyle} 
-                  />
+                  <select
+                    value={formProprietario.bairro}
+                    onChange={(e) => setFormProprietario(p => ({ ...p, bairro: e.target.value }))}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                    disabled={!formProprietario.cidade}
+                  >
+                    <option value="">Indiferente / Todos</option>
+                    {bairros
+                      .filter((b) => {
+                        const cidade = cidades.find((c) => c.name === formProprietario.cidade)
+                        return cidade && b.city_id === cidade.id
+                      })
+                      .map((b) => <option key={b.id} value={b.name}>{b.name}</option>)
+                    }
+                  </select>
                 </div>
               </div>
 
@@ -764,10 +1032,7 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
                     ariaLabel="Quero"
                     value={formComprador.tipo_negocio}
                     onChange={(v) => setFormComprador(p => ({ ...p, tipo_negocio: v }))}
-                    options={[
-                      { value: 'Comprar', label: 'Comprar' },
-                      { value: 'Alugar', label: 'Alugar' },
-                    ]}
+                    options={tiposNegocioBusca.map((t) => ({ value: t.valor, label: t.label }))}
                   />
                 </div>
                 <div>
@@ -776,7 +1041,7 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
                     ariaLabel="Tipo de imóvel"
                     value={formComprador.tipo_imovel}
                     onChange={(v) => setFormComprador(p => ({ ...p, tipo_imovel: v }))}
-                    options={TIPO_IMOVEL_OPTIONS.map((t) => ({ value: t, label: t }))}
+                    options={tiposImovel.map((t) => ({ value: t.valor, label: t.label }))}
                   />
                 </div>
               </div>
@@ -784,22 +1049,33 @@ export default function SiteCorretorPublico({ corretor, imoveis }: Props) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Cidade *</label>
-                  <input 
-                    required 
-                    placeholder="Cidade desejada" 
-                    value={formComprador.cidade} 
-                    onChange={(e) => setFormComprador(p => ({ ...p, cidade: e.target.value }))} 
-                    style={inputStyle} 
-                  />
+                  <select
+                    required
+                    value={formComprador.cidade}
+                    onChange={(e) => setFormComprador(p => ({ ...p, cidade: e.target.value, bairro_desejado: '' }))}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  >
+                    <option value="">Selecione a cidade</option>
+                    {cidades.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label style={labelStyle}>Bairro de preferência</label>
-                  <input 
-                    placeholder="Bairro" 
-                    value={formComprador.bairro_desejado} 
-                    onChange={(e) => setFormComprador(p => ({ ...p, bairro_desejado: e.target.value }))} 
-                    style={inputStyle} 
-                  />
+                  <select
+                    value={formComprador.bairro_desejado}
+                    onChange={(e) => setFormComprador(p => ({ ...p, bairro_desejado: e.target.value }))}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                    disabled={!formComprador.cidade}
+                  >
+                    <option value="">Indiferente / Todos</option>
+                    {bairros
+                      .filter((b) => {
+                        const cidade = cidades.find((c) => c.name === formComprador.cidade)
+                        return cidade && b.city_id === cidade.id
+                      })
+                      .map((b) => <option key={b.id} value={b.name}>{b.name}</option>)
+                    }
+                  </select>
                 </div>
               </div>
 
@@ -1071,17 +1347,58 @@ function CardImovel({
 // ════════════════════════════════════════════════════════════════════
 // COMPONENTE: Modal de Detalhe do Imóvel
 // ════════════════════════════════════════════════════════════════════
-function ModalImovelDetalhe({ 
-  imovel, 
+function ModalImovelDetalhe({
+  imovel,
   corretor,
-  onClose 
-}: { 
+  onClose
+}: {
   imovel: ImovelPublico
   corretor: CorretorPublico
-  onClose: () => void 
+  onClose: () => void
 }) {
   const [imgIndex, setImgIndex] = useState(0)
   const images = imovel.image_urls || []
+  const [showForm, setShowForm] = useState(false)
+  const [formNome, setFormNome] = useState('')
+  const [formWhats, setFormWhats] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [enviado, setEnviado] = useState(false)
+  const [erro, setErro] = useState('')
+
+  async function enviarInteresse(e: React.FormEvent) {
+    e.preventDefault()
+    setEnviando(true)
+    setErro('')
+    try {
+      const res = await fetch('/api/public/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'busca',
+          corretorId: corretor.id,
+          dados: {
+            nome: formNome,
+            whatsapp: formWhats.replace(/\D/g, ''),
+            tipo_negocio: imovel.tipo_negocio === 'Venda' ? 'Comprar' : 'Alugar',
+            tipo_imovel: imovel.tipo_imovel,
+            cidade: imovel.cidade,
+            bairro_desejado: imovel.bairro || '',
+            valor_max: imovel.valor,
+            quartos: imovel.quartos || undefined,
+          },
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        setErro(d.error || 'Erro ao enviar. Tente novamente.')
+      } else {
+        setEnviado(true)
+      }
+    } catch {
+      setErro('Erro de conexão. Tente novamente.')
+    }
+    setEnviando(false)
+  }
 
   return (
     <div 
@@ -1276,25 +1593,91 @@ function ModalImovelDetalhe({
             )}
           </div>
 
-          {/* CTA */}
-          {corretor.phone && (
-            <a
-              href={`https://wa.me/55${corretor.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${corretor.full_name}! Tenho interesse no imóvel: ${imovel.titulo} - ${formatCurrency(imovel.valor)}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                backgroundColor: '#25D366', color: 'white',
-                padding: '16px', borderRadius: '2px',
-                fontSize: '14px', fontWeight: 600, textDecoration: 'none',
-                width: '100%',
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
-              Tenho interesse neste imóvel
-            </a>
+          {/* CTA / Formulário de Interesse */}
+          {enviado ? (
+            <div style={{
+              textAlign: 'center', padding: '28px',
+              backgroundColor: 'rgba(92,184,138,0.06)',
+              border: '1px solid rgba(92,184,138,0.2)', borderRadius: '2px',
+            }}>
+              <p style={{ fontSize: '20px', color: '#5CB88A', fontWeight: 600, margin: '0 0 6px' }}>✓ Solicitação enviada!</p>
+              <p style={{ fontSize: '13px', color: '#9B9690', margin: 0 }}>{corretor.full_name} entrará em contato em breve.</p>
+            </div>
+          ) : showForm ? (
+            <form onSubmit={enviarInteresse} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {erro && (
+                <p style={{ fontSize: '13px', color: '#E05C5C', padding: '10px 14px', backgroundColor: 'rgba(224,92,92,0.08)', borderRadius: '2px', margin: 0 }}>{erro}</p>
+              )}
+              <p style={{ fontSize: '13px', color: '#9B9690', margin: 0 }}>
+                Preencha seus dados e {corretor.full_name} entrará em contato sobre este imóvel.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <input
+                  required placeholder="Seu nome"
+                  value={formNome} onChange={e => setFormNome(e.target.value)}
+                  style={{ padding: '12px 14px', fontSize: '14px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '2px', color: '#F0EDE6', outline: 'none' }}
+                />
+                <input
+                  required placeholder="WhatsApp"
+                  value={formWhats} onChange={e => setFormWhats(e.target.value)}
+                  style={{ padding: '12px 14px', fontSize: '14px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '2px', color: '#F0EDE6', outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" disabled={enviando} style={{
+                  flex: 1, padding: '14px', backgroundColor: '#C9A84C', color: '#0E0E0F',
+                  border: 'none', borderRadius: '2px', fontSize: '14px', fontWeight: 600,
+                  cursor: enviando ? 'not-allowed' : 'pointer', opacity: enviando ? 0.7 : 1,
+                }}>
+                  {enviando ? 'Enviando...' : 'Confirmar interesse'}
+                </button>
+                {corretor.phone && (
+                  <a
+                    href={`https://wa.me/55${corretor.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${corretor.full_name}! Tenho interesse no imóvel: ${imovel.titulo} - ${formatCurrency(imovel.valor)}`)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      padding: '14px 20px', backgroundColor: '#25D366', color: 'white',
+                      borderRadius: '2px', textDecoration: 'none',
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                  </a>
+                )}
+              </div>
+            </form>
+          ) : (
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowForm(true)}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  backgroundColor: '#C9A84C', color: '#0E0E0F',
+                  padding: '16px', borderRadius: '2px',
+                  fontSize: '14px', fontWeight: 600, border: 'none', cursor: 'pointer',
+                }}
+              >
+                Tenho interesse neste imóvel
+              </button>
+              {corretor.phone && (
+                <a
+                  href={`https://wa.me/55${corretor.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá ${corretor.full_name}! Tenho interesse no imóvel: ${imovel.titulo} - ${formatCurrency(imovel.valor)}`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    backgroundColor: '#25D366', color: 'white',
+                    padding: '16px 20px', borderRadius: '2px',
+                    fontSize: '14px', fontWeight: 600, textDecoration: 'none',
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                </a>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -4,13 +4,13 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const solicitacaoId = params.id
+  const { id: solicitacaoId } = await params
 
   // IDOR: garante que a solicitação pertence ao corretor
   const { data: sol, error: solError } = await supabase

@@ -1,11 +1,29 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/format'
 
-type Aba = 'dashboard' | 'corretores' | 'denuncias' | 'financeiro'
+type Aba = 'dashboard' | 'corretores' | 'denuncias' | 'financeiro' | 'opcoes'
+
+type OpcaoSistema = {
+  id: string
+  categoria: string
+  valor: string
+  label: string
+  ativo: boolean
+  sistema: boolean
+}
+
+const CATEGORIAS_LABEL: Record<string, string> = {
+  tipo_imovel:         'Tipo de Imóvel',
+  tipo_negocio_imovel: 'Tipo de Negócio (Imóvel)',
+  tipo_negocio_busca:  'Tipo de Negócio (Busca)',
+  garantia:            'Garantia',
+  indice_reajuste:     'Índice de Reajuste',
+  forma_pagamento:     'Forma de Pagamento',
+}
 
 interface CorretorAdmin {
   id: string
@@ -74,6 +92,58 @@ export default function AdminClient({
   const router = useRouter()
   const [aba, setAba] = useState<Aba>('dashboard')
   const [atualizando, setAtualizando] = useState<string | null>(null)
+
+  // Estado da aba Opções
+  const [sistemOpcoes, setSistemOpcoes] = useState<OpcaoSistema[]>([])
+  const [opcoesLoading, setOpcoesLoading] = useState(false)
+  const [novaOpcaoCategoria, setNovaOpcaoCategoria] = useState(Object.keys(CATEGORIAS_LABEL)[0])
+  const [novaOpcaoLabel, setNovaOpcaoLabel] = useState('')
+  const [opcoesErro, setOpcoesErro] = useState('')
+
+  useEffect(() => {
+    if (aba === 'opcoes' && sistemOpcoes.length === 0) carregarOpcoes()
+  }, [aba])
+
+  async function carregarOpcoes() {
+    setOpcoesLoading(true)
+    const res = await fetch('/api/admin/opcoes')
+    if (res.ok) setSistemOpcoes(await res.json())
+    setOpcoesLoading(false)
+  }
+
+  async function adicionarOpcao() {
+    if (!novaOpcaoLabel.trim()) return
+    setOpcoesErro('')
+    const res = await fetch('/api/admin/opcoes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ categoria: novaOpcaoCategoria, label: novaOpcaoLabel.trim() }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      setOpcoesErro(err.error || 'Erro ao adicionar')
+      return
+    }
+    const nova: OpcaoSistema = await res.json()
+    setSistemOpcoes((prev) => [...prev, nova])
+    setNovaOpcaoLabel('')
+  }
+
+  async function toggleOpcao(id: string, ativo: boolean) {
+    await fetch(`/api/admin/opcoes/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ativo }),
+    })
+    setSistemOpcoes((prev) => prev.map((o) => o.id === id ? { ...o, ativo } : o))
+  }
+
+  async function deletarOpcao(id: string) {
+    if (!confirm('Remover esta opção do sistema?')) return
+    const res = await fetch(`/api/admin/opcoes/${id}`, { method: 'DELETE' })
+    if (res.ok) setSistemOpcoes((prev) => prev.filter((o) => o.id !== id))
+    else { const err = await res.json(); alert(err.error) }
+  }
 
   const btnAba = (id: Aba): React.CSSProperties => ({
     background: 'none',
@@ -148,9 +218,9 @@ export default function AdminClient({
 
       {/* Abas */}
       <div style={{ borderBottom: '1px solid #232324', display: 'flex', gap: '0' }}>
-        {(['dashboard', 'corretores', 'denuncias', 'financeiro'] as Aba[]).map((id) => (
+        {(['dashboard', 'corretores', 'denuncias', 'financeiro', 'opcoes'] as Aba[]).map((id) => (
           <button key={id} style={btnAba(id)} onClick={() => setAba(id)}>
-            {id.charAt(0).toUpperCase() + id.slice(1)}
+            {id === 'opcoes' ? 'Opções' : id.charAt(0).toUpperCase() + id.slice(1)}
             {id === 'denuncias' && metricas.denunciasAbertas > 0 && (
               <span style={{ marginLeft: '6px', backgroundColor: '#E05C5C', color: '#fff', borderRadius: '9999px', padding: '1px 6px', fontSize: '10px', fontWeight: 700 }}>
                 {metricas.denunciasAbertas}
@@ -292,6 +362,100 @@ export default function AdminClient({
           <p style={{ fontSize: '11px', color: '#2E2E30', margin: 0 }}>
             * Dados estaticos. Integracao com gateway de pagamento em breve.
           </p>
+        </div>
+      )}
+
+      {/* ABA: Opções do Sistema */}
+      {aba === 'opcoes' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <p style={{ fontSize: '13px', color: '#9B9690', margin: 0 }}>
+            Gerencie as opções padrão dos dropdowns. Corretores também podem adicionar tipos personalizados nas suas próprias contas.
+          </p>
+
+          {/* Formulário para adicionar nova opção */}
+          <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '2px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <p style={{ fontSize: '11px', color: '#C9A84C', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+              Adicionar Opção ao Sistema
+            </p>
+            {opcoesErro && (
+              <p style={{ fontSize: '12px', color: '#E05C5C', margin: 0 }}>{opcoesErro}</p>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
+              <div>
+                <label style={{ fontSize: '10px', color: '#9B9690', display: 'block', marginBottom: '4px' }}>Categoria</label>
+                <select
+                  value={novaOpcaoCategoria}
+                  onChange={(e) => setNovaOpcaoCategoria(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#232324', border: '1px solid #2E2E30', borderRadius: '2px', padding: '8px 12px', fontSize: '13px', color: '#F0EDE6', outline: 'none' }}
+                >
+                  {Object.entries(CATEGORIAS_LABEL).map(([val, lbl]) => (
+                    <option key={val} value={val}>{lbl}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '10px', color: '#9B9690', display: 'block', marginBottom: '4px' }}>Nome da Opção</label>
+                <input
+                  value={novaOpcaoLabel}
+                  onChange={(e) => setNovaOpcaoLabel(e.target.value)}
+                  placeholder="Ex: Temporada, Chalé..."
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionarOpcao() } }}
+                  style={{ width: '100%', backgroundColor: '#232324', border: '1px solid #2E2E30', borderRadius: '2px', padding: '8px 12px', fontSize: '13px', color: '#F0EDE6', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+              <button
+                onClick={adicionarOpcao}
+                style={{ backgroundColor: '#C9A84C', color: '#0E0E0F', border: 'none', borderRadius: '2px', padding: '8px 18px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                + Adicionar
+              </button>
+            </div>
+          </div>
+
+          {/* Lista de opções por categoria */}
+          {opcoesLoading ? (
+            <p style={{ fontSize: '13px', color: '#9B9690' }}>Carregando...</p>
+          ) : (
+            Object.entries(CATEGORIAS_LABEL).map(([cat, catLabel]) => {
+              const itens = sistemOpcoes.filter((o) => o.categoria === cat)
+              return (
+                <div key={cat} style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 16px', backgroundColor: '#232324', borderBottom: '1px solid #2E2E30', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <p style={{ fontSize: '11px', color: '#C9A84C', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>{catLabel}</p>
+                    <span style={{ fontSize: '11px', color: '#9B9690' }}>{itens.length} opções</span>
+                  </div>
+                  {itens.length === 0 ? (
+                    <p style={{ fontSize: '12px', color: '#9B9690', padding: '12px 16px', margin: 0 }}>Nenhuma opção cadastrada.</p>
+                  ) : (
+                    itens.map((opcao) => (
+                      <div key={opcao.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #0E0E0F', gap: '12px' }}>
+                        <span style={{ flex: 1, fontSize: '13px', color: opcao.ativo ? '#F0EDE6' : '#9B9690', textDecoration: opcao.ativo ? 'none' : 'line-through' }}>
+                          {opcao.label}
+                        </span>
+                        {opcao.sistema && (
+                          <span style={{ fontSize: '10px', color: '#9B9690', backgroundColor: '#232324', borderRadius: '2px', padding: '2px 6px' }}>sistema</span>
+                        )}
+                        <button
+                          onClick={() => toggleOpcao(opcao.id, !opcao.ativo)}
+                          style={{ background: 'none', border: `1px solid ${opcao.ativo ? 'rgba(92,184,138,0.4)' : 'rgba(155,150,144,0.3)'}`, color: opcao.ativo ? '#5CB88A' : '#9B9690', borderRadius: '2px', padding: '3px 10px', fontSize: '11px', cursor: 'pointer' }}
+                        >
+                          {opcao.ativo ? 'Ativo' : 'Inativo'}
+                        </button>
+                        {!opcao.sistema && (
+                          <button
+                            onClick={() => deletarOpcao(opcao.id)}
+                            style={{ background: 'none', border: '1px solid rgba(224,92,92,0.3)', color: '#E05C5C', borderRadius: '2px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer' }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
       )}
     </div>

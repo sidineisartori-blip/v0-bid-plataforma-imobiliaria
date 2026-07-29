@@ -39,12 +39,32 @@ interface AdminSession {
   full_name: string
 }
 
-const PLANOS = [
-  { id: 'free',       nome: 'Free',       valor: 0,   cor: '#9B9690', limiteImoveis: 5,  limiteSolicitacoes: 10 },
-  { id: 'pro',        nome: 'Pro',        valor: 97,  cor: '#5C9BE0', limiteImoveis: 30, limiteSolicitacoes: 50 },
-  { id: 'premium',    nome: 'Premium',    valor: 240, cor: '#C9A84C', limiteImoveis: -1, limiteSolicitacoes: -1 },
-  { id: 'enterprise', nome: 'Enterprise', valor: 720, cor: '#5CB88A', limiteImoveis: -1, limiteSolicitacoes: -1 },
-]
+interface Plano {
+  id: string
+  nome: string
+  valor: number
+  cor: string
+  limite_imoveis: number
+  limite_solicitacoes: number
+  ordem: number
+  ativo: boolean
+}
+
+const PLANO_VAZIO = { id: 'free', nome: 'Free', valor: 0, cor: '#9B9690', limite_imoveis: 5, limite_solicitacoes: 10, ordem: 0, ativo: true }
+
+interface Pagamento {
+  id: string
+  corretor_id: string
+  plano: string
+  valor: number
+  mes_referencia: string
+  data_vencimento: string
+  data_pagamento: string | null
+  status: 'pendente' | 'pago' | 'atrasado' | 'isento'
+  forma_pagamento: string | null
+  observacao: string | null
+  corretor?: { full_name: string; email: string; phone: string | null; plano: string } | null
+}
 
 const CRECI_STATUS = ['pendente', 'ativo', 'suspenso', 'cancelado']
 
@@ -56,9 +76,6 @@ function getIniciais(nome: string): string {
   return nome.trim().split(/\s+/).slice(0, 2).map((n) => n[0] || '').join('').toUpperCase()
 }
 
-const CORES_PLANO: Record<string, string> = {
-  free: '#9B9690', pro: '#5C9BE0', premium: '#C9A84C', enterprise: '#5CB88A',
-}
 
 // ─── MODAL BASE ─────────────────────────────────────────────────────────────
 function Modal({ titulo, onClose, children }: { titulo: string; onClose: () => void; children: React.ReactNode }) {
@@ -103,7 +120,7 @@ const inputStyle: React.CSSProperties = {
 const selectStyle: React.CSSProperties = { ...inputStyle, cursor: 'pointer' }
 
 // ─── MODAL CRIAR CORRETOR ────────────────────────────────────────────────────
-function ModalCriar({ onClose, onSalvo }: { onClose: () => void; onSalvo: () => void }) {
+function ModalCriar({ planos, onClose, onSalvo }: { planos: Plano[]; onClose: () => void; onSalvo: () => void }) {
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', creci: '', plano: 'free', senha: '' })
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
@@ -147,7 +164,7 @@ function ModalCriar({ onClose, onSalvo }: { onClose: () => void; onSalvo: () => 
           </Campo>
           <Campo label="Plano">
             <select style={selectStyle} value={form.plano} onChange={set('plano')}>
-              {PLANOS.map(p => <option key={p.id} value={p.id}>{p.nome}{p.valor > 0 ? ` — R$ ${p.valor}/mês` : ' (Grátis)'}</option>)}
+              {planos.map(p => <option key={p.id} value={p.id}>{p.nome}{p.valor > 0 ? ` — R$ ${p.valor}/mês` : ' (Grátis)'}</option>)}
             </select>
           </Campo>
           <Campo label="Senha inicial *">
@@ -171,7 +188,7 @@ function ModalCriar({ onClose, onSalvo }: { onClose: () => void; onSalvo: () => 
 }
 
 // ─── MODAL EDITAR CORRETOR ───────────────────────────────────────────────────
-function ModalEditar({ corretor, onClose, onSalvo }: { corretor: Corretor; onClose: () => void; onSalvo: () => void }) {
+function ModalEditar({ corretor, planos, onClose, onSalvo }: { corretor: Corretor; planos: Plano[]; onClose: () => void; onSalvo: () => void }) {
   const [form, setForm] = useState({
     full_name:    corretor.full_name,
     phone:        corretor.phone || '',
@@ -231,7 +248,7 @@ function ModalEditar({ corretor, onClose, onSalvo }: { corretor: Corretor; onClo
           </Campo>
           <Campo label="Plano">
             <select style={selectStyle} value={form.plano} onChange={set('plano')}>
-              {PLANOS.map(p => <option key={p.id} value={p.id}>{p.nome}{p.valor > 0 ? ` — R$ ${p.valor}/mês` : ' (Grátis)'}</option>)}
+              {planos.map(p => <option key={p.id} value={p.id}>{p.nome}{p.valor > 0 ? ` — R$ ${p.valor}/mês` : ' (Grátis)'}</option>)}
             </select>
           </Campo>
           <Campo label="Status da conta">
@@ -284,6 +301,172 @@ function ModalExcluir({ corretor, onClose, onConfirm, excluindo }: { corretor: C
   )
 }
 
+// ─── MODAL CRIAR/EDITAR PLANO ────────────────────────────────────────────────
+function ModalPlano({ plano, onClose, onSalvo }: { plano: Plano | null; onClose: () => void; onSalvo: () => void }) {
+  const editando = !!plano
+  const [form, setForm] = useState({
+    id: plano?.id || '',
+    nome: plano?.nome || '',
+    valor: String(plano?.valor ?? 0),
+    cor: plano?.cor || '#5C9BE0',
+    limite_imoveis: String(plano?.limite_imoveis ?? 5),
+    limite_solicitacoes: String(plano?.limite_solicitacoes ?? 10),
+    ordem: String(plano?.ordem ?? 0),
+  })
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState('')
+
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault()
+    setSalvando(true); setErro('')
+    try {
+      const url = editando ? `/api/admin/planos/${plano!.id}` : '/api/admin/planos'
+      const res = await fetch(url, {
+        method: editando ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErro(data.error || 'Erro ao salvar plano.'); return }
+      onSalvo()
+      onClose()
+    } catch { setErro('Falha na conexão.') }
+    finally { setSalvando(false) }
+  }
+
+  return (
+    <Modal titulo={editando ? `Editar Plano — ${plano!.nome}` : 'Novo Plano'} onClose={onClose}>
+      <form onSubmit={salvar} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Campo label="ID (slug, imutável) *">
+            <input style={inputStyle} value={form.id} onChange={set('id')} required disabled={editando} placeholder="ex: vip" />
+          </Campo>
+          <Campo label="Nome *">
+            <input style={inputStyle} value={form.nome} onChange={set('nome')} required placeholder="Ex: VIP" />
+          </Campo>
+          <Campo label="Valor mensal (R$) *">
+            <input style={inputStyle} type="number" min={0} step="0.01" value={form.valor} onChange={set('valor')} required />
+          </Campo>
+          <Campo label="Cor (hex) *">
+            <input style={inputStyle} value={form.cor} onChange={set('cor')} required placeholder="#5C9BE0" />
+          </Campo>
+          <Campo label="Limite de imóveis (-1 = ilimitado)">
+            <input style={inputStyle} type="number" value={form.limite_imoveis} onChange={set('limite_imoveis')} />
+          </Campo>
+          <Campo label="Limite de solicitações (-1 = ilimitado)">
+            <input style={inputStyle} type="number" value={form.limite_solicitacoes} onChange={set('limite_solicitacoes')} />
+          </Campo>
+          <Campo label="Ordem de exibição">
+            <input style={inputStyle} type="number" value={form.ordem} onChange={set('ordem')} />
+          </Campo>
+        </div>
+
+        {erro && <p style={{ fontSize: 13, color: '#E05C5C', margin: 0 }}>{erro}</p>}
+
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+          <button type="button" onClick={onClose} style={{ padding: '10px 20px', background: 'none', border: '1px solid #2E2E30', borderRadius: 2, color: '#9B9690', fontSize: 14, cursor: 'pointer' }}>
+            Cancelar
+          </button>
+          <button type="submit" disabled={salvando} style={{ padding: '10px 24px', backgroundColor: '#C9A84C', border: 'none', borderRadius: 2, color: '#0E0E0F', fontSize: 14, fontWeight: 700, cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.7 : 1 }}>
+            {salvando ? 'Salvando...' : editando ? 'Salvar Alterações' : 'Criar Plano'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+// ─── MODAL CONFIRMAR EXCLUSÃO DE PLANO ───────────────────────────────────────
+function ModalExcluirPlano({ plano, onClose, onConfirm, excluindo, erro }: { plano: Plano; onClose: () => void; onConfirm: () => void; excluindo: boolean; erro: string }) {
+  return (
+    <Modal titulo="Excluir Plano" onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ backgroundColor: 'rgba(224,92,92,0.08)', border: '1px solid rgba(224,92,92,0.2)', borderRadius: 2, padding: 16 }}>
+          <p style={{ fontSize: 14, color: '#E05C5C', margin: '0 0 8px', fontWeight: 600 }}>⚠ Esta ação não pode ser desfeita</p>
+          <p style={{ fontSize: 13, color: '#9B9690', margin: 0, lineHeight: 1.5 }}>
+            O plano <strong style={{ color: '#F0EDE6' }}>{plano.nome}</strong> será excluído permanentemente.
+          </p>
+        </div>
+        {erro && <p style={{ fontSize: 13, color: '#E05C5C', margin: 0 }}>{erro}</p>}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} disabled={excluindo} style={{ padding: '10px 20px', background: 'none', border: '1px solid #2E2E30', borderRadius: 2, color: '#9B9690', fontSize: 14, cursor: 'pointer' }}>
+            Cancelar
+          </button>
+          <button onClick={onConfirm} disabled={excluindo} style={{ padding: '10px 24px', backgroundColor: '#E05C5C', border: 'none', borderRadius: 2, color: '#fff', fontSize: 14, fontWeight: 700, cursor: excluindo ? 'not-allowed' : 'pointer', opacity: excluindo ? 0.7 : 1 }}>
+            {excluindo ? 'Excluindo...' : 'Confirmar Exclusão'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── MODAL CONFIRMAR PAGAMENTO ────────────────────────────────────────────────
+function ModalConfirmarPagamento({ pag, onClose, onConfirm, confirmando }: { pag: Pagamento; onClose: () => void; onConfirm: (form: { status: string; data_pagamento: string; forma_pagamento: string; observacao: string }) => void; confirmando: boolean }) {
+  const hoje = new Date().toISOString().split('T')[0]
+  const [form, setForm] = useState({
+    status: 'pago',
+    data_pagamento: hoje,
+    forma_pagamento: 'pix',
+    observacao: '',
+  })
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
+
+  const STATUS_PAG = [
+    { value: 'pago', label: 'Pago' },
+    { value: 'atrasado', label: 'Atrasado' },
+    { value: 'isento', label: 'Isento (não cobrar)' },
+    { value: 'pendente', label: 'Pendente' },
+  ]
+  const FORMAS = ['pix', 'ted', 'boleto', 'outro']
+
+  return (
+    <Modal titulo={`Pagamento — ${pag.corretor?.full_name || pag.corretor_id}`} onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ backgroundColor: '#0E0E0F', border: '1px solid #232324', borderRadius: 2, padding: '10px 14px', fontSize: 13, color: '#9B9690' }}>
+          Mês: <strong style={{ color: '#F0EDE6' }}>{pag.mes_referencia}</strong> · Valor: <strong style={{ color: '#C9A84C' }}>R$ {Number(pag.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> · Vencimento: <strong style={{ color: '#F0EDE6' }}>{new Date(pag.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}</strong>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Campo label="Status *">
+            <select style={selectStyle} value={form.status} onChange={set('status')}>
+              {STATUS_PAG.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </Campo>
+          <Campo label="Data do pagamento">
+            <input style={inputStyle} type="date" value={form.data_pagamento} onChange={set('data_pagamento')} />
+          </Campo>
+          <Campo label="Forma de pagamento">
+            <select style={selectStyle} value={form.forma_pagamento} onChange={set('forma_pagamento')}>
+              {FORMAS.map(f => <option key={f} value={f}>{f.toUpperCase()}</option>)}
+            </select>
+          </Campo>
+        </div>
+        <Campo label="Observação">
+          <textarea
+            value={form.observacao}
+            onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))}
+            rows={2}
+            placeholder="Comprovante, número do PIX, etc."
+            style={{ ...inputStyle, resize: 'vertical' } as React.CSSProperties}
+          />
+        </Campo>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+          <button onClick={onClose} disabled={confirmando} style={{ padding: '10px 20px', background: 'none', border: '1px solid #2E2E30', borderRadius: 2, color: '#9B9690', fontSize: 14, cursor: 'pointer' }}>
+            Cancelar
+          </button>
+          <button onClick={() => onConfirm(form)} disabled={confirmando} style={{ padding: '10px 24px', backgroundColor: '#5CB88A', border: 'none', borderRadius: 2, color: '#fff', fontSize: 14, fontWeight: 700, cursor: confirmando ? 'not-allowed' : 'pointer', opacity: confirmando ? 0.7 : 1 }}>
+            {confirmando ? 'Salvando...' : 'Confirmar'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ─── PÁGINA PRINCIPAL ────────────────────────────────────────────────────────
 export default function AdminPainelPage() {
   const router = useRouter()
@@ -292,6 +475,7 @@ export default function AdminPainelPage() {
   const [aba, setAba] = useState<Aba>('dashboard')
   const [corretores, setCorretores] = useState<Corretor[]>([])
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
+  const [planos, setPlanos] = useState<Plano[]>([])
   const [loading, setLoading] = useState(true)
   const [atualizando, setAtualizando] = useState<string | null>(null)
   const [telaEstreita, setTelaEstreita] = useState(false)
@@ -308,7 +492,25 @@ export default function AdminPainelPage() {
   const [confirmarCancelamento, setConfirmarCancelamento] = useState<{ id: string; corretorId: string } | null>(null)
   const [cancelando, setCancelando] = useState(false)
 
+  // Modais CRUD de planos
+  const [modalCriarPlano, setModalCriarPlano] = useState(false)
+  const [modalEditarPlano, setModalEditarPlano] = useState<Plano | null>(null)
+  const [modalExcluirPlano, setModalExcluirPlano] = useState<Plano | null>(null)
+  const [excluindoPlano, setExcluindoPlano] = useState(false)
+  const [erroExcluirPlano, setErroExcluirPlano] = useState('')
+
   const [metricas, setMetricas] = useState({ totalCorretores: 0, corretoresAtivos: 0, assinaturasPagas: 0, mrrTotal: 0 })
+
+  // Cobrança/pagamentos
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>([])
+  const [mesPagamento, setMesPagamento] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+  const [gerando, setGerando] = useState(false)
+  const [msgGerar, setMsgGerar] = useState('')
+  const [modalConfirmarPag, setModalConfirmarPag] = useState<Pagamento | null>(null)
+  const [confirmandoPag, setConfirmandoPag] = useState(false)
 
   useEffect(() => {
     const checar = () => setTelaEstreita(window.innerWidth < 1200)
@@ -316,6 +518,10 @@ export default function AdminPainelPage() {
     window.addEventListener('resize', checar)
     return () => window.removeEventListener('resize', checar)
   }, [])
+
+  useEffect(() => {
+    if (aba === 'financeiro') carregarPagamentos(mesPagamento)
+  }, [aba, mesPagamento])
 
   useEffect(() => {
     async function verificarSessao() {
@@ -335,13 +541,16 @@ export default function AdminPainelPage() {
       { data: corretoresData, count: totalCorretores },
       { data: assinaturasData },
       { count: corretoresAtivos },
+      planosRes,
     ] = await Promise.all([
       supabase.from('corretores').select('id, full_name, email, creci, creci_status, plano, nota_media, created_at, phone, is_active', { count: 'exact' }).order('created_at', { ascending: false }),
       supabase.from('assinaturas').select('*, corretor:corretores(full_name, email)').order('created_at', { ascending: false }),
       supabase.from('corretores').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      fetch('/api/admin/planos').then(r => r.ok ? r.json() : { planos: [] }).catch(() => ({ planos: [] })),
     ])
     setCorretores((corretoresData as Corretor[]) || [])
     setAssinaturas((assinaturasData as Assinatura[]) || [])
+    setPlanos((planosRes.planos as Plano[]) || [])
 
     const assinaturasPagas = (assinaturasData || []).filter((a: Assinatura) => a.status === 'ativa' && a.plano !== 'free').length
     const mrrTotal = (assinaturasData || []).filter((a: Assinatura) => a.status === 'ativa').reduce((acc: number, a: Assinatura) => acc + (a.valor_mensal || 0), 0)
@@ -351,7 +560,7 @@ export default function AdminPainelPage() {
 
   async function alterarPlano(corretorId: string, novoPlano: string) {
     setAtualizando(corretorId)
-    const planoInfo = PLANOS.find((p) => p.id === novoPlano)
+    const planoInfo = planos.find((p) => p.id === novoPlano)
     if (!planoInfo) return
     await supabase.from('corretores').update({ plano: novoPlano, plano_ativo_desde: new Date().toISOString() }).eq('id', corretorId)
     const { data: assinaturaExistente } = await supabase.from('assinaturas').select('id').eq('corretor_id', corretorId).eq('status', 'ativa').single()
@@ -363,6 +572,57 @@ export default function AdminPainelPage() {
     await supabase.from('audit_log').insert({ action: 'plano_alterado', entity_type: 'corretor', entity_id: corretorId, performed_by: session?.id, details: { plano_novo: novoPlano } })
     await carregarDados()
     setAtualizando(null)
+  }
+
+  async function excluirPlano() {
+    if (!modalExcluirPlano) return
+    setExcluindoPlano(true)
+    setErroExcluirPlano('')
+    try {
+      const res = await fetch(`/api/admin/planos/${modalExcluirPlano.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) { setErroExcluirPlano(data.error || 'Erro ao excluir plano.'); return }
+      setModalExcluirPlano(null)
+      await carregarDados()
+    } catch { setErroExcluirPlano('Falha na conexão.') }
+    finally { setExcluindoPlano(false) }
+  }
+
+  async function carregarPagamentos(mes: string) {
+    const res = await fetch(`/api/admin/pagamentos?mes=${mes}`).then(r => r.ok ? r.json() : { pagamentos: [] }).catch(() => ({ pagamentos: [] }))
+    setPagamentos(res.pagamentos || [])
+  }
+
+  async function gerarCobrancas() {
+    setGerando(true)
+    setMsgGerar('')
+    try {
+      const res = await fetch('/api/admin/pagamentos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mes_referencia: mesPagamento }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setMsgGerar(`Erro: ${data.error}`); return }
+      setMsgGerar(`${data.gerados} cobrança(s) gerada(s) para ${mesPagamento}.`)
+      await carregarPagamentos(mesPagamento)
+    } catch { setMsgGerar('Falha na conexão.') }
+    finally { setGerando(false) }
+  }
+
+  async function confirmarPagamento(pag: Pagamento, form: { status: string; data_pagamento: string; forma_pagamento: string; observacao: string }) {
+    setConfirmandoPag(true)
+    try {
+      const res = await fetch(`/api/admin/pagamentos/${pag.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) return
+      setModalConfirmarPag(null)
+      await carregarPagamentos(mesPagamento)
+    } catch { /* silencioso */ }
+    finally { setConfirmandoPag(false) }
   }
 
   async function executarCancelamento() {
@@ -425,9 +685,28 @@ export default function AdminPainelPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0E0E0F' }}>
       {/* Modais */}
-      {modalCriar && <ModalCriar onClose={() => setModalCriar(false)} onSalvo={carregarDados} />}
-      {modalEditar && <ModalEditar corretor={modalEditar} onClose={() => setModalEditar(null)} onSalvo={carregarDados} />}
+      {modalCriar && <ModalCriar planos={planos} onClose={() => setModalCriar(false)} onSalvo={carregarDados} />}
+      {modalEditar && <ModalEditar corretor={modalEditar} planos={planos} onClose={() => setModalEditar(null)} onSalvo={carregarDados} />}
       {modalExcluir && <ModalExcluir corretor={modalExcluir} onClose={() => setModalExcluir(null)} onConfirm={excluirCorretor} excluindo={excluindo} />}
+      {modalCriarPlano && <ModalPlano plano={null} onClose={() => setModalCriarPlano(false)} onSalvo={carregarDados} />}
+      {modalEditarPlano && <ModalPlano plano={modalEditarPlano} onClose={() => setModalEditarPlano(null)} onSalvo={carregarDados} />}
+      {modalExcluirPlano && (
+        <ModalExcluirPlano
+          plano={modalExcluirPlano}
+          onClose={() => { setModalExcluirPlano(null); setErroExcluirPlano('') }}
+          onConfirm={excluirPlano}
+          excluindo={excluindoPlano}
+          erro={erroExcluirPlano}
+        />
+      )}
+      {modalConfirmarPag && (
+        <ModalConfirmarPagamento
+          pag={modalConfirmarPag}
+          onClose={() => setModalConfirmarPag(null)}
+          onConfirm={(form) => confirmarPagamento(modalConfirmarPag, form)}
+          confirmando={confirmandoPag}
+        />
+      )}
       {confirmarCancelamento && (
         <ModalConfirm
           titulo="Cancelar assinatura?"
@@ -494,7 +773,7 @@ export default function AdminPainelPage() {
               />
               <select value={filtroPlano} onChange={(e) => setFiltroPlano(e.target.value)} style={{ padding: '11px 14px', backgroundColor: '#181819', border: '1px solid #232324', borderRadius: '2px', color: '#F0EDE6', fontSize: '14px', outline: 'none', cursor: 'pointer' }}>
                 <option value="todos">Todos os planos</option>
-                {PLANOS.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                {planos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
               </select>
               <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} style={{ padding: '11px 14px', backgroundColor: '#181819', border: '1px solid #232324', borderRadius: '2px', color: '#F0EDE6', fontSize: '14px', outline: 'none', cursor: 'pointer' }}>
                 <option value="todos">Todos os status</option>
@@ -526,7 +805,7 @@ export default function AdminPainelPage() {
               )}
 
               {corretoresFiltrados.slice(0, 100).map((cor, i) => {
-                const planoInfo = PLANOS.find((p) => p.id === cor.plano) || PLANOS[0]
+                const planoInfo = planos.find((p) => p.id === cor.plano) || planos[0] || PLANO_VAZIO
                 const inativo = !cor.is_active
                 return (
                   <div
@@ -545,7 +824,7 @@ export default function AdminPainelPage() {
                   >
                     {/* Nome */}
                     <span style={{ fontSize: '14px', color: '#F0EDE6', display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                      <span style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: `${CORES_PLANO[cor.plano] || '#9B9690'}26`, border: `1px solid ${CORES_PLANO[cor.plano] || '#9B9690'}59`, color: CORES_PLANO[cor.plano] || '#9B9690', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: `${planoInfo.cor}26`, border: `1px solid ${planoInfo.cor}59`, color: planoInfo.cor, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         {getIniciais(cor.full_name)}
                       </span>
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cor.full_name}</span>
@@ -574,7 +853,7 @@ export default function AdminPainelPage() {
                       disabled={atualizando === cor.id || inativo}
                       style={{ padding: '7px 10px', backgroundColor: '#232324', border: '1px solid #2E2E30', borderRadius: '2px', color: '#F0EDE6', fontSize: '13px', cursor: atualizando === cor.id || inativo ? 'not-allowed' : 'pointer', opacity: atualizando === cor.id ? 0.6 : 1 }}
                     >
-                      {PLANOS.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                      {planos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
                     </select>
 
                     {/* Ações */}
@@ -604,29 +883,63 @@ export default function AdminPainelPage() {
         {/* ── GERENCIAR PLANOS ── */}
         {aba === 'planos' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-              {PLANOS.map((plano) => {
+            {/* Header com botão criar */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '20px', fontWeight: 600, color: '#F0EDE6', margin: 0 }}>Planos</h2>
+              <button
+                onClick={() => setModalCriarPlano(true)}
+                style={{ padding: '10px 20px', backgroundColor: '#C9A84C', border: 'none', borderRadius: '2px', color: '#0E0E0F', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                + Novo Plano
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+              {planos.map((plano) => {
                 const assinantes = corretores.filter((c) => c.plano === plano.id).length
                 return (
-                  <div key={plano.id} style={{ backgroundColor: '#181819', border: `1px solid ${plano.cor}40`, borderRadius: '2px', padding: '28px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                      <h3 style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '22px', fontWeight: 600, color: plano.cor, margin: 0 }}>{plano.nome}</h3>
-                      <span style={{ fontSize: '13px', padding: '4px 12px', borderRadius: '2px', backgroundColor: `${plano.cor}20`, color: plano.cor }}>{assinantes} assinante{assinantes !== 1 ? 's' : ''}</span>
+                  <div key={plano.id} style={{ backgroundColor: '#181819', border: `1px solid ${plano.cor}40`, borderRadius: '2px', padding: '24px', opacity: plano.ativo ? 1 : 0.5 }}>
+                    {/* Cabeçalho do card */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                      <div>
+                        <h3 style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '20px', fontWeight: 600, color: plano.cor, margin: '0 0 4px' }}>{plano.nome}</h3>
+                        {!plano.ativo && <span style={{ fontSize: '11px', color: '#E05C5C', letterSpacing: '0.05em' }}>INATIVO</span>}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => setModalEditarPlano(plano)}
+                          title="Editar plano"
+                          style={{ padding: '5px 9px', backgroundColor: 'transparent', border: '1px solid #2E2E30', borderRadius: 2, color: '#9B9690', fontSize: 13, cursor: 'pointer', lineHeight: 1 }}
+                        >✏</button>
+                        <button
+                          onClick={() => { setModalExcluirPlano(plano); setErroExcluirPlano('') }}
+                          title="Excluir plano"
+                          disabled={plano.id === 'free'}
+                          style={{ padding: '5px 9px', backgroundColor: 'transparent', border: '1px solid rgba(224,92,92,0.3)', borderRadius: 2, color: '#E05C5C', fontSize: 13, cursor: plano.id === 'free' ? 'not-allowed' : 'pointer', opacity: plano.id === 'free' ? 0.4 : 1, lineHeight: 1 }}
+                        >✕</button>
+                      </div>
                     </div>
-                    <p style={{ fontSize: '28px', fontWeight: 700, color: '#F0EDE6', margin: '0 0 20px' }}>
+
+                    <p style={{ fontSize: '26px', fontWeight: 700, color: '#F0EDE6', margin: '0 0 16px' }}>
                       {plano.valor > 0 ? `R$ ${plano.valor}` : 'Grátis'}
                       {plano.valor > 0 && <span style={{ fontSize: '14px', color: '#9B9690', fontWeight: 400 }}>/mês</span>}
                     </p>
-                    <div style={{ fontSize: '14px', color: '#9B9690', lineHeight: 1.8 }}>
-                      <p style={{ margin: 0 }}>Imóveis: {plano.limiteImoveis === -1 ? 'Ilimitados' : plano.limiteImoveis}</p>
-                      <p style={{ margin: 0 }}>Solicitações: {plano.limiteSolicitacoes === -1 ? 'Ilimitadas' : plano.limiteSolicitacoes}</p>
+                    <div style={{ fontSize: '13px', color: '#9B9690', lineHeight: 1.8 }}>
+                      <p style={{ margin: 0 }}>Imóveis: {plano.limite_imoveis === -1 ? 'Ilimitados' : plano.limite_imoveis}</p>
+                      <p style={{ margin: 0 }}>Solicitações: {plano.limite_solicitacoes === -1 ? 'Ilimitadas' : plano.limite_solicitacoes}</p>
                     </div>
-                    <p style={{ fontSize: '13px', color: '#9B9690', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #232324' }}>
-                      Receita: <span style={{ color: plano.cor, fontWeight: 600 }}>{formatCurrency(plano.valor * assinantes)}</span>/mês
-                    </p>
+                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #232324', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', padding: '3px 10px', borderRadius: '2px', backgroundColor: `${plano.cor}20`, color: plano.cor }}>{assinantes} assinante{assinantes !== 1 ? 's' : ''}</span>
+                      <span style={{ fontSize: '13px', color: plano.cor, fontWeight: 600 }}>{formatCurrency(plano.valor * assinantes)}/mês</span>
+                    </div>
                   </div>
                 )
               })}
+              {planos.length === 0 && (
+                <div style={{ gridColumn: '1/-1', padding: '48px', textAlign: 'center', backgroundColor: '#181819', border: '1px solid #232324', borderRadius: 2 }}>
+                  <p style={{ color: '#9B9690', fontSize: 14, margin: 0 }}>Nenhum plano cadastrado. Execute o SQL de setup e clique em recarregar.</p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -638,7 +951,7 @@ export default function AdminPainelPage() {
                   ))}
                 </div>
                 {assinaturas.filter(a => a.status === 'ativa').slice(0, 30).map((ass, i, arr) => {
-                  const planoInfo = PLANOS.find(p => p.id === ass.plano) || PLANOS[0]
+                  const planoInfo = planos.find(p => p.id === ass.plano) || planos[0] || PLANO_VAZIO
                   return (
                     <div key={ass.id} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 120px 100px', gap: 0, padding: '14px 20px', borderBottom: i < arr.length - 1 ? '1px solid #232324' : 'none', alignItems: 'center' }}>
                       <span style={{ fontSize: '14px', color: '#F0EDE6' }}>{ass.corretor?.full_name || '—'}</span>
@@ -660,18 +973,27 @@ export default function AdminPainelPage() {
         )}
 
         {/* ── FINANCEIRO ── */}
-        {aba === 'financeiro' && (
+        {aba === 'financeiro' && (() => {
+          const pagPagos     = pagamentos.filter(p => p.status === 'pago' || p.status === 'isento').length
+          const pagPendentes = pagamentos.filter(p => p.status === 'pendente').length
+          const pagAtrasados = pagamentos.filter(p => p.status === 'atrasado').length
+          const recebidoMes  = pagamentos.filter(p => p.status === 'pago').reduce((s, p) => s + Number(p.valor), 0)
+
+          return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* KPIs */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
               {metricaBox(formatCurrency(metricas.mrrTotal), 'MRR Total', '#C9A84C')}
               {metricaBox(metricas.assinaturasPagas, 'Assinantes Pagos', '#5CB88A')}
               {metricaBox(formatCurrency(metricas.assinaturasPagas > 0 ? metricas.mrrTotal / metricas.assinaturasPagas : 0), 'Ticket Médio')}
               {metricaBox(formatCurrency(metricas.mrrTotal * 12), 'ARR Projetado', '#5C9BE0')}
             </div>
+
+            {/* Receita por plano */}
             <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '2px', padding: '28px' }}>
               <h3 style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '18px', fontWeight: 600, color: '#F0EDE6', margin: '0 0 20px' }}>Receita por Plano</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {PLANOS.filter(p => p.valor > 0).map(plano => {
+                {planos.filter(p => p.valor > 0).map(plano => {
                   const assinantes = corretores.filter(c => c.plano === plano.id).length
                   const receita = plano.valor * assinantes
                   const pct = metricas.mrrTotal > 0 ? (receita / metricas.mrrTotal) * 100 : 0
@@ -689,8 +1011,84 @@ export default function AdminPainelPage() {
                 })}
               </div>
             </div>
+
+            {/* ── Cobrança Mensal ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Header cobrança */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <h3 style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '18px', fontWeight: 600, color: '#F0EDE6', margin: 0 }}>Cobrança Mensal</h3>
+                <input
+                  type="month"
+                  value={mesPagamento}
+                  onChange={e => setMesPagamento(e.target.value)}
+                  style={{ padding: '8px 12px', backgroundColor: '#181819', border: '1px solid #2E2E30', borderRadius: 2, color: '#F0EDE6', fontSize: 14, outline: 'none' }}
+                />
+                <button
+                  onClick={gerarCobrancas}
+                  disabled={gerando}
+                  style={{ padding: '9px 18px', backgroundColor: '#5C9BE0', border: 'none', borderRadius: 2, color: '#fff', fontSize: 13, fontWeight: 700, cursor: gerando ? 'not-allowed' : 'pointer', opacity: gerando ? 0.7 : 1 }}
+                >
+                  {gerando ? 'Gerando...' : '⚡ Gerar Cobranças'}
+                </button>
+                {msgGerar && <span style={{ fontSize: 13, color: '#5CB88A' }}>{msgGerar}</span>}
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, fontSize: 13 }}>
+                  <span style={{ color: '#5CB88A' }}>✓ {pagPagos} pagos</span>
+                  <span style={{ color: '#C9A84C' }}>⏳ {pagPendentes} pendentes</span>
+                  {pagAtrasados > 0 && <span style={{ color: '#E05C5C' }}>⚠ {pagAtrasados} atrasados</span>}
+                  {recebidoMes > 0 && <span style={{ color: '#C9A84C', fontWeight: 700 }}>{formatCurrency(recebidoMes)} recebido</span>}
+                </div>
+              </div>
+
+              {/* Tabela de pagamentos */}
+              <div style={{ backgroundColor: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 90px 100px 110px 120px', gap: 0, padding: '12px 20px', borderBottom: '1px solid #232324', backgroundColor: '#232324' }}>
+                  {['Corretor', 'Plano', 'Valor', 'Vencimento', 'Status', 'Ações'].map(h => (
+                    <span key={h} style={{ fontSize: '11px', color: '#9B9690', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>{h}</span>
+                  ))}
+                </div>
+
+                {pagamentos.length === 0 && (
+                  <div style={{ padding: '40px', textAlign: 'center' }}>
+                    <p style={{ color: '#9B9690', fontSize: 14, margin: 0 }}>
+                      Nenhuma cobrança para {mesPagamento}. Clique em "Gerar Cobranças" para criar.
+                    </p>
+                  </div>
+                )}
+
+                {pagamentos.map((pag, i) => {
+                  const planoInfo = planos.find(p => p.id === pag.plano) || PLANO_VAZIO
+                  const statusColor = pag.status === 'pago' ? '#5CB88A' : pag.status === 'atrasado' ? '#E05C5C' : pag.status === 'isento' ? '#9B9690' : '#C9A84C'
+                  const statusLabel = { pago: 'Pago', atrasado: 'Atrasado', isento: 'Isento', pendente: 'Pendente' }[pag.status]
+                  return (
+                    <div
+                      key={pag.id}
+                      style={{ display: 'grid', gridTemplateColumns: '1fr 90px 90px 100px 110px 120px', gap: 0, padding: '14px 20px', borderBottom: i < pagamentos.length - 1 ? '1px solid #232324' : 'none', alignItems: 'center' }}
+                    >
+                      <div>
+                        <p style={{ fontSize: 14, color: '#F0EDE6', margin: 0 }}>{pag.corretor?.full_name || '—'}</p>
+                        <p style={{ fontSize: 11, color: '#9B9690', margin: '2px 0 0' }}>{pag.corretor?.email || ''}</p>
+                      </div>
+                      <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: 2, backgroundColor: `${planoInfo.cor}20`, color: planoInfo.cor, display: 'inline-block' }}>{planoInfo.nome}</span>
+                      <span style={{ fontSize: '13px', color: '#C9A84C' }}>{formatCurrency(Number(pag.valor))}</span>
+                      <span style={{ fontSize: '12px', color: '#9B9690' }}>{new Date(pag.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                      <div>
+                        <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: 2, backgroundColor: `${statusColor}20`, color: statusColor, display: 'inline-block' }}>{statusLabel}</span>
+                        {pag.data_pagamento && <p style={{ fontSize: 10, color: '#9B9690', margin: '3px 0 0' }}>{new Date(pag.data_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}</p>}
+                      </div>
+                      <button
+                        onClick={() => setModalConfirmarPag(pag)}
+                        style={{ padding: '6px 12px', backgroundColor: pag.status === 'pago' ? 'transparent' : '#5CB88A', border: pag.status === 'pago' ? '1px solid #2E2E30' : 'none', borderRadius: 2, color: pag.status === 'pago' ? '#9B9690' : '#fff', fontSize: 12, fontWeight: pag.status === 'pago' ? 400 : 700, cursor: 'pointer' }}
+                      >
+                        {pag.status === 'pago' ? 'Editar' : 'Confirmar'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
-        )}
+          )
+        })()}
       </div>
     </div>
   )

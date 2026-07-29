@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Solicitacao, Cidade } from '@/types/bid'
-import { TIPO_IMOVEL_OPTIONS } from '@/lib/format'
 import BairroCombobox from '@/components/localidades/BairroCombobox'
+import { useOpcoes } from '@/lib/opcoes-client'
 import NovaCidadeForm from '@/components/localidades/NovaCidadeForm'
 
 interface ModalSolicitacaoProps {
@@ -37,7 +37,7 @@ type FormData = {
   cliente_nome: string
   cliente_phone: string
   cliente_email: string
-  tipo_negocio: 'Comprar' | 'Alugar'
+  tipo_negocio: string
   tipo_imovel: string
   cidade: string
   bairro_desejado: string
@@ -70,6 +70,12 @@ export default function ModalSolicitacao({
   const [matchErro, setMatchErro] = useState('')
   const [cidadesList, setCidadesList] = useState<Cidade[]>(cidades)
   const [showNovaCidade, setShowNovaCidade] = useState(false)
+
+  const { opcoes: tiposNegocioBusca } = useOpcoes('tipo_negocio_busca', ['Comprar', 'Alugar'])
+  const { opcoes: tiposImovel } = useOpcoes('tipo_imovel', [
+    'Apartamento', 'Casa', 'Casa em Condomínio', 'Terreno', 'Sala Comercial',
+    'Loja', 'Galpão', 'Chácara / Sítio', 'Flat', 'Studio',
+  ])
 
   const [form, setForm] = useState<FormData>({
     cliente_nome: solicitacao?.cliente_nome || '',
@@ -369,15 +375,16 @@ export default function ModalSolicitacao({
             <div>
               <label style={labelStyle}>Tipo de Negocio</label>
               <select style={inputStyle} value={form.tipo_negocio} onChange={(e) => set('tipo_negocio', e.target.value)}>
-                <option value="Comprar">Comprar</option>
-                <option value="Alugar">Alugar</option>
+                {tiposNegocioBusca.map((t) => (
+                  <option key={t.valor} value={t.valor}>{t.label}</option>
+                ))}
               </select>
             </div>
             <div>
               <label style={labelStyle}>Tipo de Imovel</label>
               <select style={inputStyle} value={form.tipo_imovel} onChange={(e) => set('tipo_imovel', e.target.value)}>
-                {TIPO_IMOVEL_OPTIONS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                {tiposImovel.map((t) => (
+                  <option key={t.valor} value={t.valor}>{t.label}</option>
                 ))}
               </select>
             </div>
