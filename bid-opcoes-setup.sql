@@ -28,17 +28,24 @@ CREATE INDEX IF NOT EXISTS idx_bid_opcoes_cat ON public.bid_opcoes (categoria);
 -- RLS
 ALTER TABLE public.bid_opcoes ENABLE ROW LEVEL SECURITY;
 
+-- DROP antes de cada CREATE: o Postgres nao aceita CREATE POLICY IF NOT
+-- EXISTS, entao sem isto o script quebra se rodar uma segunda vez.
+
 -- Leitura: todos podem ler (sistema e as próprias)
+DROP POLICY IF EXISTS "read_bid_opcoes" ON public.bid_opcoes;
 CREATE POLICY "read_bid_opcoes" ON public.bid_opcoes
   FOR SELECT USING (corretor_id IS NULL OR corretor_id = auth.uid());
 
 -- Escrita: corretor só gerencia as próprias
+DROP POLICY IF EXISTS "write_bid_opcoes" ON public.bid_opcoes;
 CREATE POLICY "write_bid_opcoes" ON public.bid_opcoes
   FOR INSERT WITH CHECK (corretor_id = auth.uid());
 
+DROP POLICY IF EXISTS "delete_bid_opcoes" ON public.bid_opcoes;
 CREATE POLICY "delete_bid_opcoes" ON public.bid_opcoes
   FOR DELETE USING (corretor_id = auth.uid() AND sistema = false);
 
+DROP POLICY IF EXISTS "update_bid_opcoes" ON public.bid_opcoes;
 CREATE POLICY "update_bid_opcoes" ON public.bid_opcoes
   FOR UPDATE USING (corretor_id = auth.uid() AND sistema = false);
 
