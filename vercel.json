@@ -1,4 +1,14 @@
 {
   "framework": "nextjs",
-  "regions": ["gru1"]
+  "regions": ["gru1"],
+  "crons": [
+    {
+      "path": "/api/cron/follow-ups",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/indices",
+      "schedule": "0 10 * * *"
+    }
+  ]
 }
