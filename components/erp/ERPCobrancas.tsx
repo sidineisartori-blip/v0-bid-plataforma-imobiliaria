@@ -2,9 +2,14 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { calcVencimento, formatarMes, mesAnterior, mesSeguinte, mesAtual, fmtBRLFull } from '@/lib/vencimento'
+import { cn } from '@/lib/utils'
 import ModalConfirm from '@/components/ui/ModalConfirm'
+import { Button } from '@/components/ui/button'
+import { StatCard } from '@/components/cockpit/StatCard'
+import { StatusBadge } from '@/components/cockpit/StatusBadge'
 
 export interface Cobranca {
   id: string
@@ -29,13 +34,6 @@ interface Props {
   cobrancas: Cobranca[]
   corretorId: string
   mesInicial: string
-}
-
-const STATUS_MAP = {
-  aberto:   { label: 'Em aberto',  cor: '#C9A84C', bg: 'rgba(201,168,76,0.12)' },
-  pago:     { label: 'Pago',       cor: '#5CB88A', bg: 'rgba(92,184,138,0.12)' },
-  atrasado: { label: 'Atrasado',   cor: '#E05C5C', bg: 'rgba(224,92,92,0.12)'  },
-  isento:   { label: 'Isento',     cor: '#9B9690', bg: 'rgba(155,150,144,0.12)'},
 }
 
 export default function ERPCobrancas({ cobrancas, corretorId, mesInicial }: Props) {
@@ -76,10 +74,12 @@ export default function ERPCobrancas({ cobrancas, corretorId, mesInicial }: Prop
     router.refresh()
   }
 
-  const S = { color: 'var(--color-text, #F0EDE6)' } as React.CSSProperties
+  function plural(n: number) {
+    return n === 1 ? '1 cobrança' : `${n} cobranças`
+  }
 
   return (
-    <div style={{ ...S }}>
+    <div className="mt-5">
       {confirmarLiquidar && (
         <ModalConfirm
           titulo="Confirmar recebimento?"
@@ -91,95 +91,104 @@ export default function ERPCobrancas({ cobrancas, corretorId, mesInicial }: Prop
           carregando={liquidandoId === confirmarLiquidar}
         />
       )}
+
       {/* Navegação temporal */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <button onClick={() => setMes(mesAnterior(mes))} style={{ background: '#232324', border: '1px solid #2E2E30', borderRadius: 2, padding: '6px 14px', fontSize: 13, color: '#9B9690', cursor: 'pointer' }}>← Anterior</button>
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#F0EDE6', minWidth: 100, textAlign: 'center' }}>{formatarMes(mes)}</span>
-        <button onClick={() => setMes(mesSeguinte(mes))} style={{ background: '#232324', border: '1px solid #2E2E30', borderRadius: 2, padding: '6px 14px', fontSize: 13, color: '#9B9690', cursor: 'pointer' }}>Seguinte →</button>
+      <div className="mb-5 flex items-center gap-3">
+        <Button variant="outline" size="icon-sm" aria-label="Mês anterior" onClick={() => setMes(mesAnterior(mes))}>
+          <ChevronLeft />
+        </Button>
+        <span className="min-w-[130px] text-center text-[15px] font-semibold capitalize text-foreground">
+          {formatarMes(mes)}
+        </span>
+        <Button variant="outline" size="icon-sm" aria-label="Mês seguinte" onClick={() => setMes(mesSeguinte(mes))}>
+          <ChevronRight />
+        </Button>
         {mes !== mesAtual() && (
-          <button onClick={() => setMes(mesAtual())} style={{ background: 'none', border: 'none', fontSize: 12, color: '#C9A84C', cursor: 'pointer' }}>Mês atual</button>
+          <Button variant="link" size="sm" onClick={() => setMes(mesAtual())}>
+            Mês atual
+          </Button>
         )}
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
-        {[
-          { label: 'Recebido no mês', val: fmtBRLFull(kpis.totalPago),     sub: `${kpis.qtdPagas} cobranças`,     cor: '#5CB88A' },
-          { label: 'A receber',       val: fmtBRLFull(kpis.totalAReceber),  sub: `${kpis.qtdAReceber} cobranças`,  cor: '#C9A84C' },
-          { label: 'Em atraso',       val: fmtBRLFull(kpis.totalAtrasado),  sub: `${kpis.qtdAtrasadas} cobranças`, cor: '#E05C5C' },
-        ].map((k) => (
-          <div key={k.label} style={{ background: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 2, padding: '14px 18px' }}>
-            <p style={{ fontSize: 11, color: '#9B9690', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k.label}</p>
-            <p style={{ fontSize: 20, fontWeight: 700, color: k.cor, marginBottom: 2 }}>{k.val}</p>
-            <p style={{ fontSize: 12, color: '#9B9690' }}>{k.sub}</p>
-          </div>
-        ))}
+      <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+        <StatCard rotulo="Recebido no mês" valor={fmtBRLFull(kpis.totalPago)}    apoio={plural(kpis.qtdPagas)}     tom="positivo" />
+        <StatCard rotulo="A receber"       valor={fmtBRLFull(kpis.totalAReceber)} apoio={plural(kpis.qtdAReceber)}  tom="atencao" />
+        <StatCard rotulo="Em atraso"       valor={fmtBRLFull(kpis.totalAtrasado)} apoio={plural(kpis.qtdAtrasadas)} tom={kpis.qtdAtrasadas > 0 ? 'critico' : 'neutro'} />
       </div>
 
-      {/* Lista */}
       {filtradas.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#9B9690', fontSize: 14 }}>
-          Nenhuma cobrança em {formatarMes(mes)}.
+        <div className="rounded-lg border border-border bg-card px-5 py-14 text-center">
+          <p className="text-sm text-muted-foreground">
+            Nenhuma cobrança em <span className="capitalize">{formatarMes(mes)}</span>.
+          </p>
         </div>
       ) : (
-        <div style={{ background: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 2 }}>
-          {/* Footer totalizador */}
-          <div style={{ padding: '8px 18px', borderBottom: '1px solid #232324', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, color: '#9B9690' }}>
-              {filtradas.length} cobranças · {filtradas.filter((c: Cobranca) => c.contrato?.imovel).length} imóveis
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border bg-secondary px-4 py-2">
+            <span className="text-xs text-muted-foreground">
+              {plural(filtradas.length)} · {filtradas.filter((c: Cobranca) => c.contrato?.imovel).length} imóveis
             </span>
-            <span style={{ fontSize: 11, color: '#9B9690' }}>
-              Total: <span style={{ color: '#C9A84C', fontWeight: 600 }}>{fmtBRLFull(filtradas.reduce((s: number, c: Cobranca) => s + c.valor, 0))}</span>
+            <span className="text-xs text-muted-foreground">
+              Total:{' '}
+              <span className="font-semibold tabular-nums text-primary">
+                {fmtBRLFull(filtradas.reduce((s: number, c: Cobranca) => s + c.valor, 0))}
+              </span>
             </span>
           </div>
+
           {filtradas.map((c: Cobranca, i: number) => {
-            const sm = STATUS_MAP[c.status as keyof typeof STATUS_MAP] ?? { label: c.status || '—', cor: '#9B9690', bg: 'rgba(155,150,144,0.12)' }
             const venc = calcVencimento(c.data_vencimento)
+            const faixa =
+              c.status === 'atrasado' ? 'border-l-destructive'
+              : c.status === 'pago'   ? 'border-l-[var(--color-green)]'
+              : 'border-l-transparent'
+
             return (
               <div
                 key={c.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr auto',
-                  gap: 12,
-                  padding: '13px 18px',
-                  borderBottom: i < filtradas.length - 1 ? '1px solid #232324' : 'none',
-                  borderLeft: c.status === 'atrasado' ? '3px solid #E05C5C' : c.status === 'pago' ? '3px solid #5CB88A' : '3px solid transparent',
-                  alignItems: 'center',
-                }}
+                className={cn(
+                  'grid grid-cols-[1fr_auto] items-center gap-3 border-l-[3px] px-4 py-3',
+                  i < filtradas.length - 1 && 'border-b border-b-border',
+                  faixa,
+                )}
               >
-                <div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 3, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#F0EDE6' }}>
+                <div className="min-w-0">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground">
                       {c.contrato?.cliente_nome || '—'}
                     </span>
-                    <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 2, background: sm.bg, color: sm.cor, fontWeight: 600 }}>
-                      {sm.label}
-                    </span>
+                    <StatusBadge status={c.status} />
                     {c.status !== 'pago' && c.data_vencimento && (
-                      <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 2, background: venc.bgCor, color: venc.cor, fontWeight: 600 }}>
-                        {venc.label}
+                      <StatusBadge
+                        label={venc.label}
+                        tom={venc.status.startsWith('atrasado') ? 'critico' : 'atencao'}
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {c.contrato?.imovel && (
+                      <span>{c.contrato.imovel.titulo} · {c.contrato.imovel.cidade}</span>
+                    )}
+                    <span className="font-semibold tabular-nums text-primary">{fmtBRLFull(c.valor)}</span>
+                    {c.data_pagamento && (
+                      <span className="tabular-nums text-[var(--color-green)]">
+                        Pago em {new Date(c.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR')}
                       </span>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    {c.contrato?.imovel && (
-                      <span style={{ fontSize: 12, color: '#9B9690' }}>{c.contrato.imovel.titulo} · {c.contrato.imovel.cidade}</span>
-                    )}
-                    <span style={{ fontSize: 12, color: '#C9A84C', fontWeight: 600 }}>{fmtBRLFull(c.valor)}</span>
-                    {c.data_pagamento && (
-                      <span style={{ fontSize: 12, color: '#5CB88A' }}>Pago em {new Date(c.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                    )}
-                  </div>
                 </div>
+
                 {c.status !== 'pago' && c.status !== 'isento' && (
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setConfirmarLiquidar(c.id)}
                     disabled={liquidandoId === c.id}
-                    style={{ background: 'rgba(92,184,138,0.1)', border: '1px solid rgba(92,184,138,0.25)', borderRadius: 2, padding: '6px 14px', fontSize: 12, color: '#5CB88A', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    className="whitespace-nowrap border-[var(--color-green)]/30 text-[var(--color-green)] hover:bg-[var(--color-green)]/10 hover:text-[var(--color-green)]"
                   >
-                    {liquidandoId === c.id ? '...' : 'Liquidar'}
-                  </button>
+                    {liquidandoId === c.id ? '…' : 'Liquidar'}
+                  </Button>
                 )}
               </div>
             )

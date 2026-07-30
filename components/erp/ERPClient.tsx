@@ -2,12 +2,19 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { ChevronLeft, ChevronRight, Plus, TriangleAlert, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatCurrency } from '@/lib/format'
 import { calcVencimento, calcReajuste, mesAtual } from '@/lib/vencimento'
+import { cn } from '@/lib/utils'
 import ModalContrato from './ModalContrato'
 import { ToastContainer, useToastSimples } from '@/components/ui/ToastSimples'
 import ModalConfirm from '@/components/ui/ModalConfirm'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/cockpit/PageHeader'
+import { StatCard } from '@/components/cockpit/StatCard'
+import { StatusBadge } from '@/components/cockpit/StatusBadge'
 import ERPCobrancas, { type Cobranca } from './ERPCobrancas'
 import ERPRepasses,  { type Repasse }  from './ERPRepasses'
 import ERPExtrato,   { type MovimentacaoExtrato } from './ERPExtrato'
@@ -55,17 +62,17 @@ interface ERPClientProps {
   corretorId: string
 }
 
-const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  rascunho:              { label: 'Rascunho',        bg: 'rgba(155,150,144,0.12)', color: '#9B9690' },
-  aguardando_assinatura: { label: 'Ag. Assinatura',  bg: 'rgba(201,168,76,0.12)',  color: '#C9A84C' },
-  ativo:                 { label: 'Ativo',            bg: 'rgba(34,197,94,0.12)',   color: '#22c55e' },
-  encerrado:             { label: 'Encerrado',        bg: 'rgba(155,150,144,0.12)', color: '#9B9690' },
-  cancelado:             { label: 'Cancelado',        bg: 'rgba(239,68,68,0.12)',   color: '#ef4444' },
+const TIPO_LABEL: Record<string, string> = {
+  locacao: 'Locação',
+  venda:   'Venda',
 }
 
-const TIPO_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  locacao: { label: 'Locação', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  venda:   { label: 'Venda',   color: '#C9A84C', bg: 'rgba(201,168,76,0.12)' },
+const STATUS_LABEL: Record<string, string> = {
+  rascunho:              'Rascunho',
+  aguardando_assinatura: 'Ag. Assinatura',
+  ativo:                 'Ativo',
+  encerrado:             'Encerrado',
+  cancelado:             'Cancelado',
 }
 
 function formatData(iso: string | null) {
@@ -75,6 +82,15 @@ function formatData(iso: string | null) {
 
 const PAGE_SIZE = 10
 type Aba = 'contratos' | 'cobrancas' | 'repasses' | 'extrato' | 'chamados' | 'vistorias'
+
+const ABAS: { key: Aba; label: string }[] = [
+  { key: 'contratos', label: 'Contratos' },
+  { key: 'cobrancas', label: 'Cobranças' },
+  { key: 'repasses',  label: 'Repasses'  },
+  { key: 'extrato',   label: 'Extrato'   },
+  { key: 'chamados',  label: 'Chamados'  },
+  { key: 'vistorias', label: 'Vistorias' },
+]
 
 export default function ERPClient({
   contratos, cobrancas, repasses, movimentacoes, saldoAnterior, imoveis, corretorId
@@ -147,27 +163,17 @@ export default function ERPClient({
     router.refresh()
   }
 
-  const INP: React.CSSProperties = {
-    background: 'var(--color-dark-2, #181819)',
-    border: '1px solid var(--color-dark-4, #2E2E30)',
-    borderRadius: 2,
-    padding: '8px 12px',
-    fontSize: 13,
-    color: '#F0EDE6',
-    outline: 'none',
-  }
+  const selectClasse =
+    'h-9 rounded-md border border-input bg-card px-3 text-sm text-foreground shadow-xs outline-none ' +
+    'transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
 
-  const ABAS: { key: Aba; label: string }[] = [
-    { key: 'contratos', label: 'Contratos' },
-    { key: 'cobrancas', label: 'Cobranças' },
-    { key: 'repasses',  label: 'Repasses'  },
-    { key: 'extrato',   label: 'Extrato'   },
-    { key: 'chamados',  label: 'Chamados'  },
-    { key: 'vistorias', label: 'Vistorias' },
-  ]
+  const chipClasse =
+    'inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs text-muted-foreground ' +
+    'transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none ' +
+    'focus-visible:ring-2 focus-visible:ring-ring'
 
   return (
-    <div style={{ padding: '32px 24px', maxWidth: 1100, margin: '0 auto', color: '#F0EDE6' }}>
+    <div className="mx-auto max-w-[1100px] px-6 py-8">
       <ToastContainer toasts={toasts} onRemover={removerToast} />
       {confirmarExcluir && (
         <ModalConfirm
@@ -179,65 +185,54 @@ export default function ERPClient({
           carregando={deletandoId === confirmarExcluir}
         />
       )}
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, fontWeight: 700, color: '#F0EDE6', marginBottom: 4 }}>ERP Imobiliário</h1>
-          <p style={{ fontSize: 13, color: '#9B9690' }}>Contratos, cobranças, repasses e extrato financeiro.</p>
-        </div>
-        {aba === 'contratos' && (
-          <button
-            onClick={() => { setContratoEditando(null); setModalAberto(true) }}
-            style={{ background: '#C9A84C', color: '#0E0E0F', border: 'none', borderRadius: 2, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-          >
-            + Novo Contrato
-          </button>
-        )}
-      </div>
+
+      <PageHeader
+        titulo="ERP Imobiliário"
+        descricao="Contratos, cobranças, repasses e extrato financeiro."
+        acoes={
+          aba === 'contratos' && (
+            <Button onClick={() => { setContratoEditando(null); setModalAberto(true) }}>
+              <Plus /> Novo contrato
+            </Button>
+          )
+        }
+      />
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px,1fr))', gap: 12, marginBottom: 24 }}>
-        {[
-          { label: 'Contratos Ativos',  value: kpis.locacoes + kpis.vendas, cor: '#C9A84C' },
-          { label: 'Locações',          value: kpis.locacoes,  cor: '#60a5fa' },
-          { label: 'Vendas',            value: kpis.vendas,    cor: '#C9A84C' },
-          { label: 'Receita Mês',       value: formatCurrency(kpis.receitaMes), cor: '#5CB88A' },
-          { label: 'Comissão Pendente', value: formatCurrency(kpis.comissaoPendente), cor: '#C9A84C' },
-          { label: 'A Reajustar',       value: kpis.aReajustar, cor: kpis.aReajustar > 0 ? '#E05C5C' : '#9B9690' },
-        ].map((k) => (
-          <div key={k.label} style={{ background: '#181819', border: '1px solid rgba(201,168,76,0.12)', borderRadius: 2, padding: '14px 18px' }}>
-            <p style={{ fontSize: 11, color: '#9B9690', marginBottom: 6, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{k.label}</p>
-            <p style={{ fontSize: 22, fontWeight: 700, color: k.cor }}>{k.value}</p>
-          </div>
-        ))}
+      <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
+        <StatCard rotulo="Contratos ativos"  valor={kpis.locacoes + kpis.vendas} />
+        <StatCard rotulo="Locações"          valor={kpis.locacoes} />
+        <StatCard rotulo="Vendas"            valor={kpis.vendas} />
+        <StatCard rotulo="Receita do mês"    valor={formatCurrency(kpis.receitaMes)} tom="positivo" />
+        <StatCard rotulo="Comissão pendente" valor={formatCurrency(kpis.comissaoPendente)} tom="atencao" />
+        <StatCard
+          rotulo="A reajustar"
+          valor={kpis.aReajustar}
+          tom={kpis.aReajustar > 0 ? 'critico' : 'neutro'}
+        />
       </div>
 
       {/* Abas */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #232324', marginBottom: 20, gap: 0 }}>
+      <div role="tablist" className="mt-6 flex gap-0 overflow-x-auto border-b border-border">
         {ABAS.map((a) => (
           <button
             key={a.key}
+            role="tab"
+            aria-selected={aba === a.key}
             onClick={() => setAba(a.key)}
-            style={{
-              background: 'none',
-              border: 'none',
-              borderBottom: aba === a.key ? '2px solid #C9A84C' : '2px solid transparent',
-              padding: '10px 20px',
-              fontSize: 13,
-              fontWeight: aba === a.key ? 600 : 400,
-              color: aba === a.key ? '#C9A84C' : '#9B9690',
-              cursor: 'pointer',
-              position: 'relative',
-              marginBottom: -1,
-            }}
+            className={cn(
+              '-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-5 py-2.5 text-sm transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+              aba === a.key
+                ? 'border-primary font-semibold text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+            )}
           >
             {a.label}
             {badges[a.key] > 0 && (
-              <span style={{
-                marginLeft: 6, background: '#E05C5C', color: '#fff',
-                borderRadius: 9999, fontSize: 10, fontWeight: 700,
-                padding: '1px 6px', verticalAlign: 'middle',
-              }}>{badges[a.key]}</span>
+              <span className="rounded-full bg-destructive px-1.5 py-px text-[10px] font-bold text-white tabular-nums">
+                {badges[a.key]}
+              </span>
             )}
           </button>
         ))}
@@ -245,30 +240,43 @@ export default function ERPClient({
 
       {/* Aba: Contratos */}
       {aba === 'contratos' && (
-        <>
-          {/* Alerta reajuste */}
+        <div className="mt-5">
           {kpis.aReajustar > 0 && (
-            <div style={{ background: 'rgba(224,92,92,0.08)', border: '1px solid rgba(224,92,92,0.25)', borderRadius: 2, padding: '12px 18px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p style={{ fontSize: 13, color: '#E05C5C' }}>
-                ⚠ Você tem <strong>{kpis.aReajustar}</strong> contrato(s) com reajuste nos próximos 30 dias.
+            <div className="mb-4 flex items-center gap-2.5 rounded-lg border border-destructive/25 bg-destructive/5 px-4 py-3">
+              <TriangleAlert className="size-4 shrink-0 text-destructive" />
+              <p className="text-sm text-destructive">
+                Você tem <strong className="font-semibold">{kpis.aReajustar}</strong>{' '}
+                {kpis.aReajustar === 1 ? 'contrato' : 'contratos'} com reajuste nos próximos 30 dias.
               </p>
             </div>
           )}
 
           {/* Filtros */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-            <input
-              type="text" placeholder="Buscar cliente, imóvel..." value={busca}
+          <div className="mb-4 flex flex-wrap gap-2.5">
+            <Input
+              type="text"
+              placeholder="Buscar cliente, imóvel..."
+              value={busca}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setBusca(e.target.value); setPagina(1) }}
-              style={{ ...INP, flex: '1 1 200px' }}
+              className="min-w-[200px] flex-1 bg-card"
             />
-            <select value={filtroTipo} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroTipo(e.target.value); setPagina(1) }} style={INP}>
-              <option value="">Tipo: Todos</option>
+            <select
+              aria-label="Filtrar por tipo"
+              value={filtroTipo}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroTipo(e.target.value); setPagina(1) }}
+              className={selectClasse}
+            >
+              <option value="">Tipo: todos</option>
               <option value="locacao">Locação</option>
               <option value="venda">Venda</option>
             </select>
-            <select value={filtroStatus} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroStatus(e.target.value); setPagina(1) }} style={INP}>
-              <option value="">Status: Todos</option>
+            <select
+              aria-label="Filtrar por status"
+              value={filtroStatus}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setFiltroStatus(e.target.value); setPagina(1) }}
+              className={selectClasse}
+            >
+              <option value="">Status: todos</option>
               <option value="rascunho">Rascunho</option>
               <option value="aguardando_assinatura">Ag. Assinatura</option>
               <option value="ativo">Ativo</option>
@@ -279,101 +287,114 @@ export default function ERPClient({
 
           {/* Chips de filtros ativos */}
           {(filtroStatus || filtroTipo || busca) && (
-            <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+            <div className="mb-3 flex flex-wrap gap-1.5">
               {filtroTipo && (
-                <span style={{ fontSize: 11, padding: '3px 10px', background: 'rgba(96,165,250,0.12)', color: '#60a5fa', borderRadius: 2, cursor: 'pointer' }}
-                  onClick={() => setFiltroTipo('')}>
-                  Tipo: {TIPO_BADGE[filtroTipo]?.label} ×
-                </span>
+                <button type="button" className={chipClasse} onClick={() => setFiltroTipo('')}>
+                  Tipo: {TIPO_LABEL[filtroTipo]} <X className="size-3" />
+                </button>
               )}
               {filtroStatus && (
-                <span style={{ fontSize: 11, padding: '3px 10px', background: 'rgba(201,168,76,0.12)', color: '#C9A84C', borderRadius: 2, cursor: 'pointer' }}
-                  onClick={() => setFiltroStatus('')}>
-                  Status: {STATUS_BADGE[filtroStatus]?.label} ×
-                </span>
+                <button type="button" className={chipClasse} onClick={() => setFiltroStatus('')}>
+                  Status: {STATUS_LABEL[filtroStatus]} <X className="size-3" />
+                </button>
               )}
               {busca && (
-                <span style={{ fontSize: 11, padding: '3px 10px', background: 'rgba(155,150,144,0.1)', color: '#9B9690', borderRadius: 2, cursor: 'pointer' }}
-                  onClick={() => setBusca('')}>
-                  Busca: "{busca}" ×
-                </span>
+                <button type="button" className={chipClasse} onClick={() => setBusca('')}>
+                  Busca: “{busca}” <X className="size-3" />
+                </button>
               )}
             </div>
           )}
 
-          <p style={{ fontSize: 12, color: '#9B9690', marginBottom: 10 }}>
+          <p className="mb-2.5 text-xs text-muted-foreground">
             {filtrados.length} {filtrados.length === 1 ? 'contrato' : 'contratos'}
             {filtrados.length > 0 && ` · Total: ${formatCurrency(filtrados.reduce((s: number, c: Contrato) => s + c.valor_contrato, 0))}`}
           </p>
 
           {filtrados.length === 0 ? (
-            <div style={{ background: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 2, padding: '60px 20px', textAlign: 'center' }}>
-              <p style={{ color: '#9B9690', fontSize: 14, marginBottom: 16 }}>
+            <div className="rounded-lg border border-border bg-card px-5 py-14 text-center">
+              <p className="mb-4 text-sm text-muted-foreground">
                 {contratos.length === 0 ? 'Nenhum contrato cadastrado.' : 'Nenhum resultado para os filtros.'}
               </p>
               {contratos.length === 0 && (
-                <button onClick={() => { setContratoEditando(null); setModalAberto(true) }}
-                  style={{ background: '#C9A84C', color: '#0E0E0F', border: 'none', borderRadius: 2, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                  Criar primeiro contrato
-                </button>
+                <Button onClick={() => { setContratoEditando(null); setModalAberto(true) }}>
+                  <Plus /> Criar primeiro contrato
+                </Button>
               )}
             </div>
           ) : (
-            <div style={{ background: '#181819', border: '1px solid rgba(201,168,76,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+            <div className="overflow-hidden rounded-lg border border-border bg-card">
               {visiveis.map((c: Contrato, i: number) => {
-                const sb = STATUS_BADGE[c.status]
-                const tb = TIPO_BADGE[c.tipo]
-                // Vencimento do contrato de locação
                 const vencFim = c.tipo === 'locacao' ? calcVencimento(c.data_fim) : null
-                // Reajuste
                 const reajuste = c.tipo === 'locacao' && c.status === 'ativo'
                   ? calcReajuste(c.data_inicio, c.indice_reajuste) : null
 
+                // Faixa lateral: sinaliza urgência sem depender só de cor no texto
+                const faixa =
+                  reajuste?.precisaReajuste || vencFim?.status === 'atrasado_grave'
+                    ? 'border-l-destructive'
+                    : vencFim?.status === 'vence_em_breve'
+                    ? 'border-l-primary'
+                    : 'border-l-transparent'
+
                 return (
-                  <div key={c.id} style={{
-                    display: 'grid', gridTemplateColumns: '1fr auto', gap: 12,
-                    padding: '14px 18px',
-                    borderBottom: i < visiveis.length - 1 ? '1px solid #232324' : 'none',
-                    borderLeft: reajuste?.precisaReajuste ? '3px solid #E05C5C'
-                      : vencFim?.status === 'atrasado_grave' ? '3px solid #E05C5C'
-                      : vencFim?.status === 'vence_em_breve' ? '3px solid #C9A84C'
-                      : '3px solid transparent',
-                    alignItems: 'center',
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#F0EDE6' }}>{c.cliente_nome}</span>
-                        <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 2, fontWeight: 600, background: tb?.bg, color: tb?.color }}>{tb?.label}</span>
-                        <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 2, fontWeight: 600, background: sb?.bg, color: sb?.color }}>{sb?.label}</span>
-                        {/* Status inline de vencimento */}
+                  <div
+                    key={c.id}
+                    className={cn(
+                      'grid grid-cols-[1fr_auto] items-center gap-3 border-l-[3px] px-4 py-3.5',
+                      i < visiveis.length - 1 && 'border-b border-b-border',
+                      faixa,
+                    )}
+                  >
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">{c.cliente_nome}</span>
+                        <StatusBadge
+                          label={TIPO_LABEL[c.tipo]}
+                          tom={c.tipo === 'locacao' ? 'info' : 'atencao'}
+                        />
+                        <StatusBadge status={c.status} label={STATUS_LABEL[c.status]} />
                         {vencFim && (vencFim.status === 'vence_hoje' || vencFim.status === 'vence_amanha' || vencFim.status === 'vence_em_breve' || vencFim.status.startsWith('atrasado')) && (
-                          <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 2, fontWeight: 600, background: vencFim.bgCor, color: vencFim.cor }}>
-                            {vencFim.label}
-                          </span>
+                          <StatusBadge
+                            label={vencFim.label}
+                            tom={vencFim.status.startsWith('atrasado') ? 'critico' : 'atencao'}
+                          />
                         )}
                         {reajuste?.precisaReajuste && (
-                          <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 2, fontWeight: 600, background: 'rgba(224,92,92,0.12)', color: '#E05C5C' }}>
-                            {reajuste.label}
-                          </span>
+                          <StatusBadge label={reajuste.label} tom="critico" />
                         )}
                       </div>
-                      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                        {c.imovel && <span style={{ fontSize: 12, color: '#9B9690' }}>{c.imovel.titulo} · {[c.imovel.bairro, c.imovel.cidade].filter(Boolean).join(', ')}</span>}
-                        <span style={{ fontSize: 12, color: '#C9A84C', fontWeight: 600 }}>{formatCurrency(c.valor_contrato)}</span>
-                        {c.data_inicio && <span style={{ fontSize: 12, color: '#9B9690' }}>Início: {formatData(c.data_inicio)}</span>}
-                        {c.tipo === 'locacao' && c.data_fim && <span style={{ fontSize: 12, color: '#9B9690' }}>Fim: {formatData(c.data_fim)}</span>}
-                        {c.tipo === 'locacao' && c.valor_aluguel && <span style={{ fontSize: 12, color: '#9B9690' }}>Alug. {formatCurrency(c.valor_aluguel)}/mês</span>}
+                      <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-muted-foreground">
+                        {c.imovel && (
+                          <span>{c.imovel.titulo} · {[c.imovel.bairro, c.imovel.cidade].filter(Boolean).join(', ')}</span>
+                        )}
+                        <span className="font-semibold tabular-nums text-primary">
+                          {formatCurrency(c.valor_contrato)}
+                        </span>
+                        {c.data_inicio && <span className="tabular-nums">Início: {formatData(c.data_inicio)}</span>}
+                        {c.tipo === 'locacao' && c.data_fim && <span className="tabular-nums">Fim: {formatData(c.data_fim)}</span>}
+                        {c.tipo === 'locacao' && c.valor_aluguel && (
+                          <span className="tabular-nums">Aluguel {formatCurrency(c.valor_aluguel)}/mês</span>
+                        )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                      <button onClick={() => { setContratoEditando(c); setModalAberto(true) }}
-                        style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 2, padding: '6px 12px', fontSize: 12, color: '#C9A84C', cursor: 'pointer' }}>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setContratoEditando(c); setModalAberto(true) }}
+                      >
                         Editar
-                      </button>
-                      <button onClick={() => setConfirmarExcluir(c.id)} disabled={deletandoId === c.id}
-                        style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 2, padding: '6px 12px', fontSize: 12, color: '#ef4444', cursor: 'pointer' }}>
-                        {deletandoId === c.id ? '...' : 'Excluir'}
-                      </button>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => setConfirmarExcluir(c.id)}
+                        disabled={deletandoId === c.id}
+                      >
+                        {deletandoId === c.id ? '…' : 'Excluir'}
+                      </Button>
                     </div>
                   </div>
                 )
@@ -383,46 +404,54 @@ export default function ERPClient({
 
           {/* Paginação */}
           {totalPaginas > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20 }}>
-              <button onClick={() => setPagina((p: number) => Math.max(1, p - 1))} disabled={paginaAtual === 1}
-                style={{ background: '#181819', border: '1px solid #2E2E30', borderRadius: 2, padding: '6px 14px', fontSize: 13, cursor: paginaAtual === 1 ? 'default' : 'pointer', color: paginaAtual === 1 ? '#2E2E30' : '#9B9690' }}>←</button>
+            <nav aria-label="Paginação" className="mt-5 flex items-center justify-center gap-1.5">
+              <Button
+                variant="outline" size="icon-sm" aria-label="Página anterior"
+                onClick={() => setPagina((p: number) => Math.max(1, p - 1))}
+                disabled={paginaAtual === 1}
+              >
+                <ChevronLeft />
+              </Button>
               {Array.from({ length: totalPaginas }, (_: unknown, idx: number) => idx + 1).map((n: number) => (
-                <button key={n} onClick={() => setPagina(n)}
-                  style={{ background: n === paginaAtual ? '#C9A84C' : '#181819', border: '1px solid ' + (n === paginaAtual ? '#C9A84C' : '#2E2E30'), borderRadius: 2, padding: '6px 12px', fontSize: 13, color: n === paginaAtual ? '#0F0F10' : '#9B9690', cursor: 'pointer', fontWeight: n === paginaAtual ? 700 : 400 }}>{n}</button>
+                <Button
+                  key={n}
+                  variant={n === paginaAtual ? 'default' : 'outline'}
+                  size="icon-sm"
+                  aria-current={n === paginaAtual ? 'page' : undefined}
+                  onClick={() => setPagina(n)}
+                  className="tabular-nums"
+                >
+                  {n}
+                </Button>
               ))}
-              <button onClick={() => setPagina((p: number) => Math.min(totalPaginas, p + 1))} disabled={paginaAtual === totalPaginas}
-                style={{ background: '#181819', border: '1px solid #2E2E30', borderRadius: 2, padding: '6px 14px', fontSize: 13, cursor: paginaAtual === totalPaginas ? 'default' : 'pointer', color: paginaAtual === totalPaginas ? '#2E2E30' : '#9B9690' }}>→</button>
-            </div>
+              <Button
+                variant="outline" size="icon-sm" aria-label="Próxima página"
+                onClick={() => setPagina((p: number) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaAtual === totalPaginas}
+              >
+                <ChevronRight />
+              </Button>
+            </nav>
           )}
-        </>
+        </div>
       )}
 
-      {/* Aba: Cobranças */}
       {aba === 'cobrancas' && (
         <ERPCobrancas cobrancas={cobrancas} corretorId={corretorId} mesInicial={mesAtual()} />
       )}
-
-      {/* Aba: Repasses */}
       {aba === 'repasses' && (
         <ERPRepasses repasses={repasses} corretorId={corretorId} mesInicial={mesAtual()} />
       )}
-
-      {/* Aba: Extrato */}
       {aba === 'extrato' && (
         <ERPExtrato movimentacoes={movimentacoes} saldoAnterior={saldoAnterior} mesInicial={mesAtual()} />
       )}
-
-      {/* Aba: Chamados */}
       {aba === 'chamados' && (
         <ERPChamados corretorId={corretorId} contratos={contratos} />
       )}
-
-      {/* Aba: Vistorias */}
       {aba === 'vistorias' && (
         <ERPVistorias contratos={contratos} />
       )}
 
-      {/* Modal */}
       {modalAberto && (
         <ModalContrato
           contrato={contratoEditando}

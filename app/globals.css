@@ -55,6 +55,68 @@
   --color-blue:      #5C9BE0;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   COCKPIT — superfície de trabalho (dashboard, ERP, CRM)
+   ───────────────────────────────────────────────────────────────────
+   O :root acima é a VITRINE: escuro e dourado, para o site público do
+   corretor, onde o imóvel é vendido. Este escopo é o COCKPIT: claro e
+   neutro, para onde o corretor passa horas lançando contrato e
+   conciliando repasse. Mesmos tokens, aplicação diferente.
+
+   O ouro vira #8A6B1C no claro — mesma matiz da marca, escurecido para
+   passar contraste AA (5.9:1 sobre branco; o #C9A84C dá 2.1:1 e
+   reprovaria).
+
+   A sidebar NÃO é sobrescrita aqui: herda o escuro do :root de
+   propósito, funcionando como âncora da marca ao lado da área clara.
+   ═══════════════════════════════════════════════════════════════════ */
+[data-surface='cockpit'] {
+  --background:             60 6% 98%;
+  --foreground:             36 11% 9%;
+  --card:                   0 0% 100%;
+  --card-foreground:        36 11% 9%;
+  --popover:                0 0% 100%;
+  --popover-foreground:     36 11% 9%;
+  --primary:                43 66% 33%;
+  --primary-foreground:     0 0% 100%;
+  --secondary:              45 13% 94%;
+  --secondary-foreground:   36 11% 9%;
+  --muted:                  45 13% 94%;
+  --muted-foreground:       36 8% 39%;
+  --accent:                 45 13% 94%;
+  --accent-foreground:      36 11% 9%;
+  --destructive:            4 53% 42%;
+  --destructive-foreground: 0 0% 100%;
+  --border:                 42 16% 87%;
+  --input:                  42 16% 87%;
+  --ring:                   43 66% 33%;
+  --radius:                 0.5rem;
+
+  --chart-1:                43 66% 33%;
+  --chart-2:                165 72% 28%;
+  --chart-3:                212 53% 38%;
+  --chart-4:                4 53% 42%;
+  --chart-5:                255 36% 46%;
+
+  /* Paleta BID reinterpretada para o claro — os 14 arquivos que já usam
+     var(--color-*) migram sozinhos ao entrar neste escopo. */
+  --color-gold:      #8A6B1C;
+  --color-gold-light:#A9861F;
+  --color-gold-pale: #F5EDD8;
+  --color-dark:      #FAFAF9;
+  --color-dark-2:    #FFFFFF;
+  --color-dark-3:    #F1F0ED;
+  --color-dark-4:    #E4E1DA;
+  --color-text:      #1A1815;
+  --color-muted:     #6B655C;
+  --color-green:     #14795F;
+  --color-red:       #A33A32;
+  --color-blue:      #2E5F96;
+
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+}
+
 @theme inline {
   --font-sans:  'DM Sans', 'DM Sans Fallback';
   --font-serif: 'Playfair Display', 'Playfair Display Fallback';
@@ -128,3 +190,12 @@
 ::-webkit-scrollbar       { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(201,168,76,.2); border-radius: 2px; }
+
+/* No cockpit a barra acompanha o fundo claro */
+[data-surface='cockpit'] ::-webkit-scrollbar       { width: 10px; height: 10px; }
+[data-surface='cockpit'] ::-webkit-scrollbar-thumb {
+  background: hsl(42 16% 82%);
+  border-radius: 6px;
+  border: 3px solid hsl(var(--background));
+}
+[data-surface='cockpit'] ::-webkit-scrollbar-thumb:hover { background: hsl(36 10% 68%); }

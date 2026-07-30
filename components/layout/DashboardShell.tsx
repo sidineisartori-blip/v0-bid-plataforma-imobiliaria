@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, ReactNode, cloneElement, isValidElement } from 'react'
+import { Menu } from 'lucide-react'
 
 interface DashboardShellProps {
   sidebar: ReactNode
@@ -46,43 +47,36 @@ export default function DashboardShell({ sidebar, children }: DashboardShellProp
     : sidebar
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#0E0E0F' }}>
-      {/* Mobile overlay */}
+    // data-surface="cockpit" liga o tema claro de trabalho (globals.css).
+    // A sidebar continua escura de propósito: não sobrescrevemos os tokens
+    // --sidebar-* no cockpit, então ela herda o dourado sobre escuro da marca.
+    <div data-surface="cockpit" className="flex h-screen overflow-hidden bg-background">
       {isMobile && mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 40,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-          }}
+          className="fixed inset-0 z-40 bg-black/60"
+          aria-hidden="true"
         />
       )}
 
-      {/* Sidebar — hidden on mobile unless mobileOpen */}
-      <div style={{
-        position: isMobile ? 'fixed' : 'relative',
-        top: 0, left: 0, bottom: 0,
-        zIndex: isMobile ? 50 : undefined,
-        transform: isMobile && !mobileOpen ? 'translateX(-100%)' : 'translateX(0)',
-        transition: 'transform 0.25s ease',
-      }}>
+      <div
+        className={[
+          'top-0 left-0 bottom-0 transition-transform duration-200 ease-out',
+          isMobile ? 'fixed z-50' : 'relative',
+          isMobile && !mobileOpen ? '-translate-x-full' : 'translate-x-0',
+        ].join(' ')}
+      >
         {sidebarWithProps}
       </div>
 
-      <main style={{ flex: 1, overflowY: 'auto', backgroundColor: '#0E0E0F', minWidth: 0 }}>
-        {/* Mobile hamburger */}
+      <main className="flex-1 min-w-0 overflow-y-auto bg-background text-foreground">
         {isMobile && (
           <button
             onClick={() => setMobileOpen(true)}
-            style={{
-              position: 'fixed', top: 14, left: 14, zIndex: 30,
-              background: '#181819', border: '1px solid #2E2E30',
-              borderRadius: 4, width: 40, height: 40,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#C9A84C', fontSize: 18, cursor: 'pointer',
-            }}
+            aria-label="Abrir menu"
+            className="fixed top-3.5 left-3.5 z-30 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-primary shadow-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            ☰
+            <Menu className="h-[18px] w-[18px]" />
           </button>
         )}
         {children}
