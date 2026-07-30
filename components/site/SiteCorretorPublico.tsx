@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react'
 import Image from 'next/image'
 import { useOpcoes } from '@/lib/opcoes-client'
+import SelectField from './SelectField'
 
 interface CorretorPublico {
   id: string
@@ -888,25 +889,21 @@ export default function SiteCorretorPublico({ corretor, imoveis, cidades, bairro
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Tipo de negócio</label>
-                  <select 
-                    value={formProprietario.tipo_negocio} 
-                    onChange={(e) => setFormProprietario(p => ({ ...p, tipo_negocio: e.target.value }))} 
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                  >
-                    {tiposNegocioImovel.map((t) => (
-                      <option key={t.valor} value={t.valor}>{t.label}</option>
-                    ))}
-                  </select>
+                  <SelectField
+                    ariaLabel="Tipo de negócio"
+                    value={formProprietario.tipo_negocio}
+                    onChange={(v) => setFormProprietario(p => ({ ...p, tipo_negocio: v }))}
+                    options={tiposNegocioImovel.map((t) => ({ value: t.valor, label: t.label }))}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Tipo de imóvel</label>
-                  <select
+                  <SelectField
+                    ariaLabel="Tipo de imóvel"
                     value={formProprietario.tipo_imovel}
-                    onChange={(e) => setFormProprietario(p => ({ ...p, tipo_imovel: e.target.value }))}
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                  >
-                    {tiposImovel.map((t) => <option key={t.valor} value={t.valor}>{t.label}</option>)}
-                  </select>
+                    onChange={(v) => setFormProprietario(p => ({ ...p, tipo_imovel: v }))}
+                    options={tiposImovel.map((t) => ({ value: t.valor, label: t.label }))}
+                  />
                 </div>
               </div>
 
@@ -1031,25 +1028,21 @@ export default function SiteCorretorPublico({ corretor, imoveis, cidades, bairro
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Quero</label>
-                  <select 
-                    value={formComprador.tipo_negocio} 
-                    onChange={(e) => setFormComprador(p => ({ ...p, tipo_negocio: e.target.value }))} 
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                  >
-                    {tiposNegocioBusca.map((t) => (
-                      <option key={t.valor} value={t.valor}>{t.label}</option>
-                    ))}
-                  </select>
+                  <SelectField
+                    ariaLabel="Quero"
+                    value={formComprador.tipo_negocio}
+                    onChange={(v) => setFormComprador(p => ({ ...p, tipo_negocio: v }))}
+                    options={tiposNegocioBusca.map((t) => ({ value: t.valor, label: t.label }))}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Tipo de imóvel</label>
-                  <select
+                  <SelectField
+                    ariaLabel="Tipo de imóvel"
                     value={formComprador.tipo_imovel}
-                    onChange={(e) => setFormComprador(p => ({ ...p, tipo_imovel: e.target.value }))}
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                  >
-                    {tiposImovel.map((t) => <option key={t.valor} value={t.valor}>{t.label}</option>)}
-                  </select>
+                    onChange={(v) => setFormComprador(p => ({ ...p, tipo_imovel: v }))}
+                    options={tiposImovel.map((t) => ({ value: t.valor, label: t.label }))}
+                  />
                 </div>
               </div>
 
@@ -1110,28 +1103,30 @@ export default function SiteCorretorPublico({ corretor, imoveis, cidades, bairro
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Quartos</label>
-                  <select 
-                    value={formComprador.quartos} 
-                    onChange={(e) => setFormComprador(p => ({ ...p, quartos: e.target.value }))} 
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                  >
-                    <option value="">Qualquer</option>
-                    <option value="1">1 quarto</option>
-                    <option value="2">2 quartos</option>
-                    <option value="3">3 quartos</option>
-                    <option value="4">4+ quartos</option>
-                  </select>
+                  <SelectField
+                    ariaLabel="Quartos"
+                    value={formComprador.quartos}
+                    onChange={(v) => setFormComprador(p => ({ ...p, quartos: v }))}
+                    options={[
+                      { value: '', label: 'Qualquer' },
+                      { value: '1', label: '1 quarto' },
+                      { value: '2', label: '2 quartos' },
+                      { value: '3', label: '3 quartos' },
+                      { value: '4', label: '4+ quartos' },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Tem animal de estimação?</label>
-                  <select 
-                    value={formComprador.tem_animal} 
-                    onChange={(e) => setFormComprador(p => ({ ...p, tem_animal: e.target.value }))} 
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                  >
-                    <option value="nao">Não</option>
-                    <option value="sim">Sim</option>
-                  </select>
+                  <SelectField
+                    ariaLabel="Tem animal de estimação?"
+                    value={formComprador.tem_animal}
+                    onChange={(v) => setFormComprador(p => ({ ...p, tem_animal: v }))}
+                    options={[
+                      { value: 'nao', label: 'Não' },
+                      { value: 'sim', label: 'Sim' },
+                    ]}
+                  />
                 </div>
               </div>
 
